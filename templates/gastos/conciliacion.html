@@ -1,0 +1,467 @@
+{% extends 'gastos/base.html' %}
+{% load gastos_extras %}
+
+{% block title %}Conciliación de Gastos - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-calculator-fill"></i> Conciliación de Gastos</h1>
+        <p class="text-muted">Quién pagó qué y cuánto debe cada uno</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'historial_conciliaciones' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history"></i> Historial
+        </a>
+    </div>
+</div>
+
+<!-- Estado de Conciliación -->
+{% if conciliacion_existente %}
+<div class="alert {% if conciliacion_existente.estado == 'CERRADA' %}alert-success{% else %}alert-warning{% endif %} mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            {% if conciliacion_existente.estado == 'CERRADA' %}
+            <h5><i class="bi bi-check-circle-fill"></i> Conciliación Cerrada</h5>
+            <p class="mb-0">
+                Esta conciliación fue cerrada el {{ conciliacion_existente.fecha_cierre|date:"d/m/Y H:i" }}
+                {% if conciliacion_existente.cerrada_por %}por {{ conciliacion_existente.cerrada_por.first_name|default:conciliacion_existente.cerrada_por.username }}{% endif %}.
+                <br>Los reintegros quedaron registrados y confirmados.
+            </p>
+            {% else %}
+            <h5><i class="bi bi-hourglass-split"></i> Conciliación en Proceso</h5>
+            <p class="mb-0">Esta conciliación está pendiente de cierre.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Advertencia de emails faltantes -->
+{% if hay_aportantes_sin_email %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <h5><i class="bi bi-exclamation-triangle-fill"></i> ¡Atención! Emails Faltantes</h5>
+    <p class="mb-2">
+        <strong>No se podrán enviar códigos de confirmación porque algunos aportantes no tienen email registrado:</strong>
+    </p>
+    <ul class="mb-2">
+        {% for d in conciliacion_aportantes %}
+            {% if not d.aportante.email %}
+            <li><strong>{{ d.aportante.nombre }}</strong> -
+                <a href="{% url 'editar_aportante' d.aportante.pk %}" class="alert-link">
+                    <i class="bi bi-pencil"></i> Agregar email ahora
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <p class="mb-0">
+        <i class="bi bi-info-circle"></i>
+        El sistema de confirmación por email requiere que <strong>todos los aportantes</strong> tengan un email válido.
+    </p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Selector de Período -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Mes</label>
+                <select name="mes" class="form-select">
+                    <option value="1" {% if mes == 1 %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if mes == 2 %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if mes == 3 %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if mes == 4 %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes == 5 %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if mes == 6 %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if mes == 7 %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if mes == 8 %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes == 9 %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if mes == 10 %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes == 11 %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes == 12 %}selected{% endif %}>Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Año</label>
+                <input type="number" name="anio" class="form-control" value="{{ anio }}" min="2020" max="2030">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="bi bi-search"></i> Consultar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen General -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card stat-card">
+            <div class="stat-label">Total Ingresos</div>
+            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card stat-card">
+            <div class="stat-label">Total Gastos</div>
+            <div class="stat-value text-danger">${{ total_gastos_mes|floatformat:0 }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Conciliación por Aportante -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-people-fill"></i> Estado de Conciliación por Aportante</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Aportante</th>
+                                <th>% Esperado</th>
+                                <th>Debe Pagar</th>
+                                <th>Pagó Realmente</th>
+                                <th>% Pagado</th>
+                                <th>Balance</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in conciliacion_aportantes %}
+                            <tr class="{% if item.balance > 0 %}table-success{% elif item.balance < 0 %}table-danger{% endif %}">
+                                <td class="fw-bold">{{ item.aportante.nombre }}</td>
+                                <td>{{ item.porcentaje_esperado|floatformat:2 }}%</td>
+                                <td>${{ item.gastos_asignados|floatformat:0 }}</td>
+                                <td class="fw-bold">${{ item.pagos_realizados|floatformat:0 }}</td>
+                                <td>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar {% if item.porcentaje_pagado > item.porcentaje_esperado %}bg-info{% elif item.porcentaje_pagado < item.porcentaje_esperado %}bg-warning{% else %}bg-success{% endif %}"
+                                             role="progressbar"
+                                             style="width: {{ item.porcentaje_pagado }}%">
+                                            {{ item.porcentaje_pagado|floatformat:1 }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="{% if item.balance > 0 %}text-success{% elif item.balance < 0 %}text-danger{% else %}text-muted{% endif %} fw-bold">
+                                    {% if item.balance > 0 %}
+                                    +${{ item.balance|floatformat:0 }}
+                                    {% elif item.balance < 0 %}
+                                    -${{ item.balance|floatformat:0|cut:"-" }}
+                                    {% else %}
+                                    $0
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.estado == 'debe_recibir' %}
+                                    <span class="badge bg-success"><i class="bi bi-arrow-down-circle"></i> Debe recibir</span>
+                                    {% elif item.estado == 'debe_pagar' %}
+                                    <span class="badge bg-danger"><i class="bi bi-arrow-up-circle"></i> Debe pagar</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-check-circle"></i> Equilibrado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reintegros Necesarios -->
+{% if hay_desbalance %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Reintegros Necesarios</h5>
+            </div>
+            <div class="card-body">
+                {% if reintegros %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Para equilibrar los gastos del mes, se requieren los siguientes reintegros:</strong>
+                </div>
+
+                <div class="list-group">
+                    {% for reintegro in reintegros %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="bi bi-person-fill text-danger"></i> {{ reintegro.de.nombre }}
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <i class="bi bi-person-fill text-success"></i> {{ reintegro.para.nombre }}
+                            </h6>
+                            <small class="text-muted">
+                                {{ reintegro.de.nombre }} debe transferir a {{ reintegro.para.nombre }}
+                            </small>
+                        </div>
+                        <span class="badge bg-warning text-dark" style="font-size: 1.2rem;">
+                            ${{ reintegro.monto|floatformat:0 }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> No se requieren reintegros. ¡Los gastos están equilibrados!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle-fill"></i>
+    <strong>¡Perfecto!</strong> Los gastos están completamente equilibrados. No se requieren reintegros.
+</div>
+{% endif %}
+
+<!-- Detalle de Pagos por Aportante -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Detalle de Pagos Realizados</h5>
+            </div>
+            <div class="card-body">
+                {% for item in conciliacion_aportantes %}
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2">
+                        <i class="bi bi-person-fill"></i> {{ item.aportante.nombre }}
+                        <span class="badge bg-primary float-end">Total pagado: ${{ item.pagos_realizados|floatformat:0 }}</span>
+                    </h6>
+
+                    {% if detalles_pagos|get_item:item.aportante.id %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Gasto</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in detalles_pagos|get_item:item.aportante.id %}
+                                <tr>
+                                    <td>{{ gasto.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {{ gasto.subcategoria.categoria.nombre }} → {{ gasto.subcategoria.nombre }}
+                                        {% if gasto.descripcion %}
+                                        <br><small class="text-muted">{{ gasto.descripcion }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-bold">${{ gasto.monto|floatformat:0 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No realizó pagos este mes.</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón para Cerrar/Confirmar Conciliación -->
+{% if not conciliacion_existente or conciliacion_existente.estado != 'CERRADA' %}
+
+{% if conciliacion_existente and conciliacion_existente.estado == 'PENDIENTE' %}
+<!-- Formulario de Confirmación con Códigos -->
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="bi bi-envelope-fill"></i> Confirmar Conciliación con Código</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <strong><i class="bi bi-info-circle"></i> Confirmación Pendiente</strong><br>
+            Se han enviado códigos de confirmación por email a cada aportante.
+            Todos deben ingresar su código para cerrar la conciliación.
+        </div>
+
+        <!-- Progreso de Confirmaciones -->
+        <div class="mb-3">
+            <strong>Progreso:</strong> {{ confirmados_count }} de {{ total_aportantes }} aportantes han confirmado
+            <div class="progress mt-2">
+                {% if total_aportantes > 0 %}
+                    {% widthratio confirmados_count total_aportantes 100 as porcentaje %}
+                    <div class="progress-bar {% if confirmados_count == total_aportantes %}bg-success{% else %}bg-warning{% endif %}"
+                         style="width: {{ porcentaje }}%"
+                         role="progressbar">
+                        {{ porcentaje }}%
+                    </div>
+                {% else %}
+                    <div class="progress-bar bg-secondary" style="width: 100%" role="progressbar">
+                        0%
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Formularios de Confirmación por Aportante -->
+        {% for detalle in conciliacion_existente.detalles.all %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <strong>{{ detalle.aportante.nombre }}</strong>
+                        {% if detalle.aportante.email %}
+                        <br><small class="text-muted">{{ detalle.aportante.email }}</small>
+                        {% else %}
+                        <br><small class="text-danger">Sin email</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <small>Balance:</small><br>
+                        <strong class="{% if detalle.balance > 0 %}text-success{% elif detalle.balance < 0 %}text-danger{% endif %}">
+                            ${{ detalle.balance|floatformat:0 }}
+                        </strong>
+                    </div>
+                    <div class="col-md-6">
+                        {% if detalle.confirmado %}
+                        <div class="alert alert-success mb-0 py-2">
+                            <i class="bi bi-check-circle-fill"></i> Confirmado
+                            {% if detalle.fecha_confirmacion %}
+                            el {{ detalle.fecha_confirmacion|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <form method="post" action="{% url 'confirmar_conciliacion' %}" class="row g-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="mes" value="{{ mes }}">
+                            <input type="hidden" name="anio" value="{{ anio }}">
+                            <input type="hidden" name="aportante_id" value="{{ detalle.aportante.id }}">
+                            <div class="col-7">
+                                <input type="text"
+                                       name="codigo"
+                                       class="form-control"
+                                       placeholder="Código de 6 dígitos"
+                                       pattern="[0-9]{6}"
+                                       maxlength="6"
+                                       required>
+                            </div>
+                            <div class="col-5">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-check2"></i> Confirmar
+                                </button>
+                            </div>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="alert alert-light mt-3">
+            <small>
+                <strong><i class="bi bi-lightbulb"></i> Tip:</strong>
+                Revisa tu email (y carpeta de spam) para encontrar el código de 6 dígitos.
+                La conciliación se cerrará automáticamente cuando todos los aportantes confirmen.
+            </small>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Formulario para Iniciar Cierre (Enviar Códigos) -->
+<div class="card border-success mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-envelope-check"></i> Iniciar Cierre de Conciliación</h5>
+    </div>
+    <div class="card-body">
+        <p class="mb-3">
+            <strong>¿Todos los aportantes están de acuerdo con los reintegros?</strong><br>
+            Al iniciar el cierre, cada aportante recibirá un <strong>código de confirmación por email</strong>.
+            La conciliación se cerrará cuando todos confirmen.
+        </p>
+
+        {% if hay_desbalance %}
+        <div class="alert alert-warning">
+            <strong><i class="bi bi-exclamation-triangle"></i> Reintegros Pendientes:</strong><br>
+            Hay {{ reintegros|length }} reintegro{{ reintegros|length|pluralize }} calculados.
+            Verifica que todos estén de acuerdo antes de continuar.
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <strong><i class="bi bi-check-circle"></i> ¡Mes Equilibrado!</strong><br>
+            No hay reintegros pendientes. Todos pagaron exactamente lo que les correspondía.
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'cerrar_conciliacion' %}">
+            {% csrf_token %}
+            <input type="hidden" name="mes" value="{{ mes }}">
+            <input type="hidden" name="anio" value="{{ anio }}">
+
+            <div class="mb-3">
+                <label for="observaciones" class="form-label">Observaciones (Opcional)</label>
+                <textarea class="form-control" id="observaciones" name="observaciones" rows="2"
+                          placeholder="Ej: Acordado en reunión familiar del 13/01/2026"></textarea>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-envelope-check-fill"></i> Enviar Códigos de Confirmación por Email
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Explicación -->
+<div class="alert alert-light border mt-4">
+    <h6><i class="bi bi-lightbulb"></i> ¿Cómo funciona la conciliación?</h6>
+    <p class="mb-2">
+        <strong>1. Distribución teórica:</strong> Cada aportante debe pagar un porcentaje de los gastos según su ingreso.<br>
+        <strong>2. Pagos reales:</strong> Se registra quién pagó cada gasto durante el mes.<br>
+        <strong>3. Balance:</strong> Se calcula la diferencia entre lo que pagó y lo que debería haber pagado.<br>
+        <strong>4. Reintegros:</strong> Los que pagaron de más reciben de los que pagaron de menos.<br>
+        <strong>5. Cierre:</strong> Al cerrar la conciliación, el acuerdo queda registrado y documentado.
+    </p>
+    <p class="mb-0">
+        <strong>Ejemplo:</strong> Si Juan debe pagar el 45.5% ($1,000,000) pero pagó $1,500,000, pagó de más $500,000.
+        Si María debe pagar el 54.5% ($1,200,000) pero pagó solo $700,000, debe $500,000 a Juan.
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        text-align: center;
+        padding: 20px;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+

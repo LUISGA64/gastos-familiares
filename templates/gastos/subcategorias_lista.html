@@ -1,0 +1,118 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Subcategorías - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-diagram-3-fill"></i> Subcategorías de Gastos</h1>
+        <p class="text-muted">Gastos específicos organizados por categoría principal</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'crear_subcategoria' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Subcategoría
+        </a>
+        <a href="{% url 'lista_categorias' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Ver Categorías
+        </a>
+    </div>
+</div>
+
+<!-- Agrupar subcategorías por categoría -->
+{% regroup subcategorias by categoria as categorias_agrupadas %}
+
+{% for categoria_grupo in categorias_agrupadas %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-folder-fill"></i> {{ categoria_grupo.grouper.nombre }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Gastos Fijos -->
+            <div class="col-md-6">
+                <h6 class="text-danger"><i class="bi bi-pin-fill"></i> Gastos Fijos</h6>
+                <div class="list-group">
+                    {% for subcategoria in categoria_grupo.list %}
+                        {% if subcategoria.tipo == 'FIJO' %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">{{ subcategoria.nombre }}</div>
+                                {% if subcategoria.descripcion %}
+                                <small class="text-muted">{{ subcategoria.descripcion }}</small>
+                                {% endif %}
+                                {% if subcategoria.monto_estimado %}
+                                <div class="mt-1">
+                                    <span class="badge bg-info">Estimado: ${{ subcategoria.monto_estimado|floatformat:0 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if subcategoria.activo %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                                <a href="{% url 'editar_subcategoria' subcategoria.pk %}" class="btn btn-sm btn-warning ms-2">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Gastos Variables -->
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-shuffle"></i> Gastos Variables</h6>
+                <div class="list-group">
+                    {% for subcategoria in categoria_grupo.list %}
+                        {% if subcategoria.tipo == 'VARIABLE' %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">{{ subcategoria.nombre }}</div>
+                                {% if subcategoria.descripcion %}
+                                <small class="text-muted">{{ subcategoria.descripcion }}</small>
+                                {% endif %}
+                                {% if subcategoria.monto_estimado %}
+                                <div class="mt-1">
+                                    <span class="badge bg-info">Estimado: ${{ subcategoria.monto_estimado|floatformat:0 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if subcategoria.activo %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                                <a href="{% url 'editar_subcategoria' subcategoria.pk %}" class="btn btn-sm btn-warning ms-2">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No hay subcategorías registradas.
+    <a href="{% url 'crear_subcategoria' %}" class="alert-link">Crear la primera subcategoría</a>
+</div>
+{% endfor %}
+
+<div class="alert alert-light border">
+    <h6><i class="bi bi-lightbulb"></i> Información</h6>
+    <p class="mb-0">
+        <strong>Estructura jerárquica:</strong> Cada categoría principal (ej: Servicios Públicos) puede contener múltiples subcategorías o gastos específicos (ej: Internet, Acueducto, Luz, Gas).
+        Cada subcategoría puede ser un <strong>gasto fijo</strong> (monto constante) o <strong>variable</strong> (depende del consumo).
+    </p>
+</div>
+{% endblock %}
+

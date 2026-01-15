@@ -1,0 +1,103 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}{{ titulo }} - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-person-fill"></i> {{ titulo }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pencil-square"></i> Información del Aportante
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                        <div class="text-danger">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            {{ form.email.label }}
+                            <span class="badge bg-info">Recomendado</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="text-danger">{{ form.email.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <i class="bi bi-info-circle"></i> {{ form.email.help_text|default:"Email para recibir códigos de confirmación de conciliaciones" }}
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.ingreso_mensual.id_for_label }}" class="form-label">{{ form.ingreso_mensual.label }}</label>
+                        {{ form.ingreso_mensual }}
+                        {% if form.ingreso_mensual.errors %}
+                        <div class="text-danger">{{ form.ingreso_mensual.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Ingrese el valor en pesos colombianos (COP)</small>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.activo }}
+                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                            {{ form.activo.label }}
+                        </label>
+                        {% if form.activo.errors %}
+                        <div class="text-danger">{{ form.activo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'lista_aportantes' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h5>¿Qué es un aportante?</h5>
+                <p>Un aportante es cada persona que contribuye con ingresos al hogar. Puede ser cualquier miembro de la familia que trabaje y aporte dinero para los gastos.</p>
+
+                <h5 class="mt-3">Cálculo del porcentaje</h5>
+                <p>El porcentaje de aporte se calcula automáticamente sumando todos los ingresos y determinando qué proporción representa cada salario del total.</p>
+
+                <div class="alert alert-info mt-3">
+                    <strong>Ejemplo:</strong><br>
+                    Si hay 2 aportantes:<br>
+                    - Aportante A: $2,000,000<br>
+                    - Aportante B: $3,000,000<br>
+                    Total: $5,000,000<br>
+                    <br>
+                    Aportante A: 40% del total<br>
+                    Aportante B: 60% del total
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

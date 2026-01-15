@@ -1,0 +1,106 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Aportantes - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-people-fill"></i> Aportantes</h1>
+        <p class="text-muted">Gestión de aportantes y sus ingresos</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'crear_aportante' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Aportante
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list"></i> Lista de Aportantes
+        <span class="badge bg-primary float-end">Total Ingresos: ${{ total_ingresos|floatformat:0 }}</span>
+    </div>
+    <div class="card-body">
+        {% if aportantes %}
+
+        <!-- Alerta de emails faltantes -->
+        {% if hay_aportantes_sin_email %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong><i class="bi bi-exclamation-triangle"></i> Acción requerida:</strong>
+            Algunos aportantes no tienen email configurado. El email es necesario para:
+            <ul class="mb-0 mt-2">
+                <li>Recibir códigos de confirmación de conciliaciones</li>
+                <li>Notificaciones de cierre de mes</li>
+                <li>Reportes personalizados</li>
+            </ul>
+            <small class="d-block mt-2">
+                <i class="bi bi-info-circle"></i>
+                Haz click en <strong>"Editar"</strong> para agregar el email de cada aportante.
+            </small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Ingreso Mensual</th>
+                        <th>% del Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aportante in aportantes %}
+                    <tr>
+                        <td class="fw-bold">{{ aportante.nombre }}</td>
+                        <td>
+                            {% if aportante.email %}
+                            <i class="bi bi-envelope-check text-success"></i> {{ aportante.email }}
+                            {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-envelope-x"></i> Sin email
+                            </span>
+                            <br><small class="text-muted">Necesario para confirmación de conciliaciones</small>
+                            {% endif %}
+                        </td>
+                        <td>${{ aportante.ingreso_mensual|floatformat:0 }}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: {{ aportante.calcular_porcentaje_aporte }}%">
+                                    {{ aportante.calcular_porcentaje_aporte|floatformat:2 }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if aportante.activo %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'editar_aportante' aportante.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay aportantes registrados.
+            <a href="{% url 'crear_aportante' %}" class="alert-link">Crear el primer aportante</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

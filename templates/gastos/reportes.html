@@ -1,0 +1,255 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Reportes - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-graph-up"></i> Reportes y Estadísticas</h1>
+        <p class="text-muted">Análisis detallado de ingresos y gastos</p>
+    </div>
+</div>
+
+<!-- Selector de Período -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Mes</label>
+                <select name="mes" class="form-select">
+                    <option value="1" {% if mes == "1" %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if mes == "2" %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if mes == "3" %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if mes == "4" %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes == "5" %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if mes == "6" %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if mes == "7" %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if mes == "8" %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes == "9" %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if mes == "10" %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes == "11" %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes == "12" %}selected{% endif %}>Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Año</label>
+                <input type="number" name="anio" class="form-control" value="{{ anio }}" min="2020" max="2030">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="bi bi-search"></i> Consultar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen General -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-label">Ingresos Totales</div>
+            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-label">Gastos Totales</div>
+            <div class="stat-value text-danger">${{ total_gastos|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                ${{ balance|floatformat:0 }}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-label">% Gastado</div>
+            <div class="stat-value text-info">
+                {% if total_ingresos > 0 %}
+                {{ total_gastos|floatformat:0|add:"0"|floatformat:0|add:total_ingresos|floatformat:0 }}
+                {% widthratio total_gastos total_ingresos 100 %}%
+                {% else %}
+                0%
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Distribución Fijos vs Variables -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Gastos por Tipo
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-danger">Gastos Fijos</h5>
+                        <h2>${{ gastos_fijos|floatformat:0 }}</h2>
+                        {% if total_gastos > 0 %}
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-danger" role="progressbar"
+                                 style="width: {% widthratio gastos_fijos total_gastos 100 %}%">
+                                {% widthratio gastos_fijos total_gastos 100 %}%
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-warning">Gastos Variables</h5>
+                        <h2>${{ gastos_variables|floatformat:0 }}</h2>
+                        {% if total_gastos > 0 %}
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 style="width: {% widthratio gastos_variables total_gastos 100 %}%">
+                                {% widthratio gastos_variables total_gastos 100 %}%
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> Gastos por Categoría
+            </div>
+            <div class="card-body">
+                {% if gastos_por_categoria %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Total</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for categoria in gastos_por_categoria %}
+                            <tr>
+                                <td>
+                                    <span class="badge {% if categoria.tipo == 'FIJO' %}badge-fijo{% else %}badge-variable{% endif %}">
+                                        {{ categoria.get_tipo_display }}
+                                    </span>
+                                    {{ categoria.nombre }}
+                                </td>
+                                <td>{{ categoria.cantidad }}</td>
+                                <td>${{ categoria.total|floatformat:0 }}</td>
+                                <td>
+                                    {% if total_gastos > 0 %}
+                                    {% widthratio categoria.total total_gastos 100 %}%
+                                    {% else %}
+                                    0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No hay gastos en este período</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance por Aportante -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-people"></i> Balance por Aportante
+            </div>
+            <div class="card-body">
+                {% if aportantes_con_gastos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Aportante</th>
+                                <th>Ingreso</th>
+                                <th>Gastos Asignados</th>
+                                <th>Balance</th>
+                                <th>% Gastado</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in aportantes_con_gastos %}
+                            <tr>
+                                <td class="fw-bold">{{ item.aportante.nombre }}</td>
+                                <td>${{ item.ingreso|floatformat:0 }}</td>
+                                <td class="text-danger">${{ item.total_asignado|floatformat:0 }}</td>
+                                <td class="{% if item.balance >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    ${{ item.balance|floatformat:0 }}
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 25px;">
+                                        {% if item.ingreso > 0 %}
+                                        {% widthratio item.total_asignado item.ingreso 100 as porcentaje_gastado %}
+                                        <div class="progress-bar {% if porcentaje_gastado > 90 %}bg-danger{% elif porcentaje_gastado > 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                             role="progressbar"
+                                             style="width: {{ porcentaje_gastado }}%">
+                                            {{ porcentaje_gastado }}%
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.balance >= 0 %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Positivo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Negativo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No hay aportantes activos o no hay gastos registrados en este período.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notas y Recomendaciones -->
+{% if balance < 0 %}
+<div class="alert alert-danger mt-4">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <strong>Advertencia:</strong> Los gastos superan los ingresos en ${{ balance|floatformat:0|cut:"-" }}.
+    Se recomienda revisar los gastos variables y ajustar el presupuesto.
+</div>
+{% endif %}
+
+{% if total_gastos > 0 %}
+{% widthratio total_gastos total_ingresos 100 as porcentaje_total %}
+{% if porcentaje_total > 90 %}
+<div class="alert alert-warning mt-4">
+    <i class="bi bi-info-circle-fill"></i>
+    <strong>Nota:</strong> Estás gastando el {{ porcentaje_total }}% de tus ingresos.
+    Se recomienda mantener un margen de ahorro del 10-20%.
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+

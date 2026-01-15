@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-green-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="text-center mb-8">
+            <img src="{% static 'images/logo-square.svg' %}" alt="Logo" class="mx-auto mb-4 w-24 h-24">
+            <h2 class="text-3xl font-bold text-gray-800">Bienvenido</h2>
+            <p class="text-gray-600 mt-2">Inicia sesión en tu cuenta</p>
+        </div>
+
+        <!-- ...existing code... -->
+    </div>
+</body>
+</html>
+

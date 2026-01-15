@@ -1,0 +1,222 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Registro - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+        min-height: 100vh;
+        padding: 40px 0;
+    }
+
+    .registro-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .registro-header {
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .registro-header h4 {
+        font-size: 28px;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .registro-body {
+        padding: 40px;
+        background: white;
+    }
+
+    .form-control {
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 2px solid #ecf0f1;
+    }
+
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .btn-registro {
+        padding: 14px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        border: none;
+    }
+
+    .btn-registro:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .warning-alert {
+        background: linear-gradient(135deg, rgba(243, 156, 18, 0.1), rgba(230, 126, 34, 0.1));
+        border: none;
+        border-left: 4px solid #f39c12;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="registro-card">
+                <div class="registro-header">
+                    <div style="font-size: 50px; margin-bottom: 15px;">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <h4>Crear Cuenta Nueva</h4>
+                    <p class="mb-0 opacity-75">Únete a Gestor de Gastos Familiares</p>
+                </div>
+
+                <div class="registro-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="alert warning-alert mb-4">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Código de Invitación Requerido</strong><br>
+                            Necesitas un código válido para registrarte.
+                            <a href="{% url 'planes_precios' %}" class="alert-link fw-bold">Compra tu plan aquí</a>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label fw-bold">Nombre *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="first_name"
+                                       name="first_name"
+                                       required
+                                       placeholder="Juan">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label fw-bold">Apellido *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="last_name"
+                                       name="last_name"
+                                       required
+                                       placeholder="Pérez">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-bold">Usuario *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="username"
+                                   name="username"
+                                   required
+                                   placeholder="juanperez">
+                            <small class="text-muted">Solo letras, números y guiones bajos</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-bold">Email *</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="email"
+                                   name="email"
+                                   required
+                                   placeholder="juan@ejemplo.com">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label fw-bold">Contraseña *</label>
+                                <input type="password"
+                                       class="form-control"
+                                       id="password"
+                                       name="password"
+                                       required
+                                       minlength="8"
+                                       placeholder="Mínimo 8 caracteres">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="password2" class="form-label fw-bold">Confirmar Contraseña *</label>
+                                <input type="password"
+                                       class="form-control"
+                                       id="password2"
+                                       name="password2"
+                                       required
+                                       minlength="8"
+                                       placeholder="Repite la contraseña">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="codigo_invitacion" class="form-label fw-bold">
+                                Código de Invitación *
+                                <i class="bi bi-info-circle" title="Código recibido al comprar tu plan"></i>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="codigo_invitacion"
+                                   name="codigo_invitacion"
+                                   required
+                                   placeholder="XXX-XXXX-XXXX"
+                                   style="text-transform: uppercase;">
+                            <small class="text-muted">Código recibido al adquirir tu plan</small>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-registro">
+                                <i class="bi bi-person-plus-fill"></i> Crear Mi Cuenta
+                            </button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="text-muted mb-2">¿Ya tienes cuenta?</p>
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary" style="border-radius: 10px; padding: 10px 30px;">
+                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <a href="{% url 'planes_precios' %}" class="btn btn-light btn-lg" style="border-radius: 10px;">
+                    <i class="bi bi-star-fill text-warning"></i> Ver Planes y Precios
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validar que las contraseñas coincidan
+document.querySelector('form').addEventListener('submit', function(e) {
+    var password = document.getElementById('password').value;
+    var password2 = document.getElementById('password2').value;
+
+    if (password !== password2) {
+        e.preventDefault();
+        alert('Las contraseñas no coinciden');
+    }
+});
+
+// Convertir código a mayúsculas automáticamente
+document.getElementById('codigo_invitacion').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+</script>
+{% endblock %}
+

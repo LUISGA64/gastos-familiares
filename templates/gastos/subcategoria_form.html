@@ -1,0 +1,127 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}{{ titulo }} - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-diagram-3"></i> {{ titulo }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pencil-square"></i> Información de la Subcategoría
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.categoria.id_for_label }}" class="form-label">{{ form.categoria.label }}</label>
+                        {{ form.categoria }}
+                        {% if form.categoria.errors %}
+                        <div class="text-danger">{{ form.categoria.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Selecciona la categoría principal a la que pertenece este gasto</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                        <div class="text-danger">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.tipo.id_for_label }}" class="form-label">{{ form.tipo.label }}</label>
+                        {{ form.tipo }}
+                        {% if form.tipo.errors %}
+                        <div class="text-danger">{{ form.tipo.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <strong>Fijo:</strong> El monto es constante cada mes (ej: Internet $70.500)<br>
+                            <strong>Variable:</strong> El monto depende del consumo o uso (ej: Acueducto según consumo)
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.monto_estimado.id_for_label }}" class="form-label">{{ form.monto_estimado.label }}</label>
+                        {{ form.monto_estimado }}
+                        {% if form.monto_estimado.errors %}
+                        <div class="text-danger">{{ form.monto_estimado.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Opcional: Monto promedio mensual para referencia</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                        <div class="text-danger">{{ form.descripcion.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.activo }}
+                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                            {{ form.activo.label }}
+                        </label>
+                        {% if form.activo.errors %}
+                        <div class="text-danger">{{ form.activo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'lista_subcategorias' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Ejemplos
+            </div>
+            <div class="card-body">
+                <h6>Servicios Públicos:</h6>
+                <ul class="small">
+                    <li><strong>Internet</strong> - FIJO ($70.500)</li>
+                    <li><strong>Acueducto</strong> - VARIABLE (varía según consumo)</li>
+                    <li><strong>Energía</strong> - VARIABLE (varía según consumo)</li>
+                    <li><strong>Gas</strong> - VARIABLE (varía según consumo)</li>
+                </ul>
+
+                <h6 class="mt-3">Vivienda:</h6>
+                <ul class="small">
+                    <li><strong>Arriendo</strong> - FIJO ($1.200.000)</li>
+                    <li><strong>Administración</strong> - FIJO ($150.000)</li>
+                </ul>
+
+                <h6 class="mt-3">Alimentación:</h6>
+                <ul class="small">
+                    <li><strong>Mercado del mes</strong> - VARIABLE</li>
+                    <li><strong>Domicilios</strong> - VARIABLE</li>
+                </ul>
+
+                <div class="alert alert-info mt-3">
+                    <small>
+                        <strong>Tip:</strong> Define subcategorías específicas para tener un mejor control de tus gastos.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

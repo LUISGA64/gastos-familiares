@@ -1,0 +1,191 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Iniciar Sesión - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+
+    .login-container {
+        margin-top: 50px;
+        margin-bottom: 50px;
+    }
+
+    .login-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+
+    .login-header {
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: white;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .login-header h3 {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .login-header p {
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .brand-logo {
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+
+    .login-body {
+        padding: 40px;
+        background: white;
+    }
+
+    .form-control {
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: 2px solid #ecf0f1;
+        font-size: 16px;
+    }
+
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .btn-login {
+        padding: 14px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        border: none;
+        transition: transform 0.2s;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .divider {
+        text-align: center;
+        margin: 30px 0;
+        position: relative;
+    }
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: #ecf0f1;
+    }
+
+    .divider span {
+        background: white;
+        padding: 0 20px;
+        position: relative;
+        color: #95a5a6;
+    }
+
+    .info-alert {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(44, 62, 80, 0.1));
+        border: none;
+        border-left: 4px solid #3498db;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container login-container">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="brand-logo">
+                        <i class="bi bi-piggy-bank-fill"></i>
+                    </div>
+                    <h3>Gestor de Gastos Familiares</h3>
+                    <p>Administra tus finanzas familiares de forma inteligente</p>
+                </div>
+
+                <div class="login-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-bold">Usuario</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="username"
+                                   name="username"
+                                   required
+                                   placeholder="Ingresa tu usuario"
+                                   autofocus>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-bold">Contraseña</label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   required
+                                   placeholder="Ingresa tu contraseña">
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-login">
+                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="divider">
+                        <span>¿Eres nuevo?</span>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="{% url 'registro' %}" class="btn btn-outline-success w-100 mb-2" style="border-radius: 10px; padding: 12px;">
+                            <i class="bi bi-person-plus"></i> Crear Cuenta Nueva
+                        </a>
+                        <a href="{% url 'planes_precios' %}" class="btn btn-link">
+                            <i class="bi bi-star"></i> Ver Planes y Precios
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert info-alert mt-4">
+                <i class="bi bi-info-circle"></i>
+                <strong>¿Primera vez?</strong> Necesitas un código de invitación para registrarte.
+                <a href="{% url 'planes_precios' %}" class="alert-link">Compra tu plan aquí</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

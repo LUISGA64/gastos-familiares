@@ -1,0 +1,139 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Gastos - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-receipt-cutoff"></i> Gastos</h1>
+        <p class="text-muted">Registro de todos los gastos del hogar</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'crear_gasto' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Gasto
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Tipo de Gasto</label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="FIJO" {% if request.GET.tipo == 'FIJO' %}selected{% endif %}>Fijos</option>
+                    <option value="VARIABLE" {% if request.GET.tipo == 'VARIABLE' %}selected{% endif %}>Variables</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Categoría</label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Mes</label>
+                <select name="mes" class="form-select">
+                    <option value="">Todos</option>
+                    {% for i in "123456789012" %}
+                    <option value="{{ forloop.counter }}" {% if request.GET.mes == forloop.counter|stringformat:"s" %}selected{% endif %}>
+                        {{ forloop.counter }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Año</label>
+                <input type="number" name="anio" class="form-control" value="{{ request.GET.anio }}" placeholder="2026">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary d-block w-100">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Total -->
+<div class="alert alert-info mb-4">
+    <strong>Total:</strong> ${{ total|floatformat:0 }} COP
+</div>
+
+<!-- Lista de gastos -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list"></i> Lista de Gastos
+    </div>
+    <div class="card-body">
+        {% if gastos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gasto in gastos %}
+                    <tr>
+                        <td>{{ gasto.fecha|date:"d/m/Y" }}</td>
+                        <td>
+                            <strong>{{ gasto.descripcion }}</strong>
+                            {% if gasto.observaciones %}
+                            <br><small class="text-muted">{{ gasto.observaciones|truncatewords:10 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ gasto.categoria.nombre }}</td>
+                        <td>
+                            <span class="badge {% if gasto.categoria.tipo == 'FIJO' %}badge-fijo{% else %}badge-variable{% endif %}">
+                                {{ gasto.get_tipo_gasto }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">${{ gasto.monto|floatformat:0 }}</td>
+                        <td>
+                            {% if gasto.pagado %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagado</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'detalle_gasto' gasto.pk %}" class="btn btn-info" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'editar_gasto' gasto.pk %}" class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay gastos registrados con los filtros seleccionados.
+            <a href="{% url 'crear_gasto' %}" class="alert-link">Registrar nuevo gasto</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,259 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Estado del Pago - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    .estado-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .estado-badge {
+        font-size: 24px;
+        padding: 16px 32px;
+        border-radius: 50px;
+        display: inline-block;
+        margin: 20px 0;
+    }
+
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 60px;
+        margin-bottom: 30px;
+    }
+
+    .timeline-icon {
+        position: absolute;
+        left: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+    }
+
+    .timeline-icon.complete {
+        background: #27ae60;
+    }
+
+    .timeline-icon.current {
+        background: #3498db;
+        animation: pulse 2s infinite;
+    }
+
+    .timeline-icon.pending {
+        background: #95a5a6;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .comprobante-preview {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container estado-container">
+    <div class="text-center mb-4">
+        <h1 class="display-6">
+            <i class="bi bi-receipt"></i> Estado del Pago
+        </h1>
+        <p class="text-muted">Referencia: {{ pago.referencia_pago }}</p>
+    </div>
+
+    <!-- Estado actual -->
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            <h4 class="mb-3">Estado Actual</h4>
+
+            {% if pago.estado == 'APROBADO' %}
+            <div class="estado-badge bg-success">
+                <i class="bi bi-check-circle-fill"></i> Pago Aprobado
+            </div>
+            <p class="text-success mt-3">
+                <i class="bi bi-calendar-check"></i> Aprobado el {{ pago.fecha_aprobacion|date:"d/m/Y H:i" }}
+            </p>
+
+            {% elif pago.estado == 'VERIFICANDO' %}
+            <div class="estado-badge bg-warning text-dark">
+                <i class="bi bi-hourglass-split"></i> En Verificación
+            </div>
+            <p class="text-muted mt-3">
+                Tu pago está siendo verificado. Recibirás una notificación cuando sea aprobado.
+            </p>
+            <div class="spinner-border text-warning mt-2" role="status">
+                <span class="visually-hidden">Verificando...</span>
+            </div>
+
+            {% elif pago.estado == 'PENDIENTE' %}
+            <div class="estado-badge bg-info">
+                <i class="bi bi-clock"></i> Pendiente
+            </div>
+            <p class="text-muted mt-3">
+                Debes completar el pago y subir el comprobante.
+            </p>
+            <a href="{% url 'generar_qr_pago' pago.plan.id pago.metodo_pago|lower %}" class="btn btn-primary mt-2">
+                <i class="bi bi-qr-code"></i> Volver al QR
+            </a>
+
+            {% elif pago.estado == 'RECHAZADO' %}
+            <div class="estado-badge bg-danger">
+                <i class="bi bi-x-circle-fill"></i> Rechazado
+            </div>
+            <div class="alert alert-danger mt-3">
+                <strong>Motivo:</strong> {{ pago.notas }}
+            </div>
+            <a href="{% url 'pagar_suscripcion' %}" class="btn btn-primary mt-2">
+                <i class="bi bi-arrow-repeat"></i> Intentar Nuevamente
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detalles del pago -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Detalles del Pago</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <strong>Plan:</strong><br>
+                    {{ pago.plan.nombre }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <strong>Monto:</strong><br>
+                    ${{ pago.monto|floatformat:0 }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <strong>Método de Pago:</strong><br>
+                    {{ pago.get_metodo_pago_display }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <strong>Fecha:</strong><br>
+                    {{ pago.fecha_pago|date:"d/m/Y H:i" }}
+                </div>
+                {% if pago.numero_transaccion %}
+                <div class="col-md-12 mb-3">
+                    <strong>Número de Transacción:</strong><br>
+                    <span class="font-monospace">{{ pago.numero_transaccion }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline del proceso -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Progreso</h5>
+        </div>
+        <div class="card-body">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon {% if pago.estado != 'PENDIENTE' %}complete{% else %}current{% endif %}">
+                        <i class="bi bi-{% if pago.estado != 'PENDIENTE' %}check{% else %}circle{% endif %}"></i>
+                    </div>
+                    <h6>Pago Iniciado</h6>
+                    <p class="text-muted">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon {% if pago.estado in 'VERIFICANDO,APROBADO,RECHAZADO' %}complete{% elif pago.estado == 'PENDIENTE' %}pending{% else %}current{% endif %}">
+                        <i class="bi bi-{% if pago.comprobante %}check{% else %}cloud-upload{% endif %}"></i>
+                    </div>
+                    <h6>Comprobante Subido</h6>
+                    <p class="text-muted">
+                        {% if pago.comprobante %}
+                        ✓ Comprobante recibido
+                        {% else %}
+                        Esperando comprobante
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon {% if pago.estado == 'APROBADO' %}complete{% elif pago.estado == 'VERIFICANDO' %}current{% else %}pending{% endif %}">
+                        <i class="bi bi-{% if pago.estado == 'APROBADO' %}check{% else %}search{% endif %}"></i>
+                    </div>
+                    <h6>Verificación</h6>
+                    <p class="text-muted">
+                        {% if pago.estado == 'APROBADO' %}
+                        ✓ Verificado
+                        {% elif pago.estado == 'VERIFICANDO' %}
+                        En proceso...
+                        {% else %}
+                        Pendiente
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon {% if pago.estado == 'APROBADO' %}complete{% else %}pending{% endif %}">
+                        <i class="bi bi-{% if pago.estado == 'APROBADO' %}check-circle-fill{% else %}trophy{% endif %}"></i>
+                    </div>
+                    <h6>Suscripción Activada</h6>
+                    <p class="text-muted">
+                        {% if pago.estado == 'APROBADO' %}
+                        ✓ Activa hasta {{ familia.fecha_fin_suscripcion|date:"d/m/Y" }}
+                        {% else %}
+                        Esperando aprobación
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comprobante (si existe) -->
+    {% if pago.comprobante %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-file-earmark-image"></i> Comprobante</h5>
+        </div>
+        <div class="card-body text-center">
+            <img src="{{ pago.comprobante.url }}" alt="Comprobante" class="comprobante-preview">
+            <br>
+            <a href="{{ pago.comprobante.url }}" class="btn btn-outline-primary mt-3" download>
+                <i class="bi bi-download"></i> Descargar Comprobante
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div class="text-center">
+        <a href="{% url 'mis_pagos' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Ver Todos mis Pagos
+        </a>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="bi bi-house"></i> Volver al Inicio
+        </a>
+    </div>
+</div>
+
+{% if pago.estado == 'VERIFICANDO' %}
+<script>
+// Auto-reload cada 30 segundos para verificar si cambió el estado
+setTimeout(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endif %}
+{% endblock %}
+

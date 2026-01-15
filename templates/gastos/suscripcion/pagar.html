@@ -1,0 +1,275 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Pagar Suscripción - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-card {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        height: 100%;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+
+    .plan-header {
+        padding: 24px;
+        text-align: center;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: white;
+    }
+
+    .plan-precio {
+        font-size: 48px;
+        font-weight: bold;
+        margin: 16px 0;
+    }
+
+    .plan-periodo {
+        font-size: 18px;
+        opacity: 0.9;
+    }
+
+    .plan-features {
+        list-style: none;
+        padding: 24px;
+        margin: 0;
+    }
+
+    .plan-features li {
+        padding: 12px 0;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .plan-features li:last-child {
+        border-bottom: none;
+    }
+
+    .plan-features i {
+        color: #27ae60;
+        margin-right: 8px;
+    }
+
+    .metodo-pago-card {
+        border: 2px solid #ecf0f1;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 16px;
+    }
+
+    .metodo-pago-card:hover {
+        border-color: #3498db;
+        background: rgba(52, 152, 219, 0.05);
+        transform: translateX(4px);
+    }
+
+    .metodo-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    .plan-popular {
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-6 fw-bold">
+                <i class="bi bi-credit-card"></i> Pagar Suscripción
+            </h1>
+            <p class="text-muted fs-5">Elige tu plan y método de pago</p>
+        </div>
+    </div>
+
+    <!-- Planes disponibles -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="bi bi-star-fill text-warning"></i> Planes Disponibles</h3>
+        </div>
+
+        {% for plan in planes %}
+        <div class="col-md-4 mb-4">
+            <div class="plan-card position-relative">
+                {% if plan.tipo == 'PREMIUM' %}
+                <span class="plan-popular">⭐ MÁS POPULAR</span>
+                {% endif %}
+
+                <div class="plan-header">
+                    <h4>{{ plan.nombre }}</h4>
+                    <div class="plan-precio">
+                        ${{ plan.precio_mensual|floatformat:0 }}
+                    </div>
+                    <div class="plan-periodo">por mes</div>
+                </div>
+
+                <ul class="plan-features">
+                    <li><i class="bi bi-check-circle-fill"></i> {{ plan.max_aportantes }} aportantes</li>
+                    <li><i class="bi bi-check-circle-fill"></i> {{ plan.max_gastos_mes }} gastos/mes</li>
+                    <li><i class="bi bi-check-circle-fill"></i> {{ plan.max_categorias }} categorías</li>
+                    {% if plan.tipo == 'PREMIUM' %}
+                    <li><i class="bi bi-check-circle-fill"></i> Reportes avanzados</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Gráficos interactivos</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+                    {% endif %}
+                </ul>
+
+                <div class="p-3">
+                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#metodosModal" data-plan-id="{{ plan.id }}" data-plan-nombre="{{ plan.nombre }}" data-plan-precio="{{ plan.precio_mensual }}">
+                        <i class="bi bi-cart-plus"></i> Seleccionar Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagos anteriores -->
+    {% if pagos_anteriores %}
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="bi bi-clock-history"></i> Pagos Recientes</h3>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Plan</th>
+                                    <th>Monto</th>
+                                    <th>Método</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in pagos_anteriores %}
+                                <tr>
+                                    <td>{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ pago.plan.nombre }}</td>
+                                    <td>${{ pago.monto|floatformat:0 }}</td>
+                                    <td>{{ pago.get_metodo_pago_display }}</td>
+                                    <td>
+                                        {% if pago.estado == 'APROBADO' %}
+                                        <span class="badge bg-success">✓ Aprobado</span>
+                                        {% elif pago.estado == 'VERIFICANDO' %}
+                                        <span class="badge bg-warning">⏳ En verificación</span>
+                                        {% elif pago.estado == 'PENDIENTE' %}
+                                        <span class="badge bg-info">📋 Pendiente</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">✗ {{ pago.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'estado_pago' pago.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de métodos de pago -->
+<div class="modal fade" id="metodosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-wallet2"></i> Elige tu método de pago
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="plan-info" class="alert alert-info mb-4">
+                    <strong>Plan seleccionado:</strong> <span id="selected-plan-name"></span><br>
+                    <strong>Monto a pagar:</strong> $<span id="selected-plan-price"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="metodo-pago-card text-center" onclick="pagarConQR('bancolombia')">
+                            <div class="metodo-icon">🏦</div>
+                            <h5>Bancolombia</h5>
+                            <p class="text-muted mb-0">Transferencia con QR</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metodo-pago-card text-center" onclick="pagarConQR('nequi')">
+                            <div class="metodo-icon">💰</div>
+                            <h5>Nequi</h5>
+                            <p class="text-muted mb-0">Pago con QR</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light mt-4">
+                    <i class="bi bi-info-circle"></i> <strong>¿Cómo funciona?</strong><br>
+                    1. Selecciona tu método de pago<br>
+                    2. Escanea el código QR generado<br>
+                    3. Completa el pago en tu app<br>
+                    4. Sube el comprobante<br>
+                    5. Verifica tu suscripción activada ✓
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedPlanId = null;
+
+// Capturar plan seleccionado
+document.addEventListener('DOMContentLoaded', function() {
+    const metodosModal = document.getElementById('metodosModal');
+
+    metodosModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        selectedPlanId = button.getAttribute('data-plan-id');
+        const planNombre = button.getAttribute('data-plan-nombre');
+        const planPrecio = button.getAttribute('data-plan-precio');
+
+        document.getElementById('selected-plan-name').textContent = planNombre;
+        document.getElementById('selected-plan-price').textContent = parseFloat(planPrecio).toLocaleString('es-CO');
+    });
+});
+
+function pagarConQR(metodo) {
+    if (!selectedPlanId) {
+        alert('Por favor selecciona un plan primero');
+        return;
+    }
+
+    window.location.href = `/suscripcion/generar-qr/${selectedPlanId}/${metodo}/`;
+}
+</script>
+{% endblock %}
+

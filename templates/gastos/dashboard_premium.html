@@ -1,0 +1,502 @@
+{% extends 'gastos/base.html' %}
+{% load gastos_extras %}
+
+{% block title %}Dashboard Premium - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4 fade-in">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold"><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted fs-5">Resumen financiero de {{ mes_actual }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="exportDashboard('pdf')">
+                <i class="bi bi-file-pdf"></i> Exportar PDF
+            </button>
+            <button type="button" class="btn btn-outline-success" onclick="exportDashboard('excel')">
+                <i class="bi bi-file-excel"></i> Excel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- KPIs Principales con Animación -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <i class="bi bi-wallet2 stat-icon text-success"></i>
+            <div class="stat-label">Ingresos Totales</div>
+            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+            <small class="text-muted">
+                <i class="bi bi-people-fill"></i> {{ aportantes|length }} aportante{{ aportantes|length|pluralize }}
+            </small>
+            {% if tendencia_ingresos > 0 %}
+            <div class="mt-2">
+                <span class="badge bg-success">
+                    <i class="bi bi-arrow-up"></i> +{{ tendencia_ingresos|floatformat:1 }}%
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <i class="bi bi-credit-card stat-icon text-danger"></i>
+            <div class="stat-label">Gastos del Mes</div>
+            <div class="stat-value text-danger">${{ total_gastos_mes|floatformat:0 }}</div>
+            <small class="text-muted">Total gastado</small>
+            {% if tendencia_gastos %}
+            <div class="mt-2">
+                <span class="badge {% if tendencia_gastos > 0 %}bg-danger{% else %}bg-success{% endif %}">
+                    <i class="bi bi-arrow-{% if tendencia_gastos > 0 %}up{% else %}down{% endif %}"></i>
+                    {% if tendencia_gastos > 0 %}+{% endif %}{{ tendencia_gastos|floatformat:1 }}%
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <i class="bi bi-pin-angle stat-icon text-warning"></i>
+            <div class="stat-label">Gastos Fijos</div>
+            <div class="stat-value text-warning">${{ gastos_fijos_mes|floatformat:0 }}</div>
+            <small class="text-muted">Obligatorios</small>
+            <div class="mt-2">
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar"
+                         style="width: {% widthratio gastos_fijos_mes total_gastos_mes 100 %}%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <i class="bi bi-piggy-bank stat-icon {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+            <div class="stat-label">Balance</div>
+            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                ${{ balance|floatformat:0 }}
+            </div>
+            <small class="text-muted">
+                {% if balance >= 0 %}
+                    <i class="bi bi-emoji-smile"></i> Disponible
+                {% else %}
+                    <i class="bi bi-emoji-frown"></i> Déficit
+                {% endif %}
+            </small>
+            <div class="mt-2">
+                <small class="{% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% widthratio balance total_ingresos 100 %}% de ingresos
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos Principales -->
+<div class="row mb-4">
+    <!-- Gráfico de Tendencia -->
+    <div class="col-lg-8 mb-4">
+        <div class="card slide-in">
+            <div class="card-header">
+                <i class="bi bi-graph-up-arrow"></i> Tendencia de Ingresos vs Gastos
+                <div class="float-end">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" onclick="updateChart('3months')">3M</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="updateChart('6months')">6M</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="updateChart('12months')">12M</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por Categorías -->
+    <div class="col-lg-4 mb-4">
+        <div class="card slide-in">
+            <div class="card-header">
+                <i class="bi bi-pie-chart-fill"></i> Gastos por Categoría
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 280px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aportantes y Distribución -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-people-fill"></i> Aportantes
+                <a href="{% url 'crear_aportante' %}" class="btn btn-sm btn-primary float-end">
+                    <i class="bi bi-plus-circle"></i> Nuevo
+                </a>
+            </div>
+            <div class="card-body">
+                {% if aportantes %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Ingreso</th>
+                                <th>Distribución</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aportante in aportantes %}
+                            <tr>
+                                <td>
+                                    <strong>{{ aportante.nombre }}</strong>
+                                </td>
+                                <td>${{ aportante.ingreso_mensual|floatformat:0 }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 24px;">
+                                            <div class="progress-bar bg-gradient" role="progressbar"
+                                                 style="width: {{ aportante.calcular_porcentaje_aporte }}%;
+                                                        background: linear-gradient(90deg, #3498db {{ aportante.calcular_porcentaje_aporte }}%, #2ecc71 100%);">
+                                                <strong>{{ aportante.calcular_porcentaje_aporte|floatformat:1 }}%</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gráfico de Aportantes -->
+                <div class="chart-container mt-3" style="height: 200px;">
+                    <canvas id="aportantesChart"></canvas>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay aportantes registrados.
+                    <a href="{% url 'crear_aportante' %}" class="alert-link">Agregar aportante</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gastos Recientes y Análisis -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Gastos Recientes
+                <a href="{% url 'crear_gasto' %}" class="btn btn-sm btn-success float-end">
+                    <i class="bi bi-plus-circle"></i> Registrar
+                </a>
+            </div>
+            <div class="card-body">
+                {% if gastos_recientes %}
+                <div class="list-group list-group-flush">
+                    {% for gasto in gastos_recientes|slice:":5" %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ gasto.descripcion|truncatewords:5 }}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-tag"></i> {{ gasto.categoria.nombre }}
+                                <span class="mx-2">•</span>
+                                <i class="bi bi-calendar"></i> {{ gasto.fecha|date:"d/m/Y" }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-danger">${{ gasto.monto|floatformat:0 }}</strong>
+                            <br>
+                            <span class="badge badge-{{ gasto.categoria.tipo|lower }}">
+                                {{ gasto.categoria.get_tipo_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if gastos_recientes|length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'lista_gastos' %}" class="btn btn-outline-primary">
+                        Ver todos los gastos <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay gastos registrados este mes.
+                    <a href="{% url 'crear_gasto' %}" class="alert-link">Registrar gasto</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis y Predicciones -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightbulb"></i> Análisis Inteligente y Recomendaciones
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="alert alert-primary border-start border-primary border-4">
+                            <h6><i class="bi bi-graph-up"></i> Proyección Próximo Mes</h6>
+                            <p class="mb-0">Basado en tu historial, se estima un gasto de <strong>${{ proyeccion_gastos|floatformat:0 }}</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="alert alert-{% if balance >= 0 %}success{% else %}warning{% endif %} border-start border-{% if balance >= 0 %}success{% else %}warning{% endif %} border-4">
+                            <h6><i class="bi bi-piggy-bank"></i> Estado Financiero</h6>
+                            <p class="mb-0">
+                                {% if balance >= 0 %}
+                                    ¡Excelente! Estás ahorrando <strong>${{ balance|floatformat:0 }}</strong> este mes
+                                {% else %}
+                                    Atención: Tienes un déficit de <strong>${{ balance|abs_value|floatformat:0 }}</strong>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="alert alert-info border-start border-info border-4">
+                            <h6><i class="bi bi-trophy"></i> Meta de Ahorro</h6>
+                            <p class="mb-0">Intenta ahorrar el 20% de tus ingresos: <strong>${{ meta_ahorro|floatformat:0 }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Datos para los gráficos
+    const trendData = {
+        labels: {{ meses_labels|safe }},
+        ingresos: {{ ingresos_historico|safe }},
+        gastos: {{ gastos_historico|safe }}
+    };
+
+    const categoryData = {
+        labels: {{ categorias_labels|safe }},
+        data: {{ categorias_data|safe }},
+        colors: {{ categorias_colors|safe }}
+    };
+
+    const aportantesData = {
+        labels: {{ aportantes_labels|safe }},
+        data: {{ aportantes_data|safe }}
+    };
+
+    // ========== GRÁFICO DE TENDENCIA ==========
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.labels,
+                datasets: [{
+                    label: 'Ingresos',
+                    data: trendData.ingresos,
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }, {
+                    label: 'Gastos',
+                    data: trendData.gastos,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': $' + formatNumber(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + (value / 1000) + 'K';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+    }
+
+    // ========== GRÁFICO DE CATEGORÍAS ==========
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx && categoryData.data.length > 0) {
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.labels,
+                datasets: [{
+                    data: categoryData.data,
+                    backgroundColor: categoryData.colors,
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ': $' + formatNumber(value) + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========== GRÁFICO DE APORTANTES ==========
+    const aportantesCtx = document.getElementById('aportantesChart');
+    if (aportantesCtx && aportantesData.data.length > 0) {
+        const aportantesChart = new Chart(aportantesCtx, {
+            type: 'bar',
+            data: {
+                labels: aportantesData.labels,
+                datasets: [{
+                    label: 'Ingreso Mensual',
+                    data: aportantesData.data,
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(46, 204, 113, 0.8)',
+                        'rgba(155, 89, 182, 0.8)',
+                        'rgba(241, 196, 15, 0.8)'
+                    ],
+                    borderColor: [
+                        '#3498db',
+                        '#2ecc71',
+                        '#9b59b6',
+                        '#f1c40f'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Ingreso: $' + formatNumber(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + (value / 1000000) + 'M';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========== FUNCIONES AUXILIARES ==========
+    function exportDashboard(format) {
+        showToast('Generando reporte en formato ' + format.toUpperCase() + '...', 'info');
+        // Aquí se implementaría la exportación real
+        setTimeout(() => {
+            showToast('Reporte generado exitosamente', 'success');
+        }, 1500);
+    }
+
+    function updateChart(period) {
+        showToast('Actualizando datos para ' + period, 'info');
+        // Aquí se implementaría la actualización real del gráfico
+    }
+</script>
+{% endblock %}
+

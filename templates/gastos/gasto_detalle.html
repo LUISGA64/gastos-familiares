@@ -1,0 +1,148 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Detalle del Gasto - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-receipt"></i> Detalle del Gasto</h1>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'editar_gasto' gasto.pk %}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a href="{% url 'lista_gastos' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información del Gasto
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Descripción:</th>
+                        <td>{{ gasto.descripcion }}</td>
+                    </tr>
+                    <tr>
+                        <th>Categoría:</th>
+                        <td>
+                            {{ gasto.categoria.nombre }}
+                            <span class="badge {% if gasto.categoria.tipo == 'FIJO' %}badge-fijo{% else %}badge-variable{% endif %}">
+                                {{ gasto.get_tipo_gasto }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Monto:</th>
+                        <td class="fs-4 fw-bold text-primary">${{ gasto.monto|floatformat:0 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha:</th>
+                        <td>{{ gasto.fecha|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            {% if gasto.pagado %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagado</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if gasto.observaciones %}
+                    <tr>
+                        <th>Observaciones:</th>
+                        <td>{{ gasto.observaciones }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Fecha de Registro:</th>
+                        <td>{{ gasto.fecha_registro|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> Distribución del Gasto
+            </div>
+            <div class="card-body">
+                {% if distribuciones %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Aportante</th>
+                                <th>Porcentaje</th>
+                                <th>Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for distribucion in distribuciones %}
+                            <tr>
+                                <td>{{ distribucion.aportante.nombre }}</td>
+                                <td>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {{ distribucion.porcentaje }}%">
+                                            {{ distribucion.porcentaje|floatformat:2 }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">${{ distribucion.monto_asignado|floatformat:0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gráfico visual -->
+                <div class="mt-4">
+                    <h6>Distribución Visual</h6>
+                    {% for distribucion in distribuciones %}
+                    <div class="mb-2">
+                        <small>{{ distribucion.aportante.nombre }}</small>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-{% cycle 'primary' 'success' 'info' 'warning' %}"
+                                 role="progressbar"
+                                 style="width: {{ distribucion.porcentaje }}%">
+                                ${{ distribucion.monto_asignado|floatformat:0 }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Este gasto no tiene distribución asignada. Puedes editarlo y activar la distribución automática.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if distribuciones %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Información:</strong> El gasto total de ${{ gasto.monto|floatformat:0 }} ha sido distribuido entre
+            {{ distribuciones|length }} aportante{{ distribuciones|length|pluralize }} según su porcentaje de aporte.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

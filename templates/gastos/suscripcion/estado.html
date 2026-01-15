@@ -1,0 +1,181 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Estado de Suscripción - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1><i class="bi bi-credit-card-fill"></i> Estado de tu Suscripción</h1>
+            <p class="text-muted">Gestiona tu plan y actualiza cuando lo necesites</p>
+        </div>
+    </div>
+
+    <!-- Estado Actual -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card {% if suscripcion_activa %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-header {% if suscripcion_activa %}bg-success{% else %}bg-danger{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if suscripcion_activa %}check-circle{% else %}x-circle{% endif %}"></i>
+                        Plan Actual: {{ familia.plan.nombre }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h3 class="text-primary">
+                                {% if familia.plan.precio_mensual == 0 %}
+                                GRATIS
+                                {% else %}
+                                ${{ familia.plan.precio_mensual|floatformat:0 }}/mes
+                                {% endif %}
+                            </h3>
+
+                            {% if suscripcion_activa %}
+                            <p class="text-success mb-0">
+                                <i class="bi bi-check-circle-fill"></i> Suscripción Activa
+                            </p>
+                            {% else %}
+                            <p class="text-danger mb-0">
+                                <i class="bi bi-x-circle-fill"></i> Suscripción Expirada
+                            </p>
+                            {% endif %}
+
+                            {% if familia.en_periodo_prueba %}
+                            <p class="mt-2">
+                                <span class="badge bg-info">Período de Prueba</span>
+                                <br><small>Te quedan {{ dias_restantes }} días gratis</small>
+                            </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6>Límites de tu plan:</h6>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="bi bi-people"></i>
+                                    {% if familia.plan.max_aportantes == 999 %}
+                                    Aportantes: <strong>Ilimitados</strong>
+                                    {% else %}
+                                    Aportantes: <strong>{{ familia.plan.max_aportantes }}</strong>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    <i class="bi bi-receipt"></i>
+                                    {% if familia.plan.max_gastos_mes == 999999 %}
+                                    Gastos/mes: <strong>Ilimitados</strong>
+                                    {% else %}
+                                    Gastos/mes: <strong>{{ familia.plan.max_gastos_mes }}</strong>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    <i class="bi bi-tags"></i>
+                                    {% if familia.plan.max_categorias == 999 %}
+                                    Categorías: <strong>Ilimitadas</strong>
+                                    {% else %}
+                                    Categorías: <strong>{{ familia.plan.max_categorias }}</strong>
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6>¿Necesitas más?</h6>
+                    <p class="small text-muted">Actualiza tu plan y disfruta de todas las funcionalidades</p>
+                    <a href="{% url 'planes_precios' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-up-circle"></i> Ver Planes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Planes Disponibles -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">Planes Disponibles para Actualizar</h3>
+        </div>
+
+        {% for plan in planes_disponibles %}
+        {% if plan.id != familia.plan.id %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 {% if plan.tipo == 'PREMIUM' %}border-primary{% endif %}">
+                {% if plan.tipo == 'PREMIUM' %}
+                <div class="card-header bg-primary text-white text-center">
+                    <small>⭐ MÁS POPULAR ⭐</small>
+                </div>
+                {% endif %}
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ plan.nombre }}</h5>
+                    <h3 class="text-primary">
+                        {% if plan.precio_mensual == 0 %}
+                        GRATIS
+                        {% else %}
+                        ${{ plan.precio_mensual|floatformat:0 }}/mes
+                        {% endif %}
+                    </h3>
+
+                    <hr>
+
+                    <ul class="list-unstyled small">
+                        <li class="mb-1">
+                            <i class="bi bi-check text-success"></i>
+                            {% if plan.max_aportantes == 999 %}
+                            Aportantes ilimitados
+                            {% else %}
+                            {{ plan.max_aportantes }} aportantes
+                            {% endif %}
+                        </li>
+                        <li class="mb-1">
+                            <i class="bi bi-check text-success"></i>
+                            {% if plan.max_gastos_mes == 999999 %}
+                            Gastos ilimitados
+                            {% else %}
+                            {{ plan.max_gastos_mes }} gastos/mes
+                            {% endif %}
+                        </li>
+                        <li class="mb-1">
+                            <i class="bi bi-check text-success"></i>
+                            {% if plan.max_categorias == 999 %}
+                            Categorías ilimitadas
+                            {% else %}
+                            {{ plan.max_categorias }} categorías
+                            {% endif %}
+                        </li>
+                    </ul>
+
+                    <div class="d-grid mt-3">
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            Actualizar a {{ plan.nombre }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> ¿Necesitas ayuda?</h6>
+                <p class="mb-0">
+                    Contáctanos: <a href="mailto:soporte@gastosfamiliares.com">soporte@gastosfamiliares.com</a> |
+                    WhatsApp: <a href="https://wa.me/573117009855" target="_blank">+57 311 700 9855</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

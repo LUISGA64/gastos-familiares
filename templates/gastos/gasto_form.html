@@ -1,0 +1,148 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}{{ titulo }} - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1><i class="bi bi-receipt"></i> {{ titulo }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pencil-square"></i> Información del Gasto
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.subcategoria.id_for_label }}" class="form-label">{{ form.subcategoria.label }}</label>
+                        {{ form.subcategoria }}
+                        {% if form.subcategoria.errors %}
+                        <div class="text-danger">{{ form.subcategoria.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                        <div class="text-danger">{{ form.descripcion.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.monto.id_for_label }}" class="form-label">{{ form.monto.label }}</label>
+                                {{ form.monto }}
+                                {% if form.monto.errors %}
+                                <div class="text-danger">{{ form.monto.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.fecha.id_for_label }}" class="form-label">{{ form.fecha.label }}</label>
+                                {{ form.fecha }}
+                                {% if form.fecha.errors %}
+                                <div class="text-danger">{{ form.fecha.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.pagado_por.id_for_label }}" class="form-label">
+                            {{ form.pagado_por.label }}
+                            <i class="bi bi-info-circle" title="Selecciona quién realizó el pago de este gasto"></i>
+                        </label>
+                        {{ form.pagado_por }}
+                        {% if form.pagado_por.errors %}
+                        <div class="text-danger">{{ form.pagado_por.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <strong>Importante:</strong> Selecciona el aportante que hizo el pago real de este gasto.
+                            Esto se usará para la conciliación mensual.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                        <div class="text-danger">{{ form.observaciones.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.pagado }}
+                        <label class="form-check-label" for="{{ form.pagado.id_for_label }}">
+                            {{ form.pagado.label }}
+                        </label>
+                        {% if form.pagado.errors %}
+                        <div class="text-danger">{{ form.pagado.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.distribuir_automaticamente }}
+                        <label class="form-check-label" for="{{ form.distribuir_automaticamente.id_for_label }}">
+                            {{ form.distribuir_automaticamente.label }}
+                        </label>
+                        <small class="form-text text-muted d-block">
+                            Al activar esta opción, el gasto se distribuirá automáticamente entre todos los aportantes activos según su porcentaje de aporte.
+                        </small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save"></i> Guardar Gasto
+                        </button>
+                        <a href="{% url 'lista_gastos' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Ayuda
+            </div>
+            <div class="card-body">
+                <h6>Distribución automática</h6>
+                <p class="small">
+                    Si activas la distribución automática, el sistema calculará cuánto debe aportar cada miembro de la familia según su porcentaje de ingreso.
+                </p>
+
+                <h6 class="mt-3">Ejemplo</h6>
+                <p class="small">
+                    Si registras un gasto de $100,000 y tienes 2 aportantes:<br>
+                    - Aportante A (60%): $60,000<br>
+                    - Aportante B (40%): $40,000
+                </p>
+
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Nota:</strong> Puedes editar la distribución manualmente después desde el detalle del gasto.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
