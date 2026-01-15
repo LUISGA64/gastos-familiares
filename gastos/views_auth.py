@@ -10,6 +10,16 @@ import random
 import string
 
 
+def inicio(request):
+    """Vista de inicio - redirige según autenticación"""
+    if request.user.is_authenticated:
+        # Si ya está autenticado, ir al dashboard
+        return redirect('dashboard')
+    else:
+        # Si no está autenticado, ir al login
+        return redirect('login')
+
+
 def generar_codigo_invitacion():
     """Genera un código de invitación único"""
     while True:

@@ -1,0 +1,243 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Crear Familia - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+
+    .crear-container {
+        margin-top: 60px;
+        margin-bottom: 60px;
+    }
+
+    .crear-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+        background: white;
+    }
+
+    .crear-header {
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: white;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .crear-header h3 {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .crear-header p {
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .brand-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+
+    .crear-body {
+        padding: 40px;
+    }
+
+    .form-control {
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: 2px solid #ecf0f1;
+        font-size: 16px;
+    }
+
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+
+    .btn-crear {
+        padding: 14px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        border: none;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+    .btn-crear:hover {
+        background: linear-gradient(135deg, #2980b9, #1a252f);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-cancelar {
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 10px;
+        width: 100%;
+    }
+
+    .info-box {
+        background-color: #e8f4f8;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+
+    .info-box i {
+        color: #3498db;
+        font-size: 20px;
+        margin-right: 10px;
+    }
+
+    .caracteristicas {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .caracteristicas h5 {
+        color: #2c3e50;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .caracteristica-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 15px;
+    }
+
+    .caracteristica-item i {
+        color: #27ae60;
+        font-size: 18px;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container crear-container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="crear-card">
+                <div class="crear-header">
+                    <div class="brand-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h3>Crear Nueva Familia</h3>
+                    <p>Comienza a gestionar los gastos de tu hogar</p>
+                </div>
+
+                <div class="crear-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="info-box">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <strong>¿Qué es una familia?</strong><br>
+                        <small>Una familia es un grupo de personas que comparten gastos. Puedes crear varias familias para diferentes propósitos (hogar, negocio, viajes, etc.)</small>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="nombre" class="form-label">
+                                <i class="bi bi-house-door"></i> Nombre de la Familia *
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="nombre"
+                                   name="nombre"
+                                   placeholder="Ej: Familia García, Casa Playa, Oficina Central"
+                                   required
+                                   maxlength="100">
+                            <small class="text-muted">Este nombre identificará a tu familia en el sistema</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="descripcion" class="form-label">
+                                <i class="bi bi-card-text"></i> Descripción (Opcional)
+                            </label>
+                            <textarea class="form-control"
+                                      id="descripcion"
+                                      name="descripcion"
+                                      rows="3"
+                                      placeholder="Ej: Gastos compartidos del hogar principal"></textarea>
+                            <small class="text-muted">Agrega detalles sobre el propósito de esta familia</small>
+                        </div>
+
+                        <div class="caracteristicas">
+                            <h5><i class="bi bi-gift"></i> Plan Inicial: Gratuito</h5>
+                            <div class="caracteristica-item">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Hasta 2 aportantes</span>
+                            </div>
+                            <div class="caracteristica-item">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Hasta 30 gastos por mes</span>
+                            </div>
+                            <div class="caracteristica-item">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Hasta 5 categorías personalizadas</span>
+                            </div>
+                            <div class="caracteristica-item">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>Acceso completo al sistema</span>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="bi bi-arrow-up-circle"></i> Puedes actualizar a un plan superior en cualquier momento
+                            </small>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6 mb-3">
+                                <a href="{% url 'seleccionar_familia' %}" class="btn btn-outline-secondary btn-cancelar">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <button type="submit" class="btn btn-primary btn-crear">
+                                    <i class="bi bi-plus-circle"></i> Crear Familia
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'dashboard' %}" class="text-white text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

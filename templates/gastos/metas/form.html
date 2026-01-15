@@ -1,0 +1,103 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}{% if meta %}Editar Meta{% else %}Nueva Meta de Ahorro{% endif %} - Gastos Familiares{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Card del formulario -->
+            <div class="card shadow-sm border-0" style="border-radius: 16px;">
+                <div class="card-header text-white text-center py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0;">
+                    <h3 class="mb-0">
+                        <i class="bi bi-{% if meta %}pencil-square{% else %}plus-circle{% endif %} me-2"></i>
+                        {% if meta %}Editar Meta de Ahorro{% else %}✨ Nueva Meta de Ahorro{% endif %}
+                    </h3>
+                    <p class="mb-0 mt-2" style="opacity: 0.9;">Define tu objetivo y comienza a ahorrar</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Nombre -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ form.nombre.label }}</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.help_text %}
+                            <small class="form-text text-muted">{{ form.nombre.help_text }}</small>
+                            {% endif %}
+                            {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">{{ form.nombre.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.help_text %}
+                            <small class="form-text text-muted">{{ form.descripcion.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ícono y Prioridad -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ form.icono.label }}</label>
+                                {{ form.icono }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ form.prioridad.label }}</label>
+                                {{ form.prioridad }}
+                                {% if form.prioridad.help_text %}
+                                <small class="form-text text-muted">{{ form.prioridad.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Monto Objetivo -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ form.monto_objetivo.label }}</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">$</span>
+                                {{ form.monto_objetivo }}
+                            </div>
+                            {% if form.monto_objetivo.help_text %}
+                            <small class="form-text text-muted">{{ form.monto_objetivo.help_text }}</small>
+                            {% endif %}
+                            {% if form.monto_objetivo.errors %}
+                            <div class="text-danger small mt-1">{{ form.monto_objetivo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Fecha Objetivo -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ form.fecha_objetivo.label }}</label>
+                            {{ form.fecha_objetivo }}
+                            {% if form.fecha_objetivo.help_text %}
+                            <small class="form-text text-muted">{{ form.fecha_objetivo.help_text }}</small>
+                            {% endif %}
+                            {% if form.fecha_objetivo.errors %}
+                            <div class="text-danger small mt-1">{{ form.fecha_objetivo.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{% url 'lista_metas' %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4" style="background: linear-gradient(135deg, #7bc96f 0%, #5da74f 100%); border: none;">
+                                <i class="bi bi-{% if meta %}check-circle{% else %}plus-circle{% endif %} me-1"></i>
+                                {% if meta %}Actualizar Meta{% else %}Crear Meta{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

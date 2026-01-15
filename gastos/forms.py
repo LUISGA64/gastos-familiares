@@ -1,5 +1,5 @@
 from django import forms
-from .models import Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto
+from .models import Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto, MetaAhorro
 
 
 class AportanteForm(forms.ModelForm):
@@ -96,17 +96,36 @@ class GastoForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        familia_id = kwargs.pop('familia_id', None)
         super().__init__(*args, **kwargs)
-        # Ordenar subcategorías por categoría y nombre
-        self.fields['subcategoria'].queryset = SubcategoriaGasto.objects.filter(
-            activo=True
-        ).select_related('categoria').order_by('categoria__nombre', 'nombre')
+
+        # Filtrar subcategorías y aportantes por familia si se proporciona
+        if familia_id:
+            self.fields['subcategoria'].queryset = SubcategoriaGasto.objects.filter(
+                categoria__familia_id=familia_id,
+                activo=True
+            ).select_related('categoria').order_by('categoria__nombre', 'nombre')
+
+            self.fields['pagado_por'].queryset = Aportante.objects.filter(
+                familia_id=familia_id,
+                activo=True
+            )
+
+            self.fields['categoria_filter'].queryset = CategoriaGasto.objects.filter(
+                familia_id=familia_id,
+                activo=True
+            )
+        else:
+            # Sin familia_id, mostrar todas (compatibilidad)
+            self.fields['subcategoria'].queryset = SubcategoriaGasto.objects.filter(
+                activo=True
+            ).select_related('categoria').order_by('categoria__nombre', 'nombre')
+
+            self.fields['pagado_por'].queryset = Aportante.objects.filter(activo=True)
 
         # Personalizar el label de subcategoría para mostrar la jerarquía
         self.fields['subcategoria'].label_from_instance = lambda obj: f"{obj.categoria.nombre} → {obj.nombre} ({obj.get_tipo_display()})"
 
-        # Solo mostrar aportantes activos
-        self.fields['pagado_por'].queryset = Aportante.objects.filter(activo=True)
 
 
 class DistribucionGastoForm(forms.ModelForm):
@@ -128,3 +147,93 @@ DistribucionGastoFormSet = forms.inlineformset_factory(
     can_delete=True
 )
 
+
+class MetaAhorroForm(forms.ModelForm):
+    """Formulario para crear y editar metas de ahorro"""
+
+    class Meta:
+        model = MetaAhorro
+        fields = ['nombre', 'descripcion', 'monto_objetivo', 'fecha_objetivo', 'prioridad', 'icono']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Vacaciones en Cartagena',
+                'maxlength': 200
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe tu meta de ahorro (opcional)'
+            }),
+            'monto_objetivo': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'fecha_objetivo': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'prioridad': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'icono': forms.Select(attrs={
+                'class': 'form-select'
+            }, choices=[
+                ('piggy-bank', '🐷 Alcancía - Ahorro general'),
+                ('airplane', '✈️ Avión - Viajes/Vacaciones'),
+                ('house', '🏠 Casa - Vivienda'),
+                ('car-front', '🚗 Carro - Vehículo'),
+                ('mortarboard', '🎓 Graduación - Educación'),
+                ('heart-pulse', '❤️ Salud - Gastos médicos'),
+                ('shield-check', '🛡️ Escudo - Fondo de emergencia'),
+                ('gift', '🎁 Regalo - Ocasión especial'),
+                ('laptop', '💻 Laptop - Tecnología'),
+                ('bicycle', '🚲 Bicicleta - Deportes'),
+                ('tree', '🌳 Árbol - Inversión'),
+                ('star', '⭐ Estrella - Meta importante'),
+            ]),
+        }
+        labels = {
+            'nombre': 'Nombre de la Meta',
+            'descripcion': 'Descripción',
+            'monto_objetivo': 'Monto Objetivo (COP)',
+            'fecha_objetivo': 'Fecha Objetivo',
+            'prioridad': 'Prioridad',
+            'icono': 'Ícono',
+        }
+        help_texts = {
+            'monto_objetivo': 'Cantidad total que deseas ahorrar',
+            'fecha_objetivo': 'Fecha en la que deseas alcanzar esta meta',
+            'prioridad': 'Qué tan importante es esta meta para ti',
+        }
+
+
+class AgregarAhorroForm(forms.Form):
+    """Formulario para agregar ahorro a una meta existente"""
+
+    monto = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': '0.00',
+            'step': '0.01',
+            'min': '0.01'
+        }),
+        label='Monto a Agregar (COP)',
+        help_text='Cantidad que deseas agregar a esta meta'
+    )
+
+    nota = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Ahorro de enero'
+        }),
+        label='Nota (Opcional)',
+        help_text='Descripción de este aporte'
+    )

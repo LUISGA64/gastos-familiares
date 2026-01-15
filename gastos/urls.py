@@ -27,8 +27,11 @@ urlpatterns = [
     path('admin/aprobar-pago/<int:pago_id>/', views_pagos.aprobar_pago_ajax, name='aprobar_pago_ajax'),
     path('admin/rechazar-pago/<int:pago_id>/', views_pagos.rechazar_pago_ajax, name='rechazar_pago_ajax'),
 
+    # Página de inicio - redirige al login
+    path('', views_auth.inicio, name='inicio'),
+
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 
     # Aportantes
     path('aportantes/', views.lista_aportantes, name='lista_aportantes'),
@@ -59,5 +62,14 @@ urlpatterns = [
     path('conciliacion/cerrar/', views.cerrar_conciliacion, name='cerrar_conciliacion'),
     path('conciliacion/confirmar/', views.confirmar_conciliacion, name='confirmar_conciliacion'),
     path('conciliacion/historial/', views.historial_conciliaciones, name='historial_conciliaciones'),
+
+    # Metas de Ahorro
+    path('metas/', views.lista_metas, name='lista_metas'),
+    path('metas/crear/', views.crear_meta, name='crear_meta'),
+    path('metas/<int:pk>/', views.detalle_meta, name='detalle_meta'),
+    path('metas/<int:pk>/editar/', views.editar_meta, name='editar_meta'),
+    path('metas/<int:pk>/agregar-ahorro/', views.agregar_ahorro, name='agregar_ahorro'),
+    path('metas/<int:pk>/cambiar-estado/', views.cambiar_estado_meta, name='cambiar_estado_meta'),
+    path('metas/<int:pk>/eliminar/', views.eliminar_meta, name='eliminar_meta'),
 ]
 

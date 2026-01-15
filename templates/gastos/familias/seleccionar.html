@@ -1,0 +1,316 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Seleccionar Familia - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+
+    .seleccionar-container {
+        margin-top: 60px;
+        margin-bottom: 60px;
+    }
+
+    .seleccionar-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+    }
+
+    .seleccionar-header h2 {
+        font-size: 42px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .seleccionar-header p {
+        font-size: 18px;
+        opacity: 0.95;
+    }
+
+    .familia-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .familia-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    }
+
+    .familia-card-header {
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: white;
+        padding: 25px;
+        border-bottom: none;
+    }
+
+    .familia-card-header h4 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .familia-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .familia-card-body {
+        padding: 25px;
+    }
+
+    .familia-info {
+        margin-bottom: 20px;
+    }
+
+    .familia-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+
+    .familia-info-item i {
+        font-size: 20px;
+        width: 30px;
+        color: #3498db;
+    }
+
+    .btn-seleccionar {
+        padding: 12px 30px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        border: none;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+    .btn-seleccionar:hover {
+        background: linear-gradient(135deg, #2980b9, #1a252f);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .badge-plan {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .badge-activo {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .badge-vencido {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .badge-prueba {
+        background-color: #f39c12;
+        color: white;
+    }
+
+    .no-familias {
+        background: white;
+        border-radius: 15px;
+        padding: 50px;
+        text-align: center;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+
+    .no-familias i {
+        font-size: 80px;
+        color: #bdc3c7;
+        margin-bottom: 20px;
+    }
+
+    .no-familias h4 {
+        color: #34495e;
+        margin-bottom: 15px;
+    }
+
+    .no-familias p {
+        color: #7f8c8d;
+        margin-bottom: 25px;
+    }
+
+    .suscripcion-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .suscripcion-info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .suscripcion-info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .familia-card.inactiva {
+        opacity: 0.7;
+    }
+
+    .familia-card.inactiva .familia-card-header {
+        background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container seleccionar-container">
+    <div class="seleccionar-header">
+        <i class="bi bi-house-heart-fill" style="font-size: 60px; margin-bottom: 20px;"></i>
+        <h2>Selecciona tu Familia</h2>
+        <p>Elige la familia con la que deseas trabajar</p>
+    </div>
+
+    {% if messages %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if familias %}
+    <div class="row">
+        {% for familia in familias %}
+        <div class="col-md-6 col-lg-4">
+            <div class="familia-card {% if not familia.esta_suscripcion_activa %}inactiva{% endif %}">
+                <div class="familia-card-header text-center">
+                    <span class="familia-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </span>
+                    <h4>{{ familia.nombre }}</h4>
+                    {% if familia.descripcion %}
+                    <small style="opacity: 0.9;">{{ familia.descripcion|truncatewords:10 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="familia-card-body">
+                    <div class="familia-info">
+                        <div class="familia-info-item">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            <span><strong>Plan:</strong> {{ familia.plan.nombre }}</span>
+                        </div>
+
+                        <div class="familia-info-item">
+                            <i class="bi bi-people"></i>
+                            <span><strong>Aportantes:</strong> {{ familia.aportantes.count }} / {{ familia.plan.max_aportantes }}</span>
+                        </div>
+
+                        {% if familia.creador %}
+                        <div class="familia-info-item">
+                            <i class="bi bi-person-badge"></i>
+                            <span><strong>Creador:</strong> {{ familia.creador.username }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="familia-info-item">
+                            <i class="bi bi-calendar-event"></i>
+                            <span><strong>Creada:</strong> {{ familia.fecha_creacion|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+
+                    {% if familia.esta_suscripcion_activa %}
+                        <div class="suscripcion-info">
+                            <div class="suscripcion-info-item">
+                                <span><i class="bi bi-check-circle-fill text-success"></i> Estado:</span>
+                                <span class="badge badge-activo">Activa</span>
+                            </div>
+
+                            {% if familia.en_periodo_prueba %}
+                            <div class="suscripcion-info-item">
+                                <span><i class="bi bi-gift-fill"></i> Período de Prueba</span>
+                                <span class="badge badge-prueba">{{ familia.dias_restantes_suscripcion }} días</span>
+                            </div>
+                            {% elif familia.fecha_fin_suscripcion %}
+                            <div class="suscripcion-info-item">
+                                <span><i class="bi bi-hourglass-split"></i> Vence:</span>
+                                <span><strong>{{ familia.fecha_fin_suscripcion|date:"d/m/Y" }}</strong></span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="familia_id" value="{{ familia.id }}">
+                            <button type="submit" class="btn btn-primary btn-seleccionar">
+                                <i class="bi bi-arrow-right-circle"></i> Seleccionar
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="suscripcion-info">
+                            <div class="suscripcion-info-item">
+                                <span><i class="bi bi-x-circle-fill text-danger"></i> Estado:</span>
+                                <span class="badge badge-vencido">Vencida</span>
+                            </div>
+                            {% if familia.fecha_fin_suscripcion %}
+                            <div class="suscripcion-info-item">
+                                <span><i class="bi bi-calendar-x"></i> Venció:</span>
+                                <span class="text-danger"><strong>{{ familia.fecha_fin_suscripcion|date:"d/m/Y" }}</strong></span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-danger mt-3 mb-0" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <strong>Suscripción Expirada</strong><br>
+                            <small>Renueva para continuar usando esta familia</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="no-familias">
+                <i class="bi bi-house-x"></i>
+                <h4>No tienes familias disponibles</h4>
+                <p>Parece que no estás asociado a ninguna familia activa.</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{% url 'registro' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Crear Nueva Familia
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-house-door"></i> Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

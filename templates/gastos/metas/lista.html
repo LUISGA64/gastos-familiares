@@ -1,0 +1,756 @@
+{% extends 'gastos/base.html' %}
+{% load static %}
+
+{% block title %}Metas de Ahorro - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Variables de colores acordes al aplicativo */
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --success-color: #27ae60;
+        --danger-color: #e74c3c;
+        --warning-color: #f39c12;
+        --info-color: #17a2b8;
+        --light-bg: #f8f9fa;
+        --border-color: #dee2e6;
+        --text-muted: #6c757d;
+    }
+
+    /* Contenedor principal */
+    .metas-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    /* Encabezado */
+    .metas-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+    }
+
+    .metas-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .metas-header p {
+        opacity: 0.9;
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    /* Stats Cards - Estructura limpia */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .stat-card-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stat-card-icon.success {
+        background: var(--success-color);
+    }
+
+    .stat-card-icon.info {
+        background: var(--secondary-color);
+    }
+
+    .stat-card-icon.warning {
+        background: var(--warning-color);
+    }
+
+    .stat-card-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card-label {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Botón crear meta */
+    .btn-crear-meta {
+        background: var(--success-color);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-crear-meta:hover {
+        background: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        color: white;
+    }
+
+    /* Título de sección */
+    .section-title {
+        color: var(--primary-color);
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Cards de metas */
+    .meta-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .meta-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        border-color: var(--secondary-color);
+    }
+
+    .meta-card-header {
+        padding: 1.5rem;
+        background: var(--light-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .meta-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .meta-icon.prioridad-alta {
+        background: var(--danger-color);
+    }
+
+    .meta-icon.prioridad-media {
+        background: var(--secondary-color);
+    }
+
+    .meta-icon.prioridad-baja {
+        background: var(--text-muted);
+    }
+
+    .meta-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 0 0 0.25rem 0;
+    }
+
+    .meta-description {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .badge-prioridad {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: white;
+    }
+
+    .badge-prioridad.alta {
+        background: var(--danger-color);
+    }
+
+    .badge-prioridad.media {
+        background: var(--secondary-color);
+    }
+
+    .badge-prioridad.baja {
+        background: var(--text-muted);
+    }
+
+    /* Contenedor de progreso */
+    .meta-body {
+        padding: 1.5rem;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .progress-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .progress-value {
+        font-size: 1.25rem;
+        color: var(--success-color);
+        font-weight: 700;
+    }
+
+    .progress-bar-container {
+        height: 20px;
+        border-radius: 10px;
+        background: #e9ecef;
+        overflow: hidden;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.8s ease-out;
+    }
+
+    .progress-bar-fill.bajo {
+        background: var(--danger-color);
+    }
+
+    .progress-bar-fill.medio {
+        background: var(--warning-color);
+    }
+
+    .progress-bar-fill.alto {
+        background: var(--success-color);
+    }
+
+    .progress-bar-fill.completo {
+        background: var(--info-color);
+    }
+
+    /* Grid de montos */
+    .montos-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .monto-item {
+        text-align: center;
+    }
+
+    .monto-valor {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .monto-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Footer de meta */
+    .meta-footer {
+        padding: 1rem 1.5rem;
+        background: var(--light-bg);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .fecha-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+
+    .fecha-info.urgente {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+
+    .fecha-info i {
+        color: var(--secondary-color);
+    }
+
+    .fecha-info.urgente i {
+        color: var(--danger-color);
+    }
+
+    /* Botones de acción */
+    .btn-ver {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ver:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .btn-agregar {
+        background: var(--success-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-agregar:hover {
+        background: #229954;
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-color);
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: var(--primary-color);
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Sección colapsable */
+    .collapsible-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-toggle {
+        cursor: pointer;
+        padding: 1rem;
+        background: var(--light-bg);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .section-toggle:hover {
+        background: #e9ecef;
+    }
+
+    .section-toggle h4 {
+        margin: 0;
+        color: var(--primary-color);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Badge completado */
+    .badge-completado {
+        background: var(--success-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Animación */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .meta-card {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    /* Responsivo */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .metas-container {
+            padding: 0.5rem;
+        }
+
+        .metas-header {
+            padding: 1.5rem;
+        }
+
+        .metas-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .montos-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .meta-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-crear-meta {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .meta-title {
+            font-size: 1.1rem;
+        }
+
+        .stat-card-value {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="metas-container">
+    <!-- Encabezado -->
+    <div class="metas-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1><i class="bi bi-piggy-bank-fill me-2"></i>Metas de Ahorro</h1>
+                <p>Convierte tus sueños en realidad, un paso a la vez</p>
+            </div>
+            <div>
+                <a href="{% url 'crear_meta' %}" class="btn-crear-meta">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Nueva Meta</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    {% if metas_activas %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon success">
+                <i class="bi bi-trophy-fill"></i>
+            </div>
+            <div class="stat-card-value">${{ total_ahorrado|floatformat:0|default:"0" }}</div>
+            <div class="stat-card-label">Total Ahorrado</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon info">
+                <i class="bi bi-bullseye"></i>
+            </div>
+            <div class="stat-card-value">${{ total_objetivo|floatformat:0|default:"0" }}</div>
+            <div class="stat-card-label">Meta Total</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon warning">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="stat-card-value">
+                {% if total_objetivo > 0 %}
+                    {% widthratio total_ahorrado total_objetivo 100 as progreso_total %}
+                    {{ progreso_total }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="stat-card-label">Progreso General</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metas Activas -->
+    {% if metas_activas %}
+    <div class="section-title">
+        <i class="bi bi-star-fill" style="color: var(--warning-color);"></i>
+        <span>Metas Activas</span>
+        <span class="badge bg-primary">{{ metas_activas|length }}</span>
+    </div>
+
+    {% for meta in metas_activas %}
+    <div class="meta-card">
+        <!-- Header -->
+        <div class="meta-card-header">
+            <div class="d-flex align-items-start gap-3">
+                <div class="meta-icon prioridad-{{ meta.prioridad|lower }}">
+                    <i class="bi bi-{{ meta.icono }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <h5 class="meta-title">{{ meta.nombre }}</h5>
+                            {% if meta.descripcion %}
+                            <p class="meta-description">{{ meta.descripcion }}</p>
+                            {% endif %}
+                        </div>
+                        <span class="badge-prioridad {{ meta.prioridad|lower }}">
+                            {{ meta.get_prioridad_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body con progreso -->
+        <div class="meta-body">
+            <div class="progress-header">
+                <span class="progress-label">Progreso</span>
+                <span class="progress-value">{{ meta.porcentaje_completado|floatformat:1 }}%</span>
+            </div>
+
+            <div class="progress-bar-container">
+                {% if meta.porcentaje_completado >= 100 %}
+                <div class="progress-bar-fill completo" style="width: 100%;"></div>
+                {% elif meta.porcentaje_completado >= 75 %}
+                <div class="progress-bar-fill alto" style="width: {{ meta.porcentaje_completado }}%;"></div>
+                {% elif meta.porcentaje_completado >= 40 %}
+                <div class="progress-bar-fill medio" style="width: {{ meta.porcentaje_completado }}%;"></div>
+                {% else %}
+                <div class="progress-bar-fill bajo" style="width: {{ meta.porcentaje_completado }}%;"></div>
+                {% endif %}
+            </div>
+
+            <div class="montos-grid">
+                <div class="monto-item">
+                    <div class="monto-valor" style="color: var(--success-color);">
+                        ${{ meta.monto_actual|floatformat:0 }}
+                    </div>
+                    <div class="monto-label">Ahorrado</div>
+                </div>
+                <div class="monto-item">
+                    <div class="monto-valor" style="color: var(--secondary-color);">
+                        ${{ meta.monto_objetivo|floatformat:0 }}
+                    </div>
+                    <div class="monto-label">Meta</div>
+                </div>
+                <div class="monto-item">
+                    <div class="monto-valor" style="color: var(--warning-color);">
+                        ${{ meta.monto_restante|floatformat:0 }}
+                    </div>
+                    <div class="monto-label">Falta</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="meta-footer">
+            <div class="fecha-info {% if meta.dias_restantes <= 30 and meta.dias_restantes > 0 %}urgente{% endif %}">
+                <i class="bi bi-calendar-event"></i>
+                <span>
+                    {% if meta.dias_restantes > 0 %}
+                        Quedan {{ meta.dias_restantes }} día{{ meta.dias_restantes|pluralize }} | {{ meta.fecha_objetivo|date:"d/m/Y" }}
+                    {% elif meta.dias_restantes == 0 %}
+                        ¡Hoy es la fecha objetivo!
+                    {% else %}
+                        Fecha: {{ meta.fecha_objetivo|date:"d/m/Y" }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'detalle_meta' meta.pk %}" class="btn-ver">
+                    <i class="bi bi-eye me-1"></i>Ver
+                </a>
+                <a href="{% url 'agregar_ahorro' meta.pk %}" class="btn-agregar">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="empty-state">
+        <div class="empty-state-icon">🎯</div>
+        <h3>¡Comienza a Construir tus Sueños!</h3>
+        <p>Todavía no tienes metas de ahorro. Define tus objetivos y comienza a hacerlos realidad.</p>
+        <a href="{% url 'crear_meta' %}" class="btn-crear-meta">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Crear Mi Primera Meta</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Metas Completadas -->
+    {% if metas_completadas %}
+    <div class="collapsible-section">
+        <div class="section-toggle" data-bs-toggle="collapse" data-bs-target="#metasCompletadas">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>
+                    <i class="bi bi-check-circle-fill" style="color: var(--success-color);"></i>
+                    <span>Metas Completadas</span>
+                    <span class="badge bg-success ms-2">{{ metas_completadas|length }}</span>
+                </h4>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="collapse" id="metasCompletadas">
+            {% for meta in metas_completadas %}
+            <div class="meta-card" style="opacity: 0.9;">
+                <div class="meta-card-header">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="meta-icon" style="background: var(--info-color);">
+                                <i class="bi bi-{{ meta.icono }}"></i>
+                            </div>
+                            <div>
+                                <h5 class="meta-title">{{ meta.nombre }}</h5>
+                                <span class="text-muted small">Completada el {{ meta.actualizado_en|date:"d/m/Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="badge-completado">
+                            <i class="bi bi-trophy-fill"></i>
+                            <span>${{ meta.monto_objetivo|floatformat:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metas Canceladas -->
+    {% if metas_canceladas %}
+    <div class="collapsible-section">
+        <div class="section-toggle" data-bs-toggle="collapse" data-bs-target="#metasCanceladas">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>
+                    <i class="bi bi-x-circle" style="color: #95a5a6;"></i>
+                    <span>Metas Canceladas</span>
+                    <span class="badge bg-secondary ms-2">{{ metas_canceladas|length }}</span>
+                </h4>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="collapse" id="metasCanceladas">
+            {% for meta in metas_canceladas %}
+            <div class="meta-card" style="opacity: 0.7;">
+                <div class="meta-card-header">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="meta-icon" style="background: #95a5a6;">
+                                <i class="bi bi-{{ meta.icono }}"></i>
+                            </div>
+                            <div>
+                                <h5 class="meta-title">{{ meta.nombre }}</h5>
+                                <span class="text-muted small">Cancelada | ${{ meta.monto_actual|floatformat:0 }} de ${{ meta.monto_objetivo|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'detalle_meta' meta.pk %}" class="btn btn-outline-secondary btn-sm">Ver</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

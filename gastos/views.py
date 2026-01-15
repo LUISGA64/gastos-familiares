@@ -1,18 +1,26 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, date
 from decimal import Decimal
 import json
-from .models import Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto
-from .forms import AportanteForm, CategoriaGastoForm, SubcategoriaGastoForm, GastoForm
+from .models import Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto, MetaAhorro, Familia
+from .forms import AportanteForm, CategoriaGastoForm, SubcategoriaGastoForm, GastoForm, MetaAhorroForm, AgregarAhorroForm
 
 
+@login_required
 def dashboard(request):
     """Vista principal con resumen de gastos e ingresos - Versión Premium"""
-    # Obtener aportantes activos
-    aportantes = Aportante.objects.filter(activo=True)
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Obtener aportantes activos de la familia
+    aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
     total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
     # Calcular gastos del mes actual
@@ -20,6 +28,7 @@ def dashboard(request):
     anio_actual = timezone.now().year
 
     gastos_mes = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes_actual,
         fecha__year=anio_actual
     )
@@ -31,8 +40,9 @@ def dashboard(request):
     # Calcular balance
     balance = total_ingresos - total_gastos_mes
 
-    # Gastos por categoría principal
+    # Gastos por categoría principal (solo de la familia actual)
     gastos_por_categoria = CategoriaGasto.objects.filter(
+        familia_id=familia_id,
         subcategorias__gastos__fecha__month=mes_actual,
         subcategorias__gastos__fecha__year=anio_actual
     ).annotate(
@@ -40,8 +50,8 @@ def dashboard(request):
         cantidad=Count('subcategorias__gastos')
     ).order_by('-total')[:5]
 
-    # Últimos gastos
-    ultimos_gastos = Gasto.objects.all().order_by('-fecha', '-fecha_registro')[:10]
+    # Últimos gastos de la familia
+    ultimos_gastos = Gasto.objects.filter(subcategoria__categoria__familia_id=familia_id).order_by('-fecha', '-fecha_registro')[:10]
 
     # ========== DATOS PARA GRÁFICOS ==========
 
@@ -63,6 +73,7 @@ def dashboard(request):
 
         # Gastos del mes
         gastos_del_mes = Gasto.objects.filter(
+            subcategoria__categoria__familia_id=familia_id,
             fecha__month=mes,
             fecha__year=anio
         ).aggregate(total=Sum('monto'))['total'] or 0
@@ -95,6 +106,7 @@ def dashboard(request):
     anio_anterior = anio_actual if mes_actual > 1 else anio_actual - 1
 
     gastos_mes_anterior = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes_anterior,
         fecha__year=anio_anterior
     ).aggregate(total=Sum('monto'))['total'] or 0
@@ -145,6 +157,7 @@ def dashboard(request):
     return render(request, 'gastos/dashboard_premium.html', context)
 
 
+@login_required
 def lista_aportantes(request):
     """Lista de todos los aportantes"""
     # Filtrar por familia
@@ -167,6 +180,7 @@ def lista_aportantes(request):
     return render(request, 'gastos/aportantes_lista.html', context)
 
 
+@login_required
 def crear_aportante(request):
     """Crear un nuevo aportante"""
     # Obtener familia del usuario
@@ -230,9 +244,17 @@ def crear_aportante(request):
     return render(request, 'gastos/aportante_form.html', {'form': form, 'titulo': 'Nuevo Aportante'})
 
 
+@login_required
 def editar_aportante(request, pk):
     """Editar un aportante existente"""
-    aportante = get_object_or_404(Aportante, pk=pk)
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que el aportante pertenezca a la familia
+    aportante = get_object_or_404(Aportante, pk=pk, familia_id=familia_id)
 
     if request.method == 'POST':
         form = AportanteForm(request.POST, instance=aportante)
@@ -246,12 +268,20 @@ def editar_aportante(request, pk):
     return render(request, 'gastos/aportante_form.html', {'form': form, 'titulo': 'Editar Aportante'})
 
 
+@login_required
 def lista_categorias(request):
     """Lista de categorías de gastos con sus subcategorías"""
-    categorias = CategoriaGasto.objects.prefetch_related('subcategorias').all()
+    # Filtrar por familia
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    categorias = CategoriaGasto.objects.filter(familia_id=familia_id).prefetch_related('subcategorias').all()
     return render(request, 'gastos/categorias_lista.html', {'categorias': categorias})
 
 
+@login_required
 def crear_categoria(request):
     """Crear una nueva categoría"""
     # Obtener familia del usuario
@@ -305,6 +335,7 @@ def crear_categoria(request):
     return render(request, 'gastos/categoria_form.html', {'form': form, 'titulo': 'Nueva Categoría'})
 
 
+@login_required
 def editar_categoria(request, pk):
     """Editar una categoría existente"""
     categoria = get_object_or_404(CategoriaGasto, pk=pk)
@@ -331,29 +362,54 @@ def editar_categoria(request, pk):
     })
 
 
+@login_required
 def lista_subcategorias(request):
     """Lista de subcategorías de gastos"""
-    subcategorias = SubcategoriaGasto.objects.select_related('categoria').all()
+    # Filtrar por familia
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    subcategorias = SubcategoriaGasto.objects.filter(categoria__familia_id=familia_id).select_related('categoria').all()
     return render(request, 'gastos/subcategorias_lista.html', {'subcategorias': subcategorias})
 
 
+@login_required
 def crear_subcategoria(request):
     """Crear una nueva subcategoría"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
     if request.method == 'POST':
         form = SubcategoriaGastoForm(request.POST)
         if form.is_valid():
             subcategoria = form.save()
+            # La familia se determina automáticamente por la categoría seleccionada
             messages.success(request, f'Subcategoría "{subcategoria.nombre}" creada exitosamente en "{subcategoria.categoria.nombre}".')
             return redirect('lista_subcategorias')
     else:
         form = SubcategoriaGastoForm()
+        # Filtrar categorías por familia
+        form.fields['categoria'].queryset = CategoriaGasto.objects.filter(familia_id=familia_id, activo=True)
 
     return render(request, 'gastos/subcategoria_form.html', {'form': form, 'titulo': 'Nueva Subcategoría'})
 
 
+@login_required
 def editar_subcategoria(request, pk):
     """Editar una subcategoría existente"""
-    subcategoria = get_object_or_404(SubcategoriaGasto, pk=pk)
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la subcategoría pertenezca a la familia (a través de categoria)
+    subcategoria = get_object_or_404(SubcategoriaGasto, pk=pk, categoria__familia_id=familia_id)
 
     if request.method == 'POST':
         form = SubcategoriaGastoForm(request.POST, instance=subcategoria)
@@ -367,9 +423,16 @@ def editar_subcategoria(request, pk):
     return render(request, 'gastos/subcategoria_form.html', {'form': form, 'titulo': 'Editar Subcategoría'})
 
 
+@login_required
 def lista_gastos(request):
     """Lista de todos los gastos con filtros"""
-    gastos = Gasto.objects.all().select_related('subcategoria__categoria')
+    # Filtrar por familia
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    gastos = Gasto.objects.filter(subcategoria__categoria__familia_id=familia_id).select_related('subcategoria__categoria')
 
     # Filtros
     tipo = request.GET.get('tipo')
@@ -392,8 +455,8 @@ def lista_gastos(request):
     # Totales
     total = gastos.aggregate(total=Sum('monto'))['total'] or 0
 
-    categorias = CategoriaGasto.objects.filter(activo=True)
-    subcategorias = SubcategoriaGasto.objects.filter(activo=True).select_related('categoria')
+    categorias = CategoriaGasto.objects.filter(familia_id=familia_id, activo=True)
+    subcategorias = SubcategoriaGasto.objects.filter(categoria__familia_id=familia_id, activo=True).select_related('categoria')
 
     context = {
         'gastos': gastos,
@@ -405,16 +468,24 @@ def lista_gastos(request):
     return render(request, 'gastos/gastos_lista.html', context)
 
 
+@login_required
 def crear_gasto(request):
     """Crear un nuevo gasto"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
     if request.method == 'POST':
-        form = GastoForm(request.POST)
+        form = GastoForm(request.POST, familia_id=familia_id)
         if form.is_valid():
             gasto = form.save()
+            # La familia se determina automáticamente por la subcategoría seleccionada
 
             # Si se marcó distribuir automáticamente
             if form.cleaned_data.get('distribuir_automaticamente'):
-                aportantes_activos = Aportante.objects.filter(activo=True)
+                aportantes_activos = Aportante.objects.filter(familia_id=familia_id, activo=True)
 
                 for aportante in aportantes_activos:
                     porcentaje = aportante.calcular_porcentaje_aporte()
@@ -435,30 +506,46 @@ def crear_gasto(request):
                 for error in errors:
                     messages.error(request, f'Error en {field}: {error}')
     else:
-        form = GastoForm(initial={'fecha': timezone.now().date()})
+        form = GastoForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
 
     return render(request, 'gastos/gasto_form.html', {'form': form, 'titulo': 'Nuevo Gasto'})
 
 
+@login_required
 def editar_gasto(request, pk):
     """Editar un gasto existente"""
-    gasto = get_object_or_404(Gasto, pk=pk)
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que el gasto pertenezca a la familia (a través de subcategoria)
+    gasto = get_object_or_404(Gasto, pk=pk, subcategoria__categoria__familia_id=familia_id)
 
     if request.method == 'POST':
-        form = GastoForm(request.POST, instance=gasto)
+        form = GastoForm(request.POST, instance=gasto, familia_id=familia_id)
         if form.is_valid():
             gasto = form.save()
             messages.success(request, f'Gasto "{gasto.descripcion}" actualizado exitosamente.')
             return redirect('lista_gastos')
     else:
-        form = GastoForm(instance=gasto)
+        form = GastoForm(instance=gasto, familia_id=familia_id)
 
     return render(request, 'gastos/gasto_form.html', {'form': form, 'titulo': 'Editar Gasto'})
 
 
+@login_required
 def detalle_gasto(request, pk):
     """Ver detalle de un gasto incluyendo su distribución"""
-    gasto = get_object_or_404(Gasto, pk=pk)
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que el gasto pertenezca a la familia (a través de subcategoria)
+    gasto = get_object_or_404(Gasto, pk=pk, subcategoria__categoria__familia_id=familia_id)
     distribuciones = gasto.distribuciones.all().select_related('aportante')
 
     context = {
@@ -469,14 +556,22 @@ def detalle_gasto(request, pk):
     return render(request, 'gastos/gasto_detalle.html', context)
 
 
+@login_required
 def reportes(request):
     """Vista de reportes y estadísticas"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
     # Parámetros de fecha
     mes = request.GET.get('mes', timezone.now().month)
     anio = request.GET.get('anio', timezone.now().year)
 
-    # Gastos del período
+    # Gastos del período de la familia
     gastos_periodo = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes,
         fecha__year=anio
     )
@@ -486,12 +581,12 @@ def reportes(request):
     gastos_fijos = gastos_periodo.filter(subcategoria__tipo='FIJO').aggregate(total=Sum('monto'))['total'] or 0
     gastos_variables = gastos_periodo.filter(subcategoria__tipo='VARIABLE').aggregate(total=Sum('monto'))['total'] or 0
 
-    # Ingresos totales
-    total_ingresos = Aportante.objects.filter(activo=True).aggregate(total=Sum('ingreso_mensual'))['total'] or 0
+    # Ingresos totales de la familia
+    total_ingresos = Aportante.objects.filter(familia_id=familia_id, activo=True).aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
     # Distribución por aportante
     aportantes_con_gastos = []
-    for aportante in Aportante.objects.filter(activo=True):
+    for aportante in Aportante.objects.filter(familia_id=familia_id, activo=True):
         total_asignado = DistribucionGasto.objects.filter(
             aportante=aportante,
             gasto__fecha__month=mes,
@@ -505,8 +600,9 @@ def reportes(request):
             'balance': aportante.ingreso_mensual - total_asignado,
         })
 
-    # Gastos por categoría principal
+    # Gastos por categoría principal de la familia
     gastos_por_categoria = CategoriaGasto.objects.filter(
+        familia_id=familia_id,
         subcategorias__gastos__fecha__month=mes,
         subcategorias__gastos__fecha__year=anio
     ).annotate(
@@ -529,6 +625,7 @@ def reportes(request):
     return render(request, 'gastos/reportes.html', context)
 
 
+@login_required
 def conciliacion(request):
     """Vista de conciliación de gastos mensuales"""
     # Obtener familia del usuario
@@ -649,6 +746,7 @@ def conciliacion(request):
     return render(request, 'gastos/conciliacion.html', context)
 
 
+@login_required
 def cerrar_conciliacion(request):
     """Iniciar proceso de cierre de conciliación enviando códigos a los aportantes"""
     if request.method != 'POST':
@@ -795,6 +893,7 @@ def cerrar_conciliacion(request):
     return redirect('conciliacion')
 
 
+@login_required
 def confirmar_conciliacion(request):
     """Confirmar conciliación con código enviado por email"""
     if request.method != 'POST':
@@ -879,6 +978,7 @@ def confirmar_conciliacion(request):
     return redirect('conciliacion')
 
 
+@login_required
 def historial_conciliaciones(request):
     """Ver historial de conciliaciones cerradas"""
     familia_id = request.session.get('familia_id')
@@ -899,3 +999,237 @@ def historial_conciliaciones(request):
     return render(request, 'gastos/historial_conciliaciones.html', context)
 
 
+# =====================================================
+# VISTAS DE METAS DE AHORRO
+# =====================================================
+
+@login_required
+def lista_metas(request):
+    """Lista de metas de ahorro de la familia"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    try:
+        familia = Familia.objects.get(id=familia_id)
+
+        # Verificar que la suscripción esté activa
+        if not familia.esta_suscripcion_activa():
+            messages.error(request, 'Tu suscripción ha expirado. Renueva para continuar usando esta funcionalidad.')
+            return redirect('estado_suscripcion')
+
+        # Obtener todas las metas de la familia
+        metas_activas = familia.metas_ahorro.filter(estado='ACTIVA').order_by('-prioridad', 'fecha_objetivo')
+        metas_completadas = familia.metas_ahorro.filter(estado='COMPLETADA').order_by('-actualizado_en')[:5]
+        metas_canceladas = familia.metas_ahorro.filter(estado='CANCELADA').order_by('-actualizado_en')[:3]
+
+        # Calcular totales
+        total_objetivo = metas_activas.aggregate(total=Sum('monto_objetivo'))['total'] or 0
+        total_ahorrado = metas_activas.aggregate(total=Sum('monto_actual'))['total'] or 0
+
+        context = {
+            'metas_activas': metas_activas,
+            'metas_completadas': metas_completadas,
+            'metas_canceladas': metas_canceladas,
+            'total_objetivo': total_objetivo,
+            'total_ahorrado': total_ahorrado,
+            'familia': familia,
+        }
+
+        return render(request, 'gastos/metas/lista.html', context)
+
+    except Familia.DoesNotExist:
+        messages.error(request, 'Familia no encontrada.')
+        return redirect('seleccionar_familia')
+
+
+@login_required
+def crear_meta(request):
+    """Crear una nueva meta de ahorro"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    try:
+        familia = Familia.objects.get(id=familia_id)
+
+        # Verificar suscripción activa
+        if not familia.esta_suscripcion_activa():
+            messages.error(request, 'Tu suscripción ha expirado. Renueva para crear metas de ahorro.')
+            return redirect('estado_suscripcion')
+
+        if request.method == 'POST':
+            form = MetaAhorroForm(request.POST)
+            if form.is_valid():
+                meta = form.save(commit=False)
+                meta.familia = familia
+                meta.fecha_inicio = date.today()
+                meta.monto_actual = 0
+                meta.estado = 'ACTIVA'
+                meta.save()
+
+                messages.success(request, f'✅ Meta "{meta.nombre}" creada exitosamente. ¡Comienza a ahorrar!')
+                return redirect('lista_metas')
+        else:
+            form = MetaAhorroForm()
+
+        context = {
+            'form': form,
+            'familia': familia,
+        }
+
+        return render(request, 'gastos/metas/form.html', context)
+
+    except Familia.DoesNotExist:
+        messages.error(request, 'Familia no encontrada.')
+        return redirect('seleccionar_familia')
+
+
+@login_required
+def editar_meta(request, pk):
+    """Editar una meta de ahorro existente"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la meta pertenezca a la familia
+    meta = get_object_or_404(MetaAhorro, pk=pk, familia_id=familia_id)
+
+    if request.method == 'POST':
+        form = MetaAhorroForm(request.POST, instance=meta)
+        if form.is_valid():
+            meta = form.save()
+            messages.success(request, f'✅ Meta "{meta.nombre}" actualizada exitosamente.')
+            return redirect('detalle_meta', pk=meta.pk)
+    else:
+        form = MetaAhorroForm(instance=meta)
+
+    context = {
+        'form': form,
+        'meta': meta,
+    }
+
+    return render(request, 'gastos/metas/form.html', context)
+
+
+@login_required
+def detalle_meta(request, pk):
+    """Ver detalle de una meta de ahorro"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la meta pertenezca a la familia
+    meta = get_object_or_404(MetaAhorro, pk=pk, familia_id=familia_id)
+
+    context = {
+        'meta': meta,
+    }
+
+    return render(request, 'gastos/metas/detalle.html', context)
+
+
+@login_required
+def agregar_ahorro(request, pk):
+    """Agregar ahorro a una meta existente"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la meta pertenezca a la familia
+    meta = get_object_or_404(MetaAhorro, pk=pk, familia_id=familia_id, estado='ACTIVA')
+
+    if request.method == 'POST':
+        form = AgregarAhorroForm(request.POST)
+        if form.is_valid():
+            monto = form.cleaned_data['monto']
+            nota = form.cleaned_data.get('nota', '')
+
+            # Agregar el ahorro
+            meta.agregar_ahorro(monto)
+
+            # Verificar si completó la meta
+            if meta.estado == 'COMPLETADA':
+                messages.success(
+                    request,
+                    f'🎉 ¡Felicidades! Has completado tu meta "{meta.nombre}". ¡Alcanzaste ${meta.monto_objetivo:,.0f}!',
+                    extra_tags='celebration'
+                )
+            else:
+                porcentaje = meta.porcentaje_completado
+                messages.success(
+                    request,
+                    f'✅ ¡Excelente! Agregaste ${monto:,.0f} a tu meta. Llevas {porcentaje:.1f}% completado.'
+                )
+
+            return redirect('detalle_meta', pk=meta.pk)
+    else:
+        form = AgregarAhorroForm()
+
+    context = {
+        'meta': meta,
+        'form': form,
+    }
+
+    return render(request, 'gastos/metas/agregar_ahorro.html', context)
+
+
+@login_required
+def cambiar_estado_meta(request, pk):
+    """Cambiar el estado de una meta (cancelar o reactivar)"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la meta pertenezca a la familia
+    meta = get_object_or_404(MetaAhorro, pk=pk, familia_id=familia_id)
+
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('estado')
+
+        if nuevo_estado in ['ACTIVA', 'CANCELADA']:
+            estado_anterior = meta.get_estado_display()
+            meta.estado = nuevo_estado
+            meta.save()
+
+            if nuevo_estado == 'CANCELADA':
+                messages.info(request, f'Meta "{meta.nombre}" ha sido cancelada.')
+            else:
+                messages.success(request, f'Meta "{meta.nombre}" ha sido reactivada.')
+
+            return redirect('lista_metas')
+
+    return redirect('detalle_meta', pk=pk)
+
+
+@login_required
+def eliminar_meta(request, pk):
+    """Eliminar una meta de ahorro"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que la meta pertenezca a la familia
+    meta = get_object_or_404(MetaAhorro, pk=pk, familia_id=familia_id)
+
+    if request.method == 'POST':
+        nombre = meta.nombre
+        meta.delete()
+        messages.success(request, f'Meta "{nombre}" eliminada exitosamente.')
+        return redirect('lista_metas')
+
+    return redirect('detalle_meta', pk=pk)
