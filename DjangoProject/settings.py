@@ -11,9 +11,17 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Cargar variables de entorno desde .env
+# Configuración de IA Multi-Proveedor
+AI_PROVIDER = config('AI_PROVIDER', default='demo')  # demo, groq, openai
+GROQ_API_KEY = config('GROQ_API_KEY', default=None)
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='tu-api-key-aqui')
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +33,7 @@ SECRET_KEY = 'django-insecure-3g3-z!3s6yt-ti@#xjkpkxpxfasem#sp051m(3c_j5@%p&8xm-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.28.93', 'localhost', ]
+ALLOWED_HOSTS = ['192.168.28.93', 'localhost', '127.0.0.1' ]
 
 
 # Application definition
@@ -48,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gastos.middleware.OnboardingMiddleware',  # Onboarding para nuevos usuarios
     'gastos.middleware.FamiliaSecurityMiddleware',  # Seguridad y aislamiento de familias
 ]
 
@@ -64,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'gastos.context_processors.gamificacion_context',  # Context processor de gamificación
             ],
         },
     },

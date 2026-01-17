@@ -9,73 +9,181 @@
         min-height: 100vh;
         display: flex;
         align-items: center;
+        padding: 20px 0;
     }
 
-    .login-container {
-        margin-top: 50px;
-        margin-bottom: 50px;
+    .auth-container {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
     }
 
-    .login-card {
-        border: none;
+    .auth-card {
+        background: white;
         border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        display: flex;
+        min-height: 600px;
+    }
+
+    /* Columna Izquierda - Ilustración */
+    .auth-illustration {
+        flex: 1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 60px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        position: relative;
         overflow: hidden;
     }
 
-    .login-header {
-        background: linear-gradient(135deg, #3498db, #2c3e50);
-        color: white;
-        padding: 40px;
-        text-align: center;
+    .auth-illustration::before {
+        content: '';
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        top: -100px;
+        right: -100px;
     }
 
-    .login-header h3 {
-        font-size: 32px;
-        font-weight: bold;
+    .auth-illustration::after {
+        content: '';
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .finanbot-character {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .finanbot-icon {
+        font-size: 120px;
+        margin-bottom: 20px;
+        animation: float 3s ease-in-out infinite;
+        text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .finanbot-text h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .finanbot-text p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        line-height: 1.6;
+        max-width: 400px;
+    }
+
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 30px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .features-list li {
+        padding: 10px 0;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .features-list li i {
+        font-size: 1.5rem;
+        background: rgba(255,255,255,0.2);
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Columna Derecha - Formulario */
+    .auth-form {
+        flex: 1;
+        padding: 60px 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .auth-form-header {
+        margin-bottom: 40px;
+    }
+
+    .auth-form-header h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
         margin-bottom: 10px;
     }
 
-    .login-header p {
-        opacity: 0.9;
-        margin: 0;
+    .auth-form-header p {
+        color: #7f8c8d;
+        font-size: 1rem;
     }
 
-    .brand-logo {
-        font-size: 60px;
+    .form-floating {
         margin-bottom: 20px;
     }
 
-    .login-body {
-        padding: 40px;
-        background: white;
+    .form-floating .form-control {
+        height: 60px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
     }
 
-    .form-control {
-        padding: 12px 20px;
-        border-radius: 10px;
-        border: 2px solid #ecf0f1;
-        font-size: 16px;
+    .form-floating .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
     }
 
-    .form-control:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    .form-floating label {
+        padding-left: 1.25rem;
+        color: #7f8c8d;
     }
 
     .btn-login {
-        padding: 14px;
-        font-size: 18px;
-        font-weight: bold;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #3498db, #2c3e50);
+        height: 55px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
-        transition: transform 0.2s;
+        transition: all 0.3s ease;
+        margin-top: 10px;
     }
 
     .btn-login:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
     }
 
     .divider {
@@ -91,7 +199,7 @@
         top: 50%;
         width: 100%;
         height: 1px;
-        background: #ecf0f1;
+        background: #e9ecef;
     }
 
     .divider span {
@@ -99,90 +207,191 @@
         padding: 0 20px;
         position: relative;
         color: #95a5a6;
+        font-weight: 500;
     }
 
-    .info-alert {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(44, 62, 80, 0.1));
-        border: none;
-        border-left: 4px solid #3498db;
-        border-radius: 10px;
+    .btn-register {
+        height: 50px;
+        border-radius: 12px;
+        border: 2px solid #667eea;
+        color: #667eea;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-register:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .info-footer {
+        margin-top: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border-radius: 12px;
+        border-left: 4px solid #667eea;
+    }
+
+    .info-footer i {
+        color: #667eea;
+        font-size: 1.2rem;
+        margin-right: 8px;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .auth-card {
+            flex-direction: column;
+        }
+
+        .auth-illustration {
+            padding: 40px 30px;
+            min-height: 300px;
+        }
+
+        .finanbot-icon {
+            font-size: 80px;
+        }
+
+        .finanbot-text h2 {
+            font-size: 1.8rem;
+        }
+
+        .features-list {
+            display: none;
+        }
+
+        .auth-form {
+            padding: 40px 30px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .auth-form {
+            padding: 30px 20px;
+        }
+
+        .auth-form-header h3 {
+            font-size: 1.6rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container login-container">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="login-card">
-                <div class="login-header">
-                    <div class="brand-logo">
-                        <i class="bi bi-piggy-bank-fill"></i>
-                    </div>
-                    <h3>Gestor de Gastos Familiares</h3>
-                    <p>Administra tus finanzas familiares de forma inteligente</p>
-                </div>
-
-                <div class="login-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <form method="post">
-                        {% csrf_token %}
-
-                        <div class="mb-3">
-                            <label for="username" class="form-label fw-bold">Usuario</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="username"
-                                   name="username"
-                                   required
-                                   placeholder="Ingresa tu usuario"
-                                   autofocus>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="password" class="form-label fw-bold">Contraseña</label>
-                            <input type="password"
-                                   class="form-control"
-                                   id="password"
-                                   name="password"
-                                   required
-                                   placeholder="Ingresa tu contraseña">
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-login">
-                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="divider">
-                        <span>¿Eres nuevo?</span>
-                    </div>
-
-                    <div class="text-center">
-                        <a href="{% url 'registro' %}" class="btn btn-outline-success w-100 mb-2" style="border-radius: 10px; padding: 12px;">
-                            <i class="bi bi-person-plus"></i> Crear Cuenta Nueva
-                        </a>
-                        <a href="{% url 'planes_precios' %}" class="btn btn-link">
-                            <i class="bi bi-star"></i> Ver Planes y Precios
-                        </a>
-                    </div>
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Columna Izquierda - Ilustración -->
+        <div class="auth-illustration">
+            <div class="finanbot-character">
+                <div class="finanbot-icon">🤖💰</div>
+                <div class="finanbot-text">
+                    <h2>¡Hola! Soy FinanBot</h2>
+                    <p>Tu asistente financiero personal para administrar tus gastos familiares de forma inteligente</p>
                 </div>
             </div>
 
-            <div class="alert info-alert mt-4">
-                <i class="bi bi-info-circle"></i>
-                <strong>¿Primera vez?</strong> Necesitas un código de invitación para registrarte.
-                <a href="{% url 'planes_precios' %}" class="alert-link">Compra tu plan aquí</a>
+            <ul class="features-list">
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Gestión inteligente de gastos</span>
+                </li>
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Gamificación con logros y niveles</span>
+                </li>
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Chatbot IA con recomendaciones</span>
+                </li>
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Reportes y análisis en tiempo real</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Columna Derecha - Formulario -->
+        <div class="auth-form">
+            <div class="auth-form-header">
+                <h3>Iniciar Sesión</h3>
+                <p>Bienvenido de nuevo, ingresa tus credenciales</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show message-animated" role="alert" data-autoclose="true">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            {% if 'success' in message.tags %}
+                                <i class="bi bi-check-circle-fill" style="font-size: 1.5rem;"></i>
+                            {% elif 'error' in message.tags or 'danger' in message.tags %}
+                                <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.5rem;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">{{ message }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <div class="progress-autoclose"></div>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-floating">
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           name="username"
+                           placeholder="Usuario"
+                           required
+                           autofocus>
+                    <label for="username">
+                        <i class="bi bi-person"></i> Usuario
+                    </label>
+                </div>
+
+                <div class="form-floating">
+                    <input type="password"
+                           class="form-control"
+                           id="password"
+                           name="password"
+                           placeholder="Contraseña"
+                           required>
+                    <label for="password">
+                        <i class="bi bi-lock"></i> Contraseña
+                    </label>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                    </button>
+                </div>
+            </form>
+
+            <div class="divider">
+                <span>¿No tienes cuenta?</span>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'registro' %}" class="btn btn-outline-primary btn-register">
+                    <i class="bi bi-person-plus me-2"></i>Crear Cuenta Nueva
+                </a>
+                <a href="{% url 'planes_precios' %}" class="btn btn-link">
+                    <i class="bi bi-star me-1"></i>Ver Planes y Precios
+                </a>
+            </div>
+
+            <div class="info-footer">
+                <i class="bi bi-info-circle-fill"></i>
+                <small>
+                    <strong>¿Primera vez?</strong> Necesitas un código de invitación para registrarte.
+                    <a href="{% url 'planes_precios' %}" class="text-decoration-none fw-bold">Compra tu plan aquí</a>
+                </small>
             </div>
         </div>
     </div>

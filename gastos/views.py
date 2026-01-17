@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta, date
@@ -153,6 +155,17 @@ def dashboard(request):
         'proyeccion_gastos': proyeccion_gastos,
         'meta_ahorro': meta_ahorro,
     }
+
+    # GAMIFICACIÓN: Registrar visita al dashboard
+    try:
+        from .gamificacion_service import GamificacionService
+        GamificacionService.registrar_visita_dashboard(request.user)
+
+        # Obtener notificaciones no vistas
+        notificaciones_logros = GamificacionService.obtener_notificaciones_no_vistas(request.user)
+        context['notificaciones_logros'] = notificaciones_logros
+    except Exception as e:
+        print(f"Error en gamificación: {e}")
 
     return render(request, 'gastos/dashboard_premium.html', context)
 
@@ -498,6 +511,14 @@ def crear_gasto(request):
                 messages.success(request, f'Gasto "{gasto.subcategoria.nombre}" creado y distribuido automáticamente.')
             else:
                 messages.success(request, f'Gasto "{gasto.subcategoria.nombre}" creado exitosamente.')
+
+            # GAMIFICACIÓN: Registrar gasto creado
+            try:
+                from .gamificacion_service import GamificacionService
+                GamificacionService.registrar_gasto_creado(request.user)
+            except Exception as e:
+                # No detener el flujo si falla la gamificación
+                print(f"Error en gamificación: {e}")
 
             return redirect('lista_gastos')
         else:
@@ -1233,3 +1254,15 @@ def eliminar_meta(request, pk):
         return redirect('lista_metas')
 
     return redirect('detalle_meta', pk=pk)
+
+
+# ==================== ONBOARDING ====================
+
+@login_required
+@require_http_methods(["POST"])
+def marcar_onboarding_completado(request):
+    """Marcar el onboarding como completado"""
+    request.session['onboarding_completed'] = True
+    request.session['show_onboarding'] = False
+    return JsonResponse({'success': True})
+

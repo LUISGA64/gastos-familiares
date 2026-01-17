@@ -1,0 +1,432 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Estadísticas - Gamificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --gradient-orange: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .page-header-stats {
+        background: var(--gradient-purple);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .stat-section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-section-title .icono {
+        font-size: 2rem;
+    }
+
+    .progress-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid;
+    }
+
+    .progress-card.actividad { border-left-color: #667eea; }
+    .progress-card.ahorro { border-left-color: #11998e; }
+    .progress-card.disciplina { border-left-color: #fa709a; }
+    .progress-card.social { border-left-color: #4facfe; }
+    .progress-card.especial { border-left-color: #9b59b6; }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .progress-title {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .progress-stats {
+        font-size: 0.9rem;
+        color: #718096;
+    }
+
+    .progress-bar-custom {
+        height: 25px;
+        border-radius: 12px;
+        background: #e2e8f0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 12px;
+        transition: width 1s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    .progress-card.actividad .progress-bar-fill {
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    .progress-card.ahorro .progress-bar-fill {
+        background: linear-gradient(90deg, #11998e, #38ef7d);
+    }
+
+    .progress-card.disciplina .progress-bar-fill {
+        background: linear-gradient(90deg, #fa709a, #fee140);
+    }
+
+    .progress-card.social .progress-bar-fill {
+        background: linear-gradient(90deg, #4facfe, #00f2fe);
+    }
+
+    .progress-card.especial .progress-bar-fill {
+        background: linear-gradient(90deg, #9b59b6, #e74c3c);
+    }
+
+    .mini-stat {
+        text-align: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #ffffff, #f8f9ff);
+        border-radius: 12px;
+        border: 2px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+
+    .mini-stat:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        border-color: #667eea;
+    }
+
+    .mini-stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .mini-stat-value {
+        font-size: 2rem;
+        font-weight: 900;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+
+    .mini-stat-label {
+        color: #718096;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #667eea, #764ba2);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -1.5rem;
+        top: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #667eea;
+        z-index: 1;
+    }
+
+    .timeline-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .timeline-date {
+        font-size: 0.85rem;
+        color: #a0aec0;
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-title {
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 2rem 0;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stat-section {
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .stat-section:nth-child(1) { animation-delay: 0.1s; }
+    .stat-section:nth-child(2) { animation-delay: 0.2s; }
+    .stat-section:nth-child(3) { animation-delay: 0.3s; }
+    .stat-section:nth-child(4) { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="page-header-stats">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="bi bi-graph-up me-3"></i>Estadísticas Detalladas</h1>
+                <p class="mb-0" style="opacity: 0.9;">Análisis completo de tu progreso y desempeño</p>
+            </div>
+            <a href="{% url 'gamificacion_dashboard' %}" class="btn btn-light btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="mini-stat">
+                <div class="mini-stat-icon">🏆</div>
+                <div class="mini-stat-value">{{ perfil.logros.count }}</div>
+                <div class="mini-stat-label">Logros Desbloqueados</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="mini-stat">
+                <div class="mini-stat-icon">⭐</div>
+                <div class="mini-stat-value">{{ perfil.nivel }}</div>
+                <div class="mini-stat-label">Nivel Actual</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="mini-stat">
+                <div class="mini-stat-icon">💎</div>
+                <div class="mini-stat-value">{{ perfil.puntos_totales }}</div>
+                <div class="mini-stat-label">Puntos Totales</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="mini-stat">
+                <div class="mini-stat-icon">🔥</div>
+                <div class="mini-stat-value">{{ perfil.racha_actual }}</div>
+                <div class="mini-stat-label">Racha Actual</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progreso por Tipo de Logro -->
+    <div class="stat-section">
+        <div class="stat-section-title">
+            <span class="icono">📊</span>
+            Progreso por Tipo de Logro
+        </div>
+
+        {% for tipo, data in progreso_por_tipo.items %}
+        <div class="progress-card {{ tipo|lower|cut:' ' }}">
+            <div class="progress-header">
+                <div class="progress-title">
+                    {% if 'Actividad' in tipo %}🎯
+                    {% elif 'Ahorro' in tipo %}💰
+                    {% elif 'Disciplina' in tipo %}🛡️
+                    {% elif 'Social' in tipo %}📊
+                    {% elif 'Especial' in tipo %}⭐
+                    {% endif %}
+                    {{ tipo }}
+                </div>
+                <div class="progress-stats">
+                    {{ data.desbloqueados }} de {{ data.total }} logros
+                </div>
+            </div>
+            <div class="progress-bar-custom">
+                <div class="progress-bar-fill" style="width: {{ data.porcentaje }}%">
+                    {{ data.porcentaje|floatformat:0 }}%
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Actividad Reciente -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="stat-section">
+                <div class="stat-section-title">
+                    <span class="icono">📈</span>
+                    Actividad General
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Gastos Registrados</div>
+                        <div class="h3 mb-0">{{ perfil.total_gastos_registrados }}</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Visitas Dashboard</div>
+                        <div class="h3 mb-0">{{ perfil.visitas_dashboard }}</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Mejor Racha</div>
+                        <div class="h3 mb-0">{{ perfil.mejor_racha }} días</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Total Ahorrado</div>
+                        <div class="h3 mb-0">${{ perfil.total_ahorrado|floatformat:0 }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Miembro Desde</div>
+                        <div class="h5 mb-0">{{ perfil.fecha_registro_app|date:"d/m/Y" }}</div>
+                        <small class="text-muted">{{ perfil.fecha_registro_app|timesince }} atrás</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="stat-section">
+                <div class="stat-section-title">
+                    <span class="icono">🎯</span>
+                    Próximo Nivel
+                </div>
+
+                <div class="text-center mb-3">
+                    <div style="font-size: 4rem;">
+                        {% if perfil.nivel <= 2 %}🥉
+                        {% elif perfil.nivel <= 4 %}🥈
+                        {% elif perfil.nivel <= 6 %}🥇
+                        {% elif perfil.nivel <= 8 %}💎
+                        {% else %}👑{% endif %}
+                    </div>
+                    <h2>Nivel {{ perfil.nivel }}</h2>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Progreso al Nivel {{ perfil.nivel|add:1 }}</span>
+                        <span>{{ stats.puntos_siguiente_nivel }} pts restantes</span>
+                    </div>
+                    <div class="progress-bar-custom">
+                        {% widthratio perfil.puntos_totales stats.puntos_siguiente_nivel 100 as progreso_nivel %}
+                        <div class="progress-bar-fill" style="width: {{ progreso_nivel }}%; background: var(--gradient-purple);">
+                            {% if progreso_nivel > 15 %}{{ progreso_nivel }}%{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    <strong>Consejo:</strong> Registra gastos diariamente para aumentar tu racha y desbloquear más logros.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Logros Recientes -->
+    {% if perfil.logros.all %}
+    <div class="stat-section">
+        <div class="stat-section-title">
+            <span class="icono">📜</span>
+            Historial de Logros Recientes
+        </div>
+
+        <div class="timeline">
+            {% for logro_desb in perfil.logros.all|slice:":10" %}
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-date">{{ logro_desb.fecha_desbloqueo|date:"d/m/Y H:i" }}</div>
+                    <div class="timeline-title">
+                        {{ logro_desb.logro.icono }} {{ logro_desb.logro.nombre }}
+                    </div>
+                    <div class="text-muted small">{{ logro_desb.logro.descripcion }}</div>
+                    <div class="mt-2">
+                        <span class="badge" style="background: var(--gradient-orange); color: white;">
+                            +{{ logro_desb.logro.puntos_recompensa }} puntos
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if perfil.logros.count > 10 %}
+        <div class="text-center mt-3">
+            <a href="{% url 'logros_lista' %}" class="btn btn-outline-primary">
+                Ver Todos los Logros ({{ perfil.logros.count }})
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="stat-section text-center py-5">
+        <div style="font-size: 4rem; opacity: 0.3;">🏆</div>
+        <h4>Aún no has desbloqueado ningún logro</h4>
+        <p class="text-muted">¡Empieza a registrar gastos para comenzar tu camino!</p>
+        <a href="{% url 'lista_gastos' %}" class="btn btn-primary mt-3">
+            <i class="bi bi-plus-circle me-2"></i>Registrar Primer Gasto
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

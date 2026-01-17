@@ -1,0 +1,458 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Gamificación - Logros y Niveles{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Paleta de colores vibrante para gamificación */
+    :root {
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --gradient-orange: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    /* Header de Perfil */
+    .perfil-header {
+        background: var(--gradient-purple);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .perfil-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1), transparent);
+        border-radius: 50%;
+    }
+
+    .nivel-badge {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    /* Progress Bar Moderno */
+    .progress-modern {
+        height: 30px;
+        border-radius: 15px;
+        background: rgba(255,255,255,0.2);
+        overflow: hidden;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .progress-modern .progress-bar {
+        background: linear-gradient(90deg, #38ef7d, #11998e);
+        border-radius: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: width 0.8s ease;
+    }
+
+    /* Stat Cards */
+    .stat-card-gamif {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-top: 4px solid;
+    }
+
+    .stat-card-gamif:nth-child(1) { border-top-color: #667eea; }
+    .stat-card-gamif:nth-child(2) { border-top-color: #11998e; }
+    .stat-card-gamif:nth-child(3) { border-top-color: #fa709a; }
+
+    .stat-card-gamif:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card-gamif .icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card-gamif .value {
+        font-size: 2rem;
+        font-weight: 800;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+    }
+
+    /* Logro Card */
+    .logro-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 2px solid #f0f0f0;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .logro-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+        transform: translateY(-3px);
+    }
+
+    .logro-card.desbloqueado {
+        border-color: #11998e;
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.05), rgba(56, 239, 125, 0.05));
+    }
+
+    .logro-card.bloqueado {
+        opacity: 0.5;
+        filter: grayscale(80%);
+    }
+
+    .logro-card .icono {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .logro-card .puntos-badge {
+        background: var(--gradient-orange);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    /* Racha Card */
+    .racha-card {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        color: white;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+    }
+
+    .racha-numero {
+        font-size: 4rem;
+        font-weight: 900;
+        margin: 1rem 0;
+    }
+
+    /* Tabs */
+    .nav-tabs .nav-link {
+        border: none;
+        color: #666;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .perfil-header {
+            padding: 1.5rem;
+        }
+
+        .nivel-badge {
+            font-size: 3rem;
+        }
+
+        .racha-numero {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header de Perfil -->
+    <div class="perfil-header">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <div class="nivel-badge">
+                    {% if perfil.nivel <= 2 %}🥉
+                    {% elif perfil.nivel <= 4 %}🥈
+                    {% elif perfil.nivel <= 6 %}🥇
+                    {% elif perfil.nivel <= 8 %}💎
+                    {% else %}👑{% endif %}
+                </div>
+                <h2 class="mb-0">Nivel {{ perfil.nivel }}</h2>
+            </div>
+            <div class="col-md-7">
+                <h2 class="mb-3">{{ request.user.get_full_name|default:request.user.username }}</h2>
+                <p class="mb-2"><i class="bi bi-trophy-fill me-2"></i>{{ perfil.puntos_totales }} puntos totales</p>
+
+                <!-- Barra de Progreso al Siguiente Nivel -->
+                <div class="progress-modern">
+                    {% widthratio perfil.puntos_totales puntos_siguiente_nivel 100 as progreso %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ progreso }}%">
+                        {{ puntos_para_siguiente }} pts para nivel {{ perfil.nivel|add:1 }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="racha-card">
+                    <div style="font-size: 2rem;">🔥</div>
+                    <div class="racha-numero">{{ perfil.racha_actual }}</div>
+                    <div>Días de Racha</div>
+                    <small class="mt-2 d-block" style="opacity: 0.9;">Mejor: {{ perfil.mejor_racha }} días</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'logros_lista' %}" style="text-decoration: none; color: inherit;">
+                <div class="stat-card-gamif">
+                    <div class="icon">🏆</div>
+                    <div class="value">{{ logros_desbloqueados.count }}</div>
+                    <div class="text-muted">Logros Desbloqueados</div>
+                    <small class="text-muted">de {{ total_logros }} disponibles</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'ranking_general' %}" style="text-decoration: none; color: inherit;">
+                <div class="stat-card-gamif">
+                    <div class="icon">📊</div>
+                    <div class="value">{{ porcentaje_completado|floatformat:0 }}%</div>
+                    <div class="text-muted">Completado</div>
+                    <small class="text-muted">{{ perfil.total_gastos_registrados }} gastos registrados</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'estadisticas_usuario' %}" style="text-decoration: none; color: inherit;">
+                <div class="stat-card-gamif">
+                    <div class="icon">💰</div>
+                    <div class="value">${{ perfil.total_ahorrado|floatformat:0 }}</div>
+                    <div class="text-muted">Total Ahorrado</div>
+                    <small class="text-muted">¡Sigue ahorrando!</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Enlaces Rápidos -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <a href="{% url 'logros_lista' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-trophy me-2"></i>Ver Todos los Logros
+                </a>
+                <a href="{% url 'ranking_general' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-bar-chart me-2"></i>Ver Ranking
+                </a>
+                <a href="{% url 'estadisticas_usuario' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-graph-up me-2"></i>Estadísticas Detalladas
+                </a>
+                <a href="{% url 'notificaciones_logros' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-bell me-2"></i>Notificaciones
+                    {% if notificaciones_no_vistas > 0 %}
+                    <span class="badge bg-danger ms-1">{{ notificaciones_no_vistas }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs de Logros -->
+    <ul class="nav nav-tabs mb-4" id="logrosTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="desbloqueados-tab" data-bs-toggle="tab" data-bs-target="#desbloqueados" type="button">
+                🏆 Desbloqueados ({{ logros_desbloqueados.count }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="disponibles-tab" data-bs-toggle="tab" data-bs-target="#disponibles" type="button">
+                🎯 Por Desbloquear ({{ logros_disponibles.count }})
+            </button>
+        </li>
+        {% if logros_secretos %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="secretos-tab" data-bs-toggle="tab" data-bs-target="#secretos" type="button">
+                🤫 Secretos ({{ logros_secretos.count }})
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="logrosTabContent">
+
+        <!-- Logros Desbloqueados -->
+        <div class="tab-pane fade show active" id="desbloqueados" role="tabpanel">
+            <div class="row">
+                {% for logro_desb in logros_desbloqueados %}
+                <div class="col-md-4 mb-4">
+                    <div class="logro-card desbloqueado">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="icono">{{ logro_desb.logro.icono }}</div>
+                            <span class="puntos-badge">+{{ logro_desb.logro.puntos_recompensa }} pts</span>
+                        </div>
+                        <h5 class="mb-2">{{ logro_desb.logro.nombre }}</h5>
+                        <p class="text-muted small mb-2">{{ logro_desb.logro.descripcion }}</p>
+                        <div class="text-success small">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            Desbloqueado el {{ logro_desb.fecha_desbloqueo|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div style="font-size: 4rem; opacity: 0.3;">🏆</div>
+                    <h4 class="text-muted">Aún no has desbloqueado ningún logro</h4>
+                    <p class="text-muted">¡Comienza a registrar gastos y desbloquea tu primer logro!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Logros Disponibles -->
+        <div class="tab-pane fade" id="disponibles" role="tabpanel">
+            <div class="row">
+                {% for logro in logros_disponibles %}
+                <div class="col-md-4 mb-4">
+                    <div class="logro-card bloqueado">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="icono">{{ logro.icono }}</div>
+                            <span class="puntos-badge">{{ logro.puntos_recompensa }} pts</span>
+                        </div>
+                        <h5 class="mb-2">{{ logro.nombre }}</h5>
+                        <p class="text-muted small mb-2">{{ logro.descripcion }}</p>
+                        <div class="text-warning small">
+                            <i class="bi bi-lock-fill me-1"></i>
+                            Requisito: {{ logro.requisito_numero }} {{ logro.requisito_tipo }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Logros Secretos -->
+        {% if logros_secretos %}
+        <div class="tab-pane fade" id="secretos" role="tabpanel">
+            <div class="row">
+                {% for logro_desb in logros_secretos %}
+                <div class="col-md-4 mb-4">
+                    <div class="logro-card desbloqueado" style="border-color: #9b59b6;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="icono">{{ logro_desb.logro.icono }}</div>
+                            <span class="puntos-badge" style="background: linear-gradient(135deg, #9b59b6, #e74c3c);">
+                                +{{ logro_desb.logro.puntos_recompensa }} pts
+                            </span>
+                        </div>
+                        <h5 class="mb-2">
+                            🤫 {{ logro_desb.logro.nombre }}
+                        </h5>
+                        <p class="text-muted small mb-2">{{ logro_desb.logro.descripcion }}</p>
+                        <div class="text-success small">
+                            <i class="bi bi-star-fill me-1"></i>
+                            ¡Logro secreto desbloqueado!
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Confetti.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<!-- Toast para notificaciones de logros con Confetti -->
+{% if notificaciones %}
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    {% for notif in notificaciones %}
+    {% if not notif.visto %}
+    <div class="toast show logro-toast" role="alert" aria-live="assertive" aria-atomic="true" data-tipo="{{ notif.tipo }}">
+        <div class="toast-header" style="background: var(--gradient-purple); color: white;">
+            <strong class="me-auto">
+                {% if notif.tipo == 'LOGRO' %}🏆
+                {% elif notif.tipo == 'NIVEL' %}⭐
+                {% elif notif.tipo == 'RACHA' %}🔥
+                {% endif %}
+                ¡Nuevo {% if notif.tipo == 'LOGRO' %}Logro{% elif notif.tipo == 'NIVEL' %}Nivel{% elif notif.tipo == 'RACHA' %}Racha{% endif %}!
+            </strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <strong>{{ notif.mensaje }}</strong>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<script>
+// Lanzar confetti para cada notificación nueva
+document.addEventListener('DOMContentLoaded', function() {
+    const toasts = document.querySelectorAll('.logro-toast');
+
+    if (toasts.length > 0) {
+        // Confetti principal
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#667eea', '#764ba2', '#11998e', '#38ef7d', '#fa709a']
+        });
+
+        // Confetti secundario después de 200ms
+        setTimeout(() => {
+            confetti({
+                particleCount: 50,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#667eea', '#764ba2']
+            });
+            confetti({
+                particleCount: 50,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#11998e', '#38ef7d']
+            });
+        }, 200);
+
+        // Sonido de éxito (opcional - requiere audio file)
+        // const audio = new Audio('/static/sounds/success.mp3');
+        // audio.play().catch(() => {});
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}

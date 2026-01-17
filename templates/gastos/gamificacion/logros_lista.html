@@ -1,0 +1,328 @@
+{% extends 'gastos/base.html' %}
+{% load gastos_extras %}
+
+{% block title %}Todos los Logros - Gamificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --gradient-orange: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .page-header-logros {
+        background: var(--gradient-purple);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .tipo-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .tipo-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid;
+        margin-bottom: 1.5rem;
+    }
+
+    .tipo-header.actividad { border-bottom-color: #667eea; }
+    .tipo-header.ahorro { border-bottom-color: #11998e; }
+    .tipo-header.disciplina { border-bottom-color: #fa709a; }
+    .tipo-header.social { border-bottom-color: #4facfe; }
+    .tipo-header.especial { border-bottom-color: #9b59b6; }
+
+    .tipo-header .icono {
+        font-size: 2.5rem;
+    }
+
+    .tipo-header h3 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .logro-item {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 2px solid #f0f0f0;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .logro-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .logro-item.desbloqueado {
+        border-color: #11998e;
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.05), rgba(56, 239, 125, 0.05));
+    }
+
+    .logro-item.bloqueado {
+        opacity: 0.6;
+        filter: grayscale(60%);
+    }
+
+    .logro-icono {
+        font-size: 3.5rem;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .logro-content {
+        flex: 1;
+    }
+
+    .logro-nombre {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+    }
+
+    .logro-descripcion {
+        color: #718096;
+        margin-bottom: 0.5rem;
+    }
+
+    .logro-requisito {
+        font-size: 0.85rem;
+        color: #a0aec0;
+    }
+
+    .logro-meta {
+        text-align: right;
+        min-width: 120px;
+    }
+
+    .puntos-badge {
+        background: var(--gradient-orange);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 1rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .fecha-desbloqueo {
+        font-size: 0.85rem;
+        color: #11998e;
+        font-weight: 600;
+    }
+
+    .estado-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .estado-badge.desbloqueado {
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.2), rgba(56, 239, 125, 0.2));
+        color: #11998e;
+    }
+
+    .estado-badge.bloqueado {
+        background: linear-gradient(135deg, rgba(160, 174, 192, 0.2), rgba(203, 213, 224, 0.2));
+        color: #718096;
+    }
+
+    .progreso-general {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .progress-circular {
+        width: 150px;
+        height: 150px;
+        position: relative;
+        margin: 0 auto 1rem;
+    }
+
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring-circle {
+        stroke: #e2e8f0;
+        fill: transparent;
+        stroke-width: 10;
+    }
+
+    .progress-ring-circle-fill {
+        stroke: url(#gradient);
+        fill: transparent;
+        stroke-width: 10;
+        stroke-dasharray: 440;
+        stroke-dashoffset: 440;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .tipo-section {
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .tipo-section:nth-child(1) { animation-delay: 0.1s; }
+    .tipo-section:nth-child(2) { animation-delay: 0.2s; }
+    .tipo-section:nth-child(3) { animation-delay: 0.3s; }
+    .tipo-section:nth-child(4) { animation-delay: 0.4s; }
+    .tipo-section:nth-child(5) { animation-delay: 0.5s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="page-header-logros">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="bi bi-trophy-fill me-3"></i>Catálogo de Logros</h1>
+                <p class="mb-0" style="opacity: 0.9;">Descubre todos los logros disponibles y desbloquea tu potencial</p>
+            </div>
+            <a href="{% url 'gamificacion_dashboard' %}" class="btn btn-light btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Progreso General -->
+    <div class="progreso-general">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <svg class="progress-circular" viewBox="0 0 160 160">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="progress-ring-circle" cx="80" cy="80" r="70"></circle>
+                    <circle class="progress-ring-circle-fill" cx="80" cy="80" r="70"
+                            style="stroke-dashoffset: calc(440 - (440 * {{ perfil.logros.count }} / {{ total_logros }}))"></circle>
+                </svg>
+                <h3 class="mb-0" style="background: var(--gradient-purple); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {{ perfil.logros.count }}/{{ total_logros }}
+                </h3>
+            </div>
+            <div class="col-md-9">
+                <h4 class="mb-3">Tu Progreso Global</h4>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <div class="text-muted small">Desbloqueados</div>
+                        <div class="h4 mb-0">{{ perfil.logros.count }}</div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-muted small">Por Desbloquear</div>
+                        <div class="h4 mb-0">{{ total_logros|add:"-"|add:perfil.logros.count }}</div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-muted small">Nivel Actual</div>
+                        <div class="h4 mb-0">{{ perfil.nivel }}</div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-muted small">Puntos Totales</div>
+                        <div class="h4 mb-0">{{ perfil.puntos_totales }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logros por Tipo -->
+    {% for tipo_codigo, tipo_nombre in logros_por_tipo.items %}
+    <div class="tipo-section">
+        <div class="tipo-header {{ tipo_codigo|lower }}">
+            <div class="icono">
+                {% if tipo_codigo == 'ACTIVIDAD' %}🎯
+                {% elif tipo_codigo == 'AHORRO' %}💰
+                {% elif tipo_codigo == 'DISCIPLINA' %}🛡️
+                {% elif tipo_codigo == 'SOCIAL' %}📊
+                {% elif tipo_codigo == 'ESPECIAL' %}⭐
+                {% endif %}
+            </div>
+            <div>
+                <h3>{{ tipo_nombre }}</h3>
+                <p class="mb-0 text-muted">
+                    {{ logros_por_tipo_data|get_item:tipo_codigo|get_item:'desbloqueados'|length }} de
+                    {{ logros_por_tipo_data|get_item:tipo_codigo|get_item:'total' }} logros desbloqueados
+                </p>
+            </div>
+        </div>
+
+        <!-- Logros Desbloqueados -->
+        {% for item in logros_por_tipo_data|get_item:tipo_codigo|get_item:'desbloqueados' %}
+        <div class="logro-item desbloqueado">
+            <div class="logro-icono">{{ item.logro.icono }}</div>
+            <div class="logro-content">
+                <div class="logro-nombre">{{ item.logro.nombre }}</div>
+                <div class="logro-descripcion">{{ item.logro.descripcion }}</div>
+                <span class="estado-badge desbloqueado">
+                    <i class="bi bi-check-circle-fill me-1"></i>Desbloqueado
+                </span>
+            </div>
+            <div class="logro-meta">
+                <div class="puntos-badge">+{{ item.logro.puntos_recompensa }} pts</div>
+                <div class="fecha-desbloqueo">{{ item.fecha|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Logros Bloqueados -->
+        {% for logro in logros_por_tipo_data|get_item:tipo_codigo|get_item:'bloqueados' %}
+        <div class="logro-item bloqueado">
+            <div class="logro-icono">{{ logro.icono }}</div>
+            <div class="logro-content">
+                <div class="logro-nombre">{{ logro.nombre }}</div>
+                <div class="logro-descripcion">{{ logro.descripcion }}</div>
+                <div class="logro-requisito">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    Requisito: {{ logro.requisito_numero }} {{ logro.get_requisito_tipo_display }}
+                </div>
+            </div>
+            <div class="logro-meta">
+                <div class="puntos-badge" style="opacity: 0.6;">{{ logro.puntos_recompensa }} pts</div>
+                <span class="estado-badge bloqueado">
+                    <i class="bi bi-lock-fill me-1"></i>Bloqueado
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

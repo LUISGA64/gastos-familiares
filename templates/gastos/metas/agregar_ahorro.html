@@ -5,21 +5,21 @@
     <div class="row justify-content-center">
         <div class="col-lg-6">
             <div class="card shadow-lg" style="border-radius: 20px; border: none;">
-                <div class="card-header text-white text-center p-4" style="background: linear-gradient(135deg, #7bc96f 0%, #5da74f 100%); border-radius: 20px 20px 0 0;">
+                <div class="card-header text-white text-center p-4" style="background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%); border-radius: 20px 20px 0 0;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>
                     <h3 class="mb-2">¡Agregar Ahorro!</h3>
                     <p class="mb-0" style="opacity: 0.9;">{{ meta.nombre }}</p>
                 </div>
                 <div class="card-body p-4">
                     <!-- Progreso Actual -->
-                    <div class="text-center mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px;">
+                    <div class="text-center mb-4 p-3" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px;">
                         <div class="row">
                             <div class="col-6">
-                                <div style="font-size: 1.3rem; font-weight: 700; color: #7bc96f;">${{ meta.monto_actual|floatformat:0 }}</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: #10b981;">${{ meta.monto_actual|floatformat:0 }}</div>
                                 <small class="text-muted">Ahorrado</small>
                             </div>
                             <div class="col-6">
-                                <div style="font-size: 1.3rem; font-weight: 700; color: #f5a623;">${{ meta.monto_restante|floatformat:0 }}</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: #f59e0b;">${{ meta.monto_restante|floatformat:0 }}</div>
                                 <small class="text-muted">Falta</small>
                             </div>
                         </div>

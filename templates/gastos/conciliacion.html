@@ -5,425 +5,516 @@
 
 {% block extra_css %}
 <style>
-    /* Paleta de colores suaves y modernos */
+    /* ===== PALETA DE COLORES MODERNA Y VIBRANTE ===== */
     :root {
-        --primary-soft: #5b7c99;
-        --success-soft: #6c9f7f;
-        --warning-soft: #d4a574;
-        --danger-soft: #c97676;
-        --info-soft: #7fa0ba;
-        --light-bg: #f8f9fa;
-        --border-light: #e9ecef;
-        --text-muted: #6c757d;
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-        --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --gradient-warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --gradient-card: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+        --gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%);
+
+        --color-primary: #667eea;
+        --color-success: #11998e;
+        --color-info: #4facfe;
+        --color-warning: #fa709a;
+        --color-text: #2d3748;
+        --color-text-light: #718096;
+
+        --shadow-soft: 0 4px 20px rgba(102, 126, 234, 0.12);
+        --shadow-hover: 0 8px 30px rgba(102, 126, 234, 0.18);
+        --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+        --border-radius: 20px;
+        --border-radius-sm: 12px;
     }
 
-    /* Encabezado de página */
-    .page-header {
-        background: linear-gradient(135deg, var(--primary-soft) 0%, #4a6780 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-md);
+    /* ===== ANIMACIONES ===== */
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
+
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    /* ===== FONDO GENERAL ===== */
+    body { background: var(--gradient-bg); }
+
+    /* ===== HEADER PRINCIPAL - SUPER MOTIVACIONAL ===== */
+    .page-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: var(--border-radius);
+        padding: 3rem 2.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .page-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .page-header-content { position: relative; z-index: 1; }
 
     .page-header h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-header h1 i {
+        font-size: 3rem;
+        animation: pulse 2s infinite;
     }
 
     .page-header p {
-        opacity: 0.9;
+        opacity: 0.95;
         margin: 0;
+        font-size: 1.2rem;
+        font-weight: 300;
     }
 
-    /* Cards modernos */
-    .modern-card {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid var(--border-light);
-        box-shadow: var(--shadow-sm);
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-
-    .modern-card:hover {
-        box-shadow: var(--shadow-md);
-    }
-
-    .modern-card-header {
-        background: var(--light-bg);
-        border-bottom: 1px solid var(--border-light);
-        padding: 1.25rem 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .modern-card-body {
-        padding: 1.5rem;
-    }
-
-    /* Stat cards mejoradas */
+    /* ===== STAT CARDS - MODERNAS Y VIBRANTES ===== */
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
-        color: white;
+        background: var(--gradient-card);
+        border-radius: var(--border-radius);
+        padding: 2rem;
         border: none;
-        box-shadow: var(--shadow-md);
-        transition: transform 0.3s ease;
+        box-shadow: var(--shadow-card);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        animation: scaleIn 0.5s ease-out;
+        animation-fill-mode: backwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        transition: height 0.3s ease;
     }
 
     .stat-card:hover {
-        transform: translateY(-4px);
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: var(--shadow-hover);
     }
 
-    .stat-card.stat-success {
-        background: linear-gradient(135deg, var(--success-soft) 0%, #5a8a6a 100%);
+    .stat-card:hover::before {
+        height: 100%;
+        opacity: 0.05;
     }
 
-    .stat-card.stat-danger {
-        background: linear-gradient(135deg, var(--danger-soft) 0%, #b86666 100%);
+    .stat-card.stat-success::before { background: var(--gradient-success); }
+    .stat-card.stat-pay::before { background: var(--gradient-info); }
+    .stat-card.stat-warning::before { background: var(--gradient-warning); }
+
+    .stat-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: white;
+        position: relative;
+        transition: transform 0.3s ease;
     }
 
-    .stat-card.stat-warning {
-        background: linear-gradient(135deg, var(--warning-soft) 0%, #c39566 100%);
+    .stat-card:hover .stat-icon { transform: rotate(10deg) scale(1.1); }
+
+    .stat-card.stat-success .stat-icon {
+        background: var(--gradient-success);
+        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    }
+
+    .stat-card.stat-pay .stat-icon {
+        background: var(--gradient-info);
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+
+    .stat-card.stat-warning .stat-icon {
+        background: var(--gradient-warning);
+        box-shadow: 0 4px 15px rgba(250, 112, 154, 0.3);
     }
 
     .stat-card-label {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.9;
-        margin-bottom: 0.5rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: var(--color-text-light);
+        margin-bottom: 0.75rem;
+        text-align: center;
     }
 
     .stat-card-value {
-        font-size: 2rem;
-        font-weight: 700;
+        font-size: 2.5rem;
+        font-weight: 800;
         line-height: 1;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-card.stat-success .stat-card-value {
+        background: var(--gradient-success);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.stat-pay .stat-card-value {
+        background: var(--gradient-info);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card.stat-warning .stat-card-value {
+        background: var(--gradient-warning);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     .stat-card-subtitle {
         font-size: 0.875rem;
-        opacity: 0.85;
+        color: var(--color-text-light);
+        text-align: center;
+        font-weight: 500;
     }
 
-    /* Selector de período */
+    /* ===== SELECTOR DE PERÍODO - MODERNO ===== */
     .period-selector {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
-        border: 1px solid var(--border-light);
-        box-shadow: var(--shadow-sm);
+        background: var(--gradient-card);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        border: none;
+        box-shadow: var(--shadow-card);
+        animation: slideUp 0.6s ease-out;
+        animation-delay: 0.2s;
+        animation-fill-mode: backwards;
+    }
+
+    .period-selector-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e8ecf3;
+    }
+
+    .period-selector-header i {
+        font-size: 1.8rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .period-selector-header h5 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--color-text);
+        font-size: 1.2rem;
     }
 
     .period-selector .form-label {
         font-weight: 600;
-        color: #2c3e50;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
+        color: var(--color-text);
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
+
+    .period-selector .form-label i { color: var(--color-primary); }
 
     .period-selector .form-select,
     .period-selector .form-control {
-        border-radius: 8px;
-        border: 1px solid var(--border-light);
-        padding: 0.625rem 1rem;
+        border-radius: var(--border-radius-sm);
+        border: 2px solid #e8ecf3;
+        padding: 0.875rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        background: white;
     }
 
-    /* Tabla de conciliación */
+    .period-selector .form-select:focus,
+    .period-selector .form-control:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .period-selector .btn-primary {
+        background: var(--gradient-primary);
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: var(--border-radius-sm);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .period-selector .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* ===== CARDS MODERNOS ===== */
+    .modern-card {
+        background: var(--gradient-card);
+        border-radius: var(--border-radius);
+        border: none;
+        box-shadow: var(--shadow-card);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        animation: slideUp 0.6s ease-out;
+        animation-delay: 0.4s;
+        animation-fill-mode: backwards;
+    }
+
+    .modern-card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-5px);
+    }
+
+    .modern-card-header {
+        background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
+        border-bottom: none;
+        padding: 1.75rem 2rem;
+        font-weight: 700;
+        color: var(--color-text);
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .modern-card-header i {
+        font-size: 1.5rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .modern-card-body { padding: 2rem; }
+
+    /* ===== TABLA MODERNA ===== */
     .conciliation-table {
         background: white;
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         overflow: hidden;
-        box-shadow: var(--shadow-sm);
+        box-shadow: none;
     }
 
     .conciliation-table thead {
-        background: var(--light-bg);
+        background: var(--gradient-primary);
     }
 
     .conciliation-table th {
-        font-weight: 600;
+        font-weight: 700;
         font-size: 0.875rem;
-        color: #2c3e50;
+        color: white !important;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
-        padding: 1rem;
+        letter-spacing: 1px;
+        padding: 1.25rem 1.5rem;
         border: none;
     }
 
     .conciliation-table td {
-        padding: 1rem;
+        padding: 1.5rem;
         vertical-align: middle;
-        border-bottom: 1px solid var(--border-light);
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--color-text);
+        font-weight: 500;
     }
 
-    .conciliation-table tbody tr:last-child td {
-        border-bottom: none;
+    .conciliation-table tbody tr:last-child td { border-bottom: none; }
+
+    .conciliation-table tbody tr {
+        transition: all 0.3s ease;
     }
 
     .conciliation-table tbody tr:hover {
-        background: #f8f9fa;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+        transform: scale(1.01);
     }
 
-    /* Badges modernos */
+    /* ===== BADGES MODERNOS ===== */
     .modern-badge {
-        padding: 0.4rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
+        padding: 0.6rem 1.25rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
+        border: 2px solid;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
     }
+
+    .modern-badge:hover { transform: scale(1.05); }
 
     .badge-receive {
-        background: rgba(108, 159, 127, 0.15);
-        color: var(--success-soft);
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%);
+        color: #11998e;
+        border-color: rgba(17, 153, 142, 0.3);
     }
 
     .badge-pay {
-        background: rgba(201, 118, 118, 0.15);
-        color: var(--danger-soft);
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+        color: #4facfe;
+        border-color: rgba(79, 172, 254, 0.3);
     }
 
     .badge-balanced {
-        background: rgba(108, 117, 125, 0.15);
-        color: var(--text-muted);
+        background: linear-gradient(135deg, rgba(113, 128, 150, 0.1) 0%, rgba(160, 174, 192, 0.1) 100%);
+        color: #718096;
+        border-color: rgba(113, 128, 150, 0.3);
     }
 
-    /* Barra de progreso moderna */
-    .progress-modern {
-        height: 28px;
-        border-radius: 14px;
-        background: var(--light-bg);
-        overflow: hidden;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .progress-modern .progress-bar {
-        font-weight: 600;
-        font-size: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        transition: width 0.6s ease;
-    }
-
-    /* Alertas modernas */
+    /* ===== ALERTAS MODERNAS ===== */
     .alert-modern {
-        border-radius: 12px;
+        border-radius: var(--border-radius-sm);
         border: none;
-        padding: 1.25rem 1.5rem;
-        box-shadow: var(--shadow-sm);
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow-card);
+        border-left: 5px solid;
+        animation: slideUp 0.5s ease-out;
     }
 
     .alert-modern.alert-success {
-        background: rgba(108, 159, 127, 0.1);
-        color: var(--success-soft);
-        border-left: 4px solid var(--success-soft);
-    }
-
-    .alert-modern.alert-warning {
-        background: rgba(212, 165, 116, 0.1);
-        color: var(--warning-soft);
-        border-left: 4px solid var(--warning-soft);
-    }
-
-    .alert-modern.alert-danger {
-        background: rgba(201, 118, 118, 0.1);
-        color: var(--danger-soft);
-        border-left: 4px solid var(--danger-soft);
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%);
+        color: #11998e;
+        border-left-color: #11998e;
     }
 
     .alert-modern.alert-info {
-        background: rgba(127, 160, 186, 0.1);
-        color: var(--info-soft);
-        border-left: 4px solid var(--info-soft);
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+        color: #4facfe;
+        border-left-color: #4facfe;
     }
 
-    /* Card de reintegro */
+    .alert-modern.alert-warning {
+        background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%);
+        color: #fa709a;
+        border-left-color: #fa709a;
+    }
+
+    /* ===== CARD DE REINTEGRO ===== */
     .reintegro-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
-        border: 1px solid var(--border-light);
-        margin-bottom: 1rem;
+        background: var(--gradient-card);
+        border-radius: var(--border-radius-sm);
+        padding: 1.75rem;
+        border: 2px solid #f1f5f9;
+        margin-bottom: 1.25rem;
         transition: all 0.3s ease;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-card);
     }
 
     .reintegro-card:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateX(4px);
+        box-shadow: var(--shadow-hover);
+        transform: translateX(8px);
+        border-color: var(--color-primary);
     }
 
     .reintegro-amount {
-        background: linear-gradient(135deg, var(--warning-soft) 0%, #c39566 100%);
+        background: var(--gradient-warning);
         color: white;
-        padding: 0.75rem 1.25rem;
-        border-radius: 8px;
-        font-size: 1.25rem;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
-    }
-
-    /* Detalle de pagos */
-    .payment-detail-section {
-        background: var(--light-bg);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .payment-detail-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid white;
-    }
-
-    .payment-detail-table {
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .payment-detail-table td {
-        padding: 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    /* Confirmación */
-    .confirmation-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        border: 1px solid var(--border-light);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .confirmation-progress {
-        background: var(--light-bg);
-        border-radius: 12px;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Botones modernos */
-    .btn-modern {
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-size: 0.875rem;
-        border: none;
-        transition: all 0.3s ease;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .btn-modern:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .btn-modern-primary {
-        background: linear-gradient(135deg, var(--primary-soft) 0%, #4a6780 100%);
-        color: white;
-    }
-
-    .btn-modern-success {
-        background: linear-gradient(135deg, var(--success-soft) 0%, #5a8a6a 100%);
-        color: white;
-    }
-
-    .btn-modern-warning {
-        background: linear-gradient(135deg, var(--warning-soft) 0%, #c39566 100%);
-        color: white;
-    }
-
-    /* Info box */
-    .info-box {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
-        border-left: 4px solid var(--primary-soft);
-    }
-
-    .info-box h6 {
-        color: var(--primary-soft);
-        font-weight: 700;
-        margin-bottom: 1rem;
+        padding: 1rem 1.75rem;
+        border-radius: var(--border-radius-sm);
+        font-size: 1.5rem;
+        font-weight: 800;
+        box-shadow: 0 4px 15px rgba(250, 112, 154, 0.3);
+        text-align: center;
+        display: inline-block;
     }
 
     /* Responsivo */
     @media (max-width: 768px) {
-        .page-header {
-            padding: 1.5rem;
-        }
-
         .page-header h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
         }
 
         .stat-card-value {
-            font-size: 1.5rem;
+            font-size: 2rem;
         }
 
-        .modern-card-body {
-            padding: 1rem;
+        .modern-card-header,
+        .period-selector {
+            padding: 1.5rem;
         }
-
-        .reintegro-card {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .reintegro-amount {
-            margin-top: 1rem;
-        }
-    }
-
-    /* Animaciones */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in {
-        animation: fadeInUp 0.5s ease-out;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Encabezado de página -->
-<div class="page-header animate-fade-in">
-    <div class="d-flex justify-content-between align-items-center flex-wrap">
-        <div>
-            <h1><i class="bi bi-calculator-fill me-2"></i>Conciliación de Gastos</h1>
-            <p>Distribución equitativa y balance de pagos del mes</p>
-        </div>
-        <div class="mt-3 mt-md-0">
-            <a href="{% url 'historial_conciliaciones' %}" class="btn btn-light btn-modern">
-                <i class="bi bi-clock-history me-2"></i>Historial
-            </a>
+<!-- Encabezado de página - SUPER MOTIVACIONAL -->
+<div class="page-header">
+    <div class="page-header-content">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1>
+                    <i class="bi bi-calculator-fill"></i>
+                    Conciliación de Gastos
+                </h1>
+                <p>✨ Transparencia total y balance perfecto para tu familia ✨</p>
+            </div>
+            <div class="mt-3 mt-md-0">
+                <a href="{% url 'historial_conciliaciones' %}" class="btn btn-light btn-lg" style="border-radius: 12px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                    <i class="bi bi-clock-history me-2"></i>Historial
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -479,9 +570,16 @@
 
 <!-- Selector de Período -->
 <div class="period-selector mb-4">
+    <div class="period-selector-header">
+        <i class="bi bi-calendar-event"></i>
+        <h5>Selecciona el Período</h5>
+    </div>
     <form method="get" class="row g-3 align-items-end">
         <div class="col-md-5">
-            <label class="form-label">Mes</label>
+            <label class="form-label">
+                <i class="bi bi-calendar-month"></i>
+                Mes
+            </label>
             <select name="mes" class="form-select">
                 <option value="1" {% if mes == 1 %}selected{% endif %}>Enero</option>
                 <option value="2" {% if mes == 2 %}selected{% endif %}>Febrero</option>
@@ -498,11 +596,14 @@
             </select>
         </div>
         <div class="col-md-5">
-            <label class="form-label">Año</label>
+            <label class="form-label">
+                <i class="bi bi-calendar"></i>
+                Año
+            </label>
             <input type="number" name="anio" class="form-control" value="{{ anio }}" min="2020" max="2030">
         </div>
         <div class="col-md-2">
-            <button type="submit" class="btn btn-modern-primary w-100">
+            <button type="submit" class="btn btn-primary w-100">
                 <i class="bi bi-search me-2"></i>Consultar
             </button>
         </div>
@@ -513,27 +614,30 @@
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card stat-success">
-            <div class="stat-card-label">
-                <i class="bi bi-cash-stack me-1"></i>Total Ingresos
+            <div class="stat-icon">
+                <i class="bi bi-cash-stack"></i>
             </div>
+            <div class="stat-card-label">Total Ingresos</div>
             <div class="stat-card-value">${{ total_ingresos|floatformat:0 }}</div>
             <div class="stat-card-subtitle">{{ conciliacion_aportantes|length }} aportante{{ conciliacion_aportantes|length|pluralize }}</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
-        <div class="stat-card stat-danger">
-            <div class="stat-card-label">
-                <i class="bi bi-receipt me-1"></i>Total Gastos
+        <div class="stat-card stat-pay">
+            <div class="stat-icon">
+                <i class="bi bi-receipt"></i>
             </div>
+            <div class="stat-card-label">Total Gastos</div>
             <div class="stat-card-value">${{ total_gastos_mes|floatformat:0 }}</div>
             <div class="stat-card-subtitle">Del mes seleccionado</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card {% if total_ingresos >= total_gastos_mes %}stat-success{% else %}stat-warning{% endif %}">
-            <div class="stat-card-label">
-                <i class="bi bi-graph-up-arrow me-1"></i>Balance
+            <div class="stat-icon">
+                <i class="bi bi-graph-up-arrow"></i>
             </div>
+            <div class="stat-card-label">Balance</div>
             <div class="stat-card-value">${{ total_ingresos|floatformat:0|add:"-"|add:total_gastos_mes|floatformat:0 }}</div>
             <div class="stat-card-subtitle">{% if total_ingresos >= total_gastos_mes %}Superávit{% else %}Déficit{% endif %}</div>
         </div>

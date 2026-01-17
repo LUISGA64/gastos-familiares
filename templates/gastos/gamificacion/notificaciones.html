@@ -1,0 +1,362 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Notificaciones - Gamificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .page-header-notif {
+        background: var(--gradient-purple);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .notif-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .notif-item:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        transform: translateX(5px);
+    }
+
+    .notif-item.LOGRO { border-left-color: #11998e; }
+    .notif-item.NIVEL { border-left-color: #667eea; }
+    .notif-item.DESAFIO { border-left-color: #fa709a; }
+    .notif-item.RACHA { border-left-color: #ff6b6b; }
+
+    .notif-item.no-visto {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border-left-width: 8px;
+    }
+
+    .notif-icono {
+        font-size: 3rem;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .notif-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .notif-badge.LOGRO {
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.2), rgba(56, 239, 125, 0.2));
+        color: #11998e;
+    }
+
+    .notif-badge.NIVEL {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+        color: #667eea;
+    }
+
+    .notif-badge.DESAFIO {
+        background: linear-gradient(135deg, rgba(250, 112, 154, 0.2), rgba(254, 225, 64, 0.2));
+        color: #fa709a;
+    }
+
+    .notif-badge.RACHA {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 147, 147, 0.2));
+        color: #ff6b6b;
+    }
+
+    .notif-fecha {
+        color: #a0aec0;
+        font-size: 0.9rem;
+    }
+
+    .notif-mensaje {
+        font-size: 1.1rem;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        color: #a0aec0;
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+
+    .filter-tabs {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .filter-tabs .nav-link {
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #718096;
+        transition: all 0.3s ease;
+    }
+
+    .filter-tabs .nav-link.active {
+        background: var(--gradient-purple);
+        color: white;
+    }
+
+    .filter-tabs .nav-link:hover:not(.active) {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .notif-item:nth-child(1) { animation-delay: 0.05s; }
+    .notif-item:nth-child(2) { animation-delay: 0.1s; }
+    .notif-item:nth-child(3) { animation-delay: 0.15s; }
+    .notif-item:nth-child(4) { animation-delay: 0.2s; }
+    .notif-item:nth-child(5) { animation-delay: 0.25s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="page-header-notif">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h1><i class="bi bi-bell-fill me-3"></i>Notificaciones</h1>
+                <p class="mb-0" style="opacity: 0.9;">Historial completo de tus logros y niveles alcanzados</p>
+            </div>
+            <div class="d-flex gap-2">
+                {% if notificaciones %}
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-light btn-lg">
+                        <i class="bi bi-check-all me-2"></i>Marcar Todas como Vistas
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{% url 'gamificacion_dashboard' %}" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-tabs">
+        <ul class="nav nav-pills justify-content-center" id="notifTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="todas-tab" data-bs-toggle="pill" data-bs-target="#todas" type="button">
+                    <i class="bi bi-list-ul me-2"></i>Todas ({{ notificaciones.count }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="logros-tab" data-bs-toggle="pill" data-bs-target="#logros" type="button">
+                    <i class="bi bi-trophy me-2"></i>Logros
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="niveles-tab" data-bs-toggle="pill" data-bs-target="#niveles" type="button">
+                    <i class="bi bi-star me-2"></i>Niveles
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rachas-tab" data-bs-toggle="pill" data-bs-target="#rachas" type="button">
+                    <i class="bi bi-fire me-2"></i>Rachas
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenido de Tabs -->
+    <div class="tab-content" id="notifTabsContent">
+
+        <!-- Todas -->
+        <div class="tab-pane fade show active" id="todas" role="tabpanel">
+            {% if notificaciones %}
+                {% for notif in notificaciones %}
+                <div class="notif-item {{ notif.tipo }} {% if not notif.visto %}no-visto{% endif %}">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="notif-icono">
+                                {% if notif.tipo == 'LOGRO' %}🏆
+                                {% elif notif.tipo == 'NIVEL' %}⭐
+                                {% elif notif.tipo == 'DESAFIO' %}🎯
+                                {% elif notif.tipo == 'RACHA' %}🔥
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="notif-badge {{ notif.tipo }}">
+                                    {{ notif.get_tipo_display }}
+                                </span>
+                                {% if not notif.visto %}
+                                <span class="badge bg-danger">Nuevo</span>
+                                {% endif %}
+                            </div>
+                            <div class="notif-mensaje">{{ notif.mensaje }}</div>
+                            <div class="notif-fecha">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ notif.fecha|timesince }} atrás
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔔</div>
+                    <h4>No tienes notificaciones</h4>
+                    <p class="text-muted">Cuando desbloquees logros o subas de nivel, aparecerán aquí</p>
+                    <a href="{% url 'lista_gastos' %}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-2"></i>Registrar Gasto
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Logros -->
+        <div class="tab-pane fade" id="logros" role="tabpanel">
+            {% with logros_count=0 %}
+                {% for notif in notificaciones %}
+                    {% if notif.tipo == 'LOGRO' %}
+                        {% with logros_count=logros_count|add:1 %}
+                        <div class="notif-item LOGRO {% if not notif.visto %}no-visto{% endif %}">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="notif-icono">🏆</div>
+                                </div>
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="notif-badge LOGRO">{{ notif.get_tipo_display }}</span>
+                                        {% if not notif.visto %}<span class="badge bg-danger">Nuevo</span>{% endif %}
+                                    </div>
+                                    <div class="notif-mensaje">{{ notif.mensaje }}</div>
+                                    <div class="notif-fecha">
+                                        <i class="bi bi-clock me-1"></i>{{ notif.fecha|timesince }} atrás
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+                {% if logros_count == 0 %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🏆</div>
+                    <h4>No has desbloqueado logros aún</h4>
+                    <p class="text-muted">¡Empieza a registrar gastos para desbloquear logros!</p>
+                    <a href="{% url 'logros_lista' %}" class="btn btn-primary mt-3">
+                        <i class="bi bi-eye me-2"></i>Ver Logros Disponibles
+                    </a>
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Niveles -->
+        <div class="tab-pane fade" id="niveles" role="tabpanel">
+            {% with niveles_count=0 %}
+                {% for notif in notificaciones %}
+                    {% if notif.tipo == 'NIVEL' %}
+                        {% with niveles_count=niveles_count|add:1 %}
+                        <div class="notif-item NIVEL {% if not notif.visto %}no-visto{% endif %}">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="notif-icono">⭐</div>
+                                </div>
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="notif-badge NIVEL">{{ notif.get_tipo_display }}</span>
+                                        {% if not notif.visto %}<span class="badge bg-danger">Nuevo</span>{% endif %}
+                                    </div>
+                                    <div class="notif-mensaje">{{ notif.mensaje }}</div>
+                                    <div class="notif-fecha">
+                                        <i class="bi bi-clock me-1"></i>{{ notif.fecha|timesince }} atrás
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+                {% if niveles_count == 0 %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">⭐</div>
+                    <h4>Aún no has subido de nivel</h4>
+                    <p class="text-muted">Acumula puntos desbloqueando logros para alcanzar el siguiente nivel</p>
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Rachas -->
+        <div class="tab-pane fade" id="rachas" role="tabpanel">
+            {% with rachas_count=0 %}
+                {% for notif in notificaciones %}
+                    {% if notif.tipo == 'RACHA' %}
+                        {% with rachas_count=rachas_count|add:1 %}
+                        <div class="notif-item RACHA {% if not notif.visto %}no-visto{% endif %}">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="notif-icono">🔥</div>
+                                </div>
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="notif-badge RACHA">{{ notif.get_tipo_display }}</span>
+                                        {% if not notif.visto %}<span class="badge bg-danger">Nuevo</span>{% endif %}
+                                    </div>
+                                    <div class="notif-mensaje">{{ notif.mensaje }}</div>
+                                    <div class="notif-fecha">
+                                        <i class="bi bi-clock me-1"></i>{{ notif.fecha|timesince }} atrás
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+                {% if rachas_count == 0 %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔥</div>
+                    <h4>No tienes rachas registradas</h4>
+                    <p class="text-muted">Mantén una racha de días consecutivos registrando gastos para recibir notificaciones</p>
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

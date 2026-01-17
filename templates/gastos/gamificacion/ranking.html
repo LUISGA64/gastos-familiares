@@ -1,0 +1,421 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Ranking de Usuarios - Gamificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        --gradient-silver: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+        --gradient-bronze: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .page-header-ranking {
+        background: var(--gradient-purple);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .podio-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        min-height: 300px;
+    }
+
+    .podio-item {
+        flex: 1;
+        max-width: 250px;
+        text-align: center;
+        position: relative;
+    }
+
+    .podio-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .podio-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+    }
+
+    .podio-item.primero .podio-card {
+        transform: translateY(-20px);
+    }
+
+    .podio-item.primero .podio-card::before {
+        background: var(--gradient-gold);
+    }
+
+    .podio-item.segundo .podio-card::before {
+        background: var(--gradient-silver);
+    }
+
+    .podio-item.tercero .podio-card::before {
+        background: var(--gradient-bronze);
+    }
+
+    .podio-card:hover {
+        transform: translateY(-5px) scale(1.02);
+    }
+
+    .podio-medalla {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .podio-posicion {
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+    }
+
+    .podio-item.primero .podio-posicion {
+        background: var(--gradient-gold);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .podio-item.segundo .podio-posicion {
+        background: var(--gradient-silver);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .podio-item.tercero .podio-posicion {
+        background: var(--gradient-bronze);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .podio-nombre {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+    }
+
+    .podio-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .podio-stat {
+        text-align: center;
+    }
+
+    .podio-stat-valor {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .podio-stat-label {
+        font-size: 0.75rem;
+        color: #718096;
+        text-transform: uppercase;
+    }
+
+    .ranking-table {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .ranking-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .ranking-table th {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 1.25rem;
+        border: none;
+    }
+
+    .ranking-table td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .ranking-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .ranking-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        transform: scale(1.01);
+    }
+
+    .ranking-table tbody tr.usuario-actual {
+        background: linear-gradient(135deg, rgba(17, 153, 142, 0.1), rgba(56, 239, 125, 0.1));
+        border-left: 5px solid #11998e;
+    }
+
+    .posicion-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.1rem;
+        margin: 0 auto;
+    }
+
+    .posicion-badge.top-3 {
+        background: var(--gradient-gold);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .posicion-badge.top-10 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .posicion-badge.normal {
+        background: #f0f0f0;
+        color: #718096;
+    }
+
+    .nivel-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .puntos-display {
+        font-size: 1.3rem;
+        font-weight: 700;
+        background: var(--gradient-purple);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .mi-posicion-card {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 30px rgba(17, 153, 142, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="page-header-ranking">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="bi bi-trophy-fill me-3"></i>Ranking de Usuarios</h1>
+                <p class="mb-0" style="opacity: 0.9;">Los mejores ahorradores y administradores financieros</p>
+            </div>
+            <a href="{% url 'gamificacion_dashboard' %}" class="btn btn-light btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Mi Posición -->
+    {% if posicion_usuario %}
+    <div class="mi-posicion-card">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <div style="font-size: 3.5rem;">🏆</div>
+            </div>
+            <div class="col-md-10">
+                <h3 class="mb-2">Tu Posición en el Ranking</h3>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div style="opacity: 0.9; font-size: 0.9rem;">Posición</div>
+                        <div style="font-size: 2.5rem; font-weight: 900;">#{{ posicion_usuario }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="opacity: 0.9; font-size: 0.9rem;">Nivel</div>
+                        <div style="font-size: 2rem; font-weight: 700;">{{ perfil.nivel }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="opacity: 0.9; font-size: 0.9rem;">Puntos</div>
+                        <div style="font-size: 2rem; font-weight: 700;">{{ perfil.puntos_totales }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="opacity: 0.9; font-size: 0.9rem;">Logros</div>
+                        <div style="font-size: 2rem; font-weight: 700;">{{ perfil.logros.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Podio Top 3 -->
+    {% if ranking|length >= 3 %}
+    <div class="podio-container">
+        <!-- Segundo Lugar -->
+        <div class="podio-item segundo">
+            <div class="podio-medalla">🥈</div>
+            <div class="podio-card">
+                <div class="podio-posicion">#2</div>
+                <div class="podio-nombre">{{ ranking.1.user.get_full_name|default:ranking.1.user.username }}</div>
+                <div class="podio-stats">
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.1.nivel }}</div>
+                        <div class="podio-stat-label">Nivel</div>
+                    </div>
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.1.puntos_totales }}</div>
+                        <div class="podio-stat-label">Puntos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Primer Lugar -->
+        <div class="podio-item primero">
+            <div class="podio-medalla">🥇</div>
+            <div class="podio-card">
+                <div class="podio-posicion">#1</div>
+                <div class="podio-nombre">{{ ranking.0.user.get_full_name|default:ranking.0.user.username }}</div>
+                <div class="podio-stats">
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.0.nivel }}</div>
+                        <div class="podio-stat-label">Nivel</div>
+                    </div>
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.0.puntos_totales }}</div>
+                        <div class="podio-stat-label">Puntos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tercer Lugar -->
+        <div class="podio-item tercero">
+            <div class="podio-medalla">🥉</div>
+            <div class="podio-card">
+                <div class="podio-posicion">#3</div>
+                <div class="podio-nombre">{{ ranking.2.user.get_full_name|default:ranking.2.user.username }}</div>
+                <div class="podio-stats">
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.2.nivel }}</div>
+                        <div class="podio-stat-label">Nivel</div>
+                    </div>
+                    <div class="podio-stat">
+                        <div class="podio-stat-valor">{{ ranking.2.puntos_totales }}</div>
+                        <div class="podio-stat-label">Puntos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de Ranking Completo -->
+    <div class="ranking-table">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Pos.</th>
+                    <th>Usuario</th>
+                    <th class="text-center">Nivel</th>
+                    <th class="text-center">Puntos</th>
+                    <th class="text-center">Logros</th>
+                    <th class="text-center">Racha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in ranking %}
+                <tr {% if usuario.id == perfil.id %}class="usuario-actual"{% endif %}>
+                    <td>
+                        <div class="posicion-badge {% if forloop.counter <= 3 %}top-3{% elif forloop.counter <= 10 %}top-10{% else %}normal{% endif %}">
+                            {{ forloop.counter }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="font-size: 2rem;">
+                                {% if usuario.nivel <= 2 %}🥉
+                                {% elif usuario.nivel <= 4 %}🥈
+                                {% elif usuario.nivel <= 6 %}🥇
+                                {% elif usuario.nivel <= 8 %}💎
+                                {% else %}👑{% endif %}
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ usuario.user.get_full_name|default:usuario.user.username }}</div>
+                                {% if usuario.id == perfil.id %}
+                                <small class="text-success"><i class="bi bi-person-check-fill me-1"></i>Tú</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="nivel-badge">
+                            <i class="bi bi-star-fill"></i>
+                            Nivel {{ usuario.nivel }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="puntos-display">{{ usuario.puntos_totales }}</div>
+                    </td>
+                    <td class="text-center">
+                        <div class="h5 mb-0">{{ usuario.logros.count }}</div>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <span style="font-size: 1.5rem;">🔥</span>
+                            <span class="h5 mb-0">{{ usuario.racha_actual }}</span>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <div style="font-size: 3rem; opacity: 0.3;">🏆</div>
+                        <p>Aún no hay usuarios en el ranking</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

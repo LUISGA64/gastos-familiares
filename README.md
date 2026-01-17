@@ -1,266 +1,262 @@
-# Gestor de Gastos Familiares 💰
+# 💰 Gestor de Gastos Familiares
 
-Sistema web completo para la gestión y control de gastos familiares con distribución automática según ingresos, conciliación mensual y múltiples planes de suscripción.
+> Aplicación web profesional para la administración inteligente de gastos familiares con gamificación, chatbot IA y sistema de pagos integrado.
+
+[![Django](https://img.shields.io/badge/Django-5.0-green.svg)](https://www.djangoproject.com/)
+[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
+
+---
 
 ## 🌟 Características Principales
 
-### ✅ Gestión de Familias
-- Sistema multi-tenant (múltiples familias aisladas)
-- Aislamiento total de datos entre familias
-- Creación automática de familia al registrarse
-- Seguridad multinivel con middleware personalizado
+### ✅ Sistema de Gestión de Gastos
+- **Multi-tenant**: Múltiples familias aisladas con total seguridad
+- **Aportantes**: Gestión de ingresos mensuales por miembro
+- **Categorías personalizables**: Fijas y variables con colores únicos
+- **Distribución automática**: Cálculo proporcional de gastos según ingresos
+- **Conciliación mensual**: Cierre y revisión de períodos
+- **Metas de ahorro**: Seguimiento visual de objetivos financieros
 
-### 💰 Gestión de Gastos
-- Registro de gastos con distribución automática
-- Clasificación por categorías y subcategorías
-- Gastos fijos y variables
-- Adjuntar comprobantes (según plan)
-- Historial completo de gastos
+### 🏆 Gamificación Completa
+- **17 logros automáticos**: Desbloqueables por acciones del usuario
+- **Sistema de niveles**: Del 1 al 10 con progreso visual
+- **Racha de días**: Contador de días consecutivos con fuego 🔥
+- **Ranking competitivo**: Top 100 con podio visual
+- **Notificaciones organizadas**: Por tipo (logros, niveles, rachas)
+- **Timeline de progreso**: Historial completo de puntos
 
-### 👥 Aportantes
-- Registro de aportantes con ingresos mensuales
-- Cálculo automático de porcentajes de aporte
-- Distribución proporcional de gastos
-- Gestión de emails para notificaciones
+### 🤖 Chatbot IA (FinanBot)
+- **Groq API (GRATIS)**: Llama 3.3 70B integrado
+- **14,400 mensajes/día gratuitos**: Sin costo para usuarios
+- **Análisis conversacional**: Entiende lenguaje natural
+- **Recomendaciones personalizadas**: Basadas en datos reales
+- **Predicción de gastos**: Oportunidades de ahorro
+- **Multi-proveedor**: Soporte para Groq, OpenAI o modo demo
 
-### 📊 Conciliación Mensual
-- Cálculo automático de reintegros
-- Cierre de períodos mensuales
-- Historial de conciliaciones
-- Notificaciones por email a aportantes
+### 💳 Sistema de Pagos
+- **4 planes de suscripción**: Gratuito, Básico, Premium, Empresarial
+- **QR dinámicos**: Bancolombia y Nequi
+- **Subida de comprobantes**: Validación de pagos
+- **Panel de verificación**: Para administradores
+- **Estados en tiempo real**: Pendiente, verificado, rechazado
 
-### 📈 Reportes y Análisis
-- Dashboard con métricas en tiempo real
-- Reportes avanzados (Plan Básico+)
-- Gráficos interactivos
-- Exportación a Excel/PDF (Plan Premium)
+### 🎨 Diseño Moderno
+- **Onboarding interactivo**: Tutorial de 6 pasos para nuevos usuarios
+- **Alertas con autoclose**: 5 segundos con barra de progreso
+- **Confetti en logros**: Celebración visual al desbloquear
+- **Animaciones sutiles**: Float, bounce, fadeIn, slideUp
+- **Responsive completo**: Móvil, tablet y desktop
 
-### 💳 Sistema de Suscripciones
-- Plan Gratuito (limitado)
-- Plan Básico ($9,900/mes) - Recomendado
-- Plan Premium ($15,900/mes)
-- Plan Empresarial ($49,900/mes)
+---
 
-### 💰 Pagos con Códigos QR
-- Bancolombia (Transferencia con QR)
-- Nequi (Pago con QR)
-- Upload de comprobantes
-- Verificación manual de pagos
-- Activación automática de suscripción
+## 🚀 Tecnologías Utilizadas
 
-## 🚀 Tecnologías
+### Backend
+- **Django 5.0.0** - Framework web principal
+- **Python 3.14** - Lenguaje de programación
+- **SQLite** - Base de datos (desarrollo)
+- **PostgreSQL** - Recomendado para producción
 
-- **Backend:** Django 5.0
-- **Base de Datos:** SQLite (desarrollo) / PostgreSQL (producción recomendada)
-- **Frontend:** Bootstrap 5, Chart.js
-- **Python:** 3.12+
-- **Librerías:** qrcode, Pillow, openpyxl
+### Frontend
+- **Bootstrap 5.3.0** - Framework CSS
+- **Chart.js 4.4.0** - Gráficos interactivos
+- **Bootstrap Icons 1.11.0** - Iconografía
+- **SweetAlert2** - Alertas bonitas
+- **Canvas-confetti** - Animaciones de celebración
 
-## 📋 Requisitos
+### IA y APIs
+- **Groq API** - IA conversacional (Llama 3.3 70B) - GRATIS
+- **OpenAI GPT-4** - Opcional para plan premium
 
+---
+
+## 🛠️ Instalación Rápida
+
+### 1. Clonar Repositorio
 ```bash
-Python 3.12 o superior
-Django 5.0
-pillow
-qrcode
-openpyxl (opcional, para exportar Excel)
+git clone https://github.com/LUISGA64/gastos-familiares.git
+cd gastos-familiares
 ```
 
-## 🛠️ Instalación
-
-### 1. Clonar el repositorio
-
+### 2. Crear Entorno Virtual
 ```bash
-git clone https://github.com/[TU_USUARIO]/DjangoProject.git
-cd DjangoProject
-```
-
-### 2. Crear entorno virtual
-
-```bash
+# Windows
 python -m venv .venv
-```
-
-### 3. Activar entorno virtual
-
-**Windows:**
-```bash
 .venv\Scripts\activate
-```
 
-**Linux/Mac:**
-```bash
+# Linux/Mac
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 4. Instalar dependencias
-
+### 3. Instalar Dependencias
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Aplicar migraciones
-
-```bash
-python manage.py migrate
+### 4. Configurar Variables de Entorno
+Crea archivo `.env`:
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=tu_groq_api_key_aqui
 ```
 
-### 6. Crear superusuario
+**Obtener API Key de Groq (GRATIS)**:
+1. Ve a https://console.groq.com/
+2. Crea cuenta (sin tarjeta)
+3. Genera API key
+4. Pégala en `.env`
 
+### 5. Configurar Base de Datos
 ```bash
+python manage.py migrate
 python manage.py createsuperuser
 ```
 
-### 7. Cargar datos de ejemplo (opcional)
-
-```bash
-python manage.py cargar_datos_ejemplo
-```
-
-### 8. Ejecutar servidor
-
+### 6. Ejecutar Servidor
 ```bash
 python manage.py runserver
 ```
 
-Accede a: `http://localhost:8000`
-
-## 📱 Uso
-
-### Registro de Usuario
-
-1. Ir a `/registro/`
-2. Completar formulario
-3. Ingresar código de invitación (ver `CODIGOS_GENERADOS.md`)
-4. Sistema crea automáticamente tu familia
-
-### Configuración Inicial
-
-1. Dashboard → Aportantes → Crear aportantes
-2. Dashboard → Categorías → Crear categorías
-3. Dashboard → Gastos → Registrar gastos
-
-### Conciliación Mensual
-
-1. Dashboard → Conciliación
-2. Revisar distribución de gastos
-3. Cerrar conciliación
-4. Confirmar y enviar notificaciones
-
-## 💳 Planes de Suscripción
-
-### Plan Gratuito ($0/mes)
-- 2 aportantes
-- 30 gastos/mes
-- 5 categorías
-- Historial 3 meses
-
-### Plan Básico ($9,900/mes) ⭐ Recomendado
-- 4 aportantes
-- 100 gastos/mes
-- 15 categorías
-- ✅ Reportes avanzados
-- ✅ Conciliación automática
-- ✅ Notificaciones email
-- ✅ Historial ilimitado
-- ✅ 1 archivo adjunto
-
-### Plan Premium ($15,900/mes)
-- 8 aportantes
-- 500 gastos/mes
-- 50 categorías
-- ✅ Todo del Básico +
-- ✅ Exportar Excel/PDF
-- ✅ 5 archivos adjuntos
-- ✅ Soporte prioritario
-
-### Plan Empresarial ($49,900/mes)
-- Ilimitado todo
-- 10 archivos adjuntos
-- Soporte dedicado
-- Capacitación incluida
-
-## 🔒 Seguridad
-
-- ✅ Aislamiento total de datos por familia
-- ✅ Middleware de seguridad personalizado
-- ✅ Autenticación requerida
-- ✅ CSRF Protection
-- ✅ Validación de permisos multinivel
-- ✅ Passwords hasheados (Django Auth)
-
-## 📞 Contacto
-
-- **WhatsApp:** +57 311 700 9855
-- **Email:** soporte@gastosfamiliares.com
-
-## 📄 Documentación
-
-- `INICIO_RAPIDO.md` - Guía de inicio rápido
-- `AISLAMIENTO_FAMILIAS.md` - Sistema de seguridad
-- `SISTEMA_PAGOS_QR.md` - Pagos con QR
-- `DIFERENCIACION_PLANES.md` - Planes y precios
-- `MODELO_COMERCIALIZACION.md` - Modelo de negocio
-
-## 🧪 Testing
-
-Ejecutar pruebas de aislamiento:
-
-```bash
-python test_aislamiento.py
-```
-
-## 🗂️ Estructura del Proyecto
-
-```
-DjangoProject/
-├── DjangoProject/          # Configuración del proyecto
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── gastos/                 # App principal
-│   ├── models.py           # Modelos de datos
-│   ├── views.py            # Vistas principales
-│   ├── views_auth.py       # Autenticación
-│   ├── views_pagos.py      # Sistema de pagos
-│   ├── qr_utils.py         # Utilidades QR
-│   ├── middleware.py       # Seguridad
-│   └── templates/          # Templates HTML
-├── templates/              # Templates globales
-├── static/                 # Archivos estáticos
-├── media/                  # Archivos subidos
-├── requirements.txt        # Dependencias
-└── manage.py              # Django CLI
-```
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crea una rama (`git checkout -b feature/mejora`)
-3. Commit cambios (`git commit -am 'Agrega nueva función'`)
-4. Push a la rama (`git push origin feature/mejora`)
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Este proyecto es de código abierto bajo licencia MIT.
-
-## 🎯 Roadmap
-
-- [ ] Integración PSE
-- [ ] API REST
-- [ ] App móvil nativa
-- [ ] Pagos recurrentes automáticos
-- [ ] OCR para comprobantes
-- [ ] Dashboard mejorado con más gráficos
-- [ ] Exportación automática mensual
-- [ ] Notificaciones push
-
-## 👨‍💻 Autor
-
-Desarrollado con ❤️ para familias colombianas
+Abre: **http://127.0.0.1:8000/**
 
 ---
 
-**¿Preguntas o sugerencias?** Contáctanos por WhatsApp: +57 311 700 9855
+## 💰 Planes de Suscripción
 
+| Plan | Precio | Aportantes | Gastos/mes |
+|------|--------|------------|------------|
+| **Gratuito** | $0 | 2 | 50 |
+| **Básico** | $9,900/mes | 5 | 200 |
+| **Premium** | $15,900/mes | 10 | Ilimitado |
+| **Empresarial** | $49,900/mes | Ilimitado | Ilimitado |
+
+**Todos incluyen**:
+- ✅ Gamificación completa
+- ✅ Chatbot IA (14,400 msgs/día gratis)
+- ✅ Reportes PDF/Excel
+- ✅ Metas de ahorro
+
+---
+
+## 🎮 Sistema de Gamificación
+
+### 17 Logros Disponibles
+
+#### 🎯 Ahorro (4)
+- Primer Ahorro, Meta Alcanzada, Ahorrador Constante, Maestro del Ahorro
+
+#### 💰 Gastos (4)
+- Primer Paso, Organizador, Experto Financiero, Maestro de Finanzas
+
+#### 📊 Disciplina (4)
+- Racha Inicial (3 días), Disciplinado (7 días), Hábito Formado (30 días), Leyenda (100 días)
+
+#### 🏆 Especial (3)
+- Presupuestado, Equilibrio Perfecto, Inversionista
+
+#### 🎯 Meta (2)
+- Visionario, Cumplidor
+
+### Sistema de Niveles
+- **Nivel 1-3**: Novato (0-1000 pts)
+- **Nivel 4-6**: Intermedio (1001-3000 pts)
+- **Nivel 7-9**: Avanzado (3001-7000 pts)
+- **Nivel 10**: Maestro (7001+ pts)
+
+---
+
+## 🤖 Chatbot IA - Configuración
+
+### Groq (Recomendado - GRATIS)
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=gsk_tu_key_aqui
+```
+- ✅ Completamente gratis
+- ✅ 14,400 requests/día
+- ✅ Llama 3.3 70B
+- ✅ 10x más rápido que GPT-4
+
+### OpenAI (Opcional - Pago)
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-proj-tu_key_aqui
+```
+- ✅ Más inteligente
+- ❌ ~$0.02 por mensaje
+
+### Demo (Sin API)
+```env
+AI_PROVIDER=demo
+```
+- ✅ 100% gratis
+- ✅ Respuestas predefinidas inteligentes
+
+---
+
+## 📊 Estadísticas del Proyecto
+
+- **~10,000** líneas de código
+- **18** modelos de BD
+- **50+** vistas Django
+- **40+** templates HTML
+- **95+** URLs configuradas
+- **17** logros automáticos
+- **~25 horas** de desarrollo
+
+---
+
+## 🚀 Deploy a Producción
+
+### Railway (Recomendado)
+1. Crea cuenta en railway.app
+2. Conecta repositorio GitHub
+3. Configura variables de entorno
+4. Deploy automático
+
+### Render
+1. Crea cuenta en render.com
+2. Nuevo Web Service
+3. Build: `pip install -r requirements.txt`
+4. Start: `gunicorn DjangoProject.wsgi:application`
+
+---
+
+## 📞 Soporte
+
+- 💬 **WhatsApp**: +57 311 700 9855
+- 📧 **Email**: soporte@gastosfamiliares.com
+- 🐛 **Issues**: [GitHub Issues](https://github.com/LUISGA64/gastos-familiares/issues)
+
+---
+
+## 👥 Autor
+
+**Luis García**
+- GitHub: [@LUISGA64](https://github.com/LUISGA64)
+- WhatsApp: +57 311 700 9855
+
+---
+
+## 🙏 Agradecimientos
+
+- **Django Framework** - Excelente framework web
+- **Groq** - API gratuita de IA
+- **Bootstrap** - Componentes UI
+- **Chart.js** - Gráficos interactivos
+- **Comunidad Open Source**
+
+---
+
+<div align="center">
+
+**⭐ Dale una estrella si te fue útil ⭐**
+
+**Hecho con ❤️ en Colombia 🇨🇴**
+
+**Gestor de Gastos Familiares © 2026**
+
+</div>

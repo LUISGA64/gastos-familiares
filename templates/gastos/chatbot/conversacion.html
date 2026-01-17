@@ -1,0 +1,490 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Chatbot IA - Asistente Financiero{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .chatbot-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        background: var(--gradient-purple);
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .chat-header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .chat-header-icon {
+        font-size: 2.5rem;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        max-height: calc(100vh - 300px);
+    }
+
+    .message {
+        margin-bottom: 1.5rem;
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message-user {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .message-assistant {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .message-bubble {
+        max-width: 70%;
+        padding: 1.2rem 1.5rem;
+        border-radius: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        position: relative;
+    }
+
+    .message-user .message-bubble {
+        background: var(--gradient-purple);
+        color: white;
+        border-bottom-right-radius: 5px;
+    }
+
+    .message-assistant .message-bubble {
+        background: white;
+        color: #2d3748;
+        border-bottom-left-radius: 5px;
+        border-left: 4px solid #667eea;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 0.75rem;
+    }
+
+    .message-user .message-avatar {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .message-assistant .message-avatar {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 0.5rem;
+    }
+
+    .chat-input-container {
+        background: white;
+        border-radius: 0 0 20px 20px;
+        padding: 1.5rem;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 2px solid #e2e8f0;
+        border-radius: 25px;
+        padding: 0.9rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .chat-send-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--gradient-purple);
+        border: none;
+        color: white;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .chat-send-btn:hover:not(:disabled) {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .chat-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1rem 1.5rem;
+    }
+
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        background: #667eea;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-10px); }
+    }
+
+    .welcome-message {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #718096;
+    }
+
+    .welcome-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .quick-action-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border: 1px solid #e2e8f0;
+        color: #667eea;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .quick-action-btn:hover {
+        background: var(--gradient-purple);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .chatbot-container {
+            height: calc(100vh - 80px);
+        }
+
+        .message-bubble {
+            max-width: 85%;
+        }
+
+        .chat-header {
+            padding: 1rem;
+        }
+
+        .chat-messages {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="chatbot-container">
+
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="chat-header-title">
+                <div class="chat-header-icon">🤖</div>
+                <div>
+                    <h3 class="mb-0">FinanBot - Tu Asistente Financiero</h3>
+                    <small style="opacity: 0.9;">Pregúntame cualquier cosa sobre tus finanzas</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'chatbot_dashboard' %}" class="btn btn-light">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>Dashboard
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        <div class="chat-messages" id="chatMessages">
+            {% if mensajes %}
+                {% for msg in mensajes %}
+                    {% if msg.role == 'user' %}
+                    <div class="message message-user">
+                        <div class="message-content">
+                            <div class="message-bubble">
+                                {{ msg.contenido }}
+                                <div class="message-time text-end">{{ msg.fecha|date:"H:i" }}</div>
+                            </div>
+                        </div>
+                        <div class="message-avatar">👤</div>
+                    </div>
+                    {% elif msg.role == 'assistant' %}
+                    <div class="message message-assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <div class="message-bubble">
+                                {{ msg.contenido|linebreaks }}
+                                <div class="message-time">{{ msg.fecha|date:"H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <!-- Mensaje de bienvenida -->
+                <div class="welcome-message">
+                    <div class="welcome-icon">🤖💡</div>
+                    <h4>¡Hola! Soy FinanBot, tu asistente financiero personal</h4>
+                    <p class="mb-4">Puedo ayudarte a analizar tus gastos, encontrar oportunidades de ahorro, y responder preguntas sobre tus finanzas.</p>
+
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="enviarMensajeRapido('¿Cuánto gasté este mes?')">
+                            ¿Cuánto gasté este mes?
+                        </button>
+                        <button class="quick-action-btn" onclick="enviarMensajeRapido('¿En qué puedo ahorrar?')">
+                            ¿En qué puedo ahorrar?
+                        </button>
+                        <button class="quick-action-btn" onclick="enviarMensajeRapido('Analiza mis gastos principales')">
+                            Analiza mis gastos principales
+                        </button>
+                        <button class="quick-action-btn" onclick="enviarMensajeRapido('Dame consejos para ahorrar más')">
+                            Dame consejos para ahorrar
+                        </button>
+                        <button class="quick-action-btn" onclick="enviarMensajeRapido('¿Cómo voy con mi presupuesto?')">
+                            ¿Cómo voy con mi presupuesto?
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Indicador de escritura (oculto por defecto) -->
+            <div class="message message-assistant" id="typingIndicator" style="display: none;">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input
+                    type="text"
+                    class="chat-input"
+                    id="chatInput"
+                    placeholder="Escribe tu pregunta aquí..."
+                    autocomplete="off"
+                >
+                <button class="chat-send-btn" id="sendBtn" onclick="enviarMensaje()">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const typingIndicator = document.getElementById('typingIndicator');
+
+// Scroll al final
+function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Enviar mensaje al presionar Enter
+chatInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        enviarMensaje();
+    }
+});
+
+function enviarMensajeRapido(mensaje) {
+    chatInput.value = mensaje;
+    enviarMensaje();
+}
+
+async function enviarMensaje() {
+    const mensaje = chatInput.value.trim();
+
+    if (!mensaje) return;
+
+    // Deshabilitar input
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Agregar mensaje del usuario al chat
+    agregarMensaje('user', mensaje);
+
+    // Limpiar input
+    chatInput.value = '';
+
+    // Mostrar indicador de escritura
+    typingIndicator.style.display = 'flex';
+    scrollToBottom();
+
+    try {
+        // Enviar al servidor
+        const response = await fetch('{% url "chatbot_enviar_mensaje" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ mensaje: mensaje })
+        });
+
+        const data = await response.json();
+
+        // Ocultar indicador
+        typingIndicator.style.display = 'none';
+
+        if (data.success) {
+            // Agregar respuesta del asistente
+            agregarMensaje('assistant', data.respuesta);
+        } else {
+            agregarMensaje('assistant', data.respuesta || 'Lo siento, ocurrió un error.');
+        }
+
+    } catch (error) {
+        typingIndicator.style.display = 'none';
+        agregarMensaje('assistant', 'Lo siento, no pude procesar tu mensaje. Por favor intenta de nuevo.');
+    }
+
+    // Rehabilitar input
+    chatInput.disabled = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+}
+
+function agregarMensaje(role, contenido) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message message-${role}`;
+
+    const ahora = new Date();
+    const hora = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+
+    if (role === 'user') {
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${contenido}
+                    <div class="message-time text-end">${hora}</div>
+                </div>
+            </div>
+            <div class="message-avatar">👤</div>
+        `;
+    } else {
+        // Convertir saltos de línea a <br>
+        const contenidoFormateado = contenido.replace(/\n/g, '<br>');
+        messageDiv.innerHTML = `
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${contenidoFormateado}
+                    <div class="message-time">${hora}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Insertar antes del indicador de escritura
+    chatMessages.insertBefore(messageDiv, typingIndicator);
+    scrollToBottom();
+}
+
+// Scroll inicial
+scrollToBottom();
+
+// Focus en input al cargar
+chatInput.focus();
+</script>
+{% endblock %}

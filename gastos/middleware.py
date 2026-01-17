@@ -1,8 +1,50 @@
 """
-Middleware para gestión de familias y seguridad
+Middleware para gestión de familias, seguridad y onboarding
 """
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.urls import reverse
+
+
+class OnboardingMiddleware:
+    """Middleware para detectar primer login y sugerir onboarding"""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+        # URLs que no requieren onboarding
+        self.exempt_urls = [
+            '/login/',
+            '/logout/',
+            '/registro/',
+            '/planes/',
+            '/familia/',
+            '/admin/',
+            '/static/',
+            '/media/',
+            '/onboarding/',
+        ]
+
+    def __call__(self, request):
+        # Si el usuario está autenticado
+        if request.user.is_authenticated and not request.user.is_staff:
+            # URL exenta
+            if any(request.path.startswith(url) for url in self.exempt_urls):
+                return self.get_response(request)
+
+            # Verificar si necesita onboarding
+            if not request.session.get('onboarding_seen'):
+                # Verificar si tiene perfil de gamificación
+                if hasattr(request.user, 'perfil_gamificacion'):
+                    perfil = request.user.perfil_gamificacion
+
+                    # Si es su primera visita, marcar para mostrar onboarding
+                    if perfil.visitas_dashboard == 0:
+                        request.session['show_onboarding'] = True
+                        request.session['onboarding_seen'] = True
+
+        response = self.get_response(request)
+        return response
 
 
 class FamiliaSecurityMiddleware:

@@ -3,7 +3,10 @@ from django.db.models import Sum
 from django.utils.html import format_html
 from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto,
                      ConciliacionMensual, DetalleConciliacion, Reintegro, MetaAhorro,
-                     PresupuestoCategoria, Notificacion, Pago)
+                     PresupuestoCategoria, Notificacion, Pago, PerfilUsuario, Logro,
+                     LogroDesbloqueado, DesafioMensual, ParticipacionDesafio,
+                     HistorialPuntos, NotificacionLogro, ConversacionChatbot,
+                     MensajeChatbot, AnalisisIA)
 
 
 @admin.register(Aportante)
@@ -404,4 +407,188 @@ class PagoAdmin(admin.ModelAdmin):
         count = queryset.filter(estado='PENDIENTE').update(estado='VERIFICANDO')
         self.message_user(request, f"{count} pagos marcados como 'En Verificación'.")
     marcar_verificando.short_description = "⏳ Marcar como 'En Verificación'"
+
+
+# ==================== GAMIFICACIÓN ====================
+
+@admin.register(PerfilUsuario)
+class PerfilUsuarioAdmin(admin.ModelAdmin):
+    list_display = ['user', 'nivel', 'puntos_totales', 'racha_actual', 'mejor_racha', 'total_gastos_registrados']
+    list_filter = ['nivel']
+    search_fields = ['user__username', 'user__email']
+    ordering = ['-puntos_totales']
+    readonly_fields = ['fecha_registro_app', 'ultima_actividad']
+
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('user',)
+        }),
+        ('Gamificación', {
+            'fields': ('puntos_totales', 'nivel', 'experiencia_nivel_actual')
+        }),
+        ('Estadísticas', {
+            'fields': ('total_gastos_registrados', 'total_ahorrado', 'visitas_dashboard')
+        }),
+        ('Racha', {
+            'fields': ('racha_actual', 'mejor_racha', 'dias_consecutivos')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_registro_app', 'ultima_actividad')
+        }),
+    )
+
+
+@admin.register(Logro)
+class LogroAdmin(admin.ModelAdmin):
+    list_display = ['icono_display', 'nombre', 'tipo', 'puntos_recompensa', 'requisito_numero', 'requisito_tipo', 'activo', 'es_secreto']
+    list_filter = ['tipo', 'activo', 'es_secreto']
+    search_fields = ['nombre', 'descripcion', 'codigo']
+    ordering = ['tipo', 'puntos_recompensa']
+
+    def icono_display(self, obj):
+        return format_html('<span style="font-size: 24px;">{}</span>', obj.icono)
+    icono_display.short_description = 'Icono'
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('codigo', 'nombre', 'descripcion', 'tipo', 'icono')
+        }),
+        ('Recompensa', {
+            'fields': ('puntos_recompensa',)
+        }),
+        ('Requisitos', {
+            'fields': ('requisito_tipo', 'requisito_numero')
+        }),
+        ('Configuración', {
+            'fields': ('activo', 'es_secreto')
+        }),
+    )
+
+
+@admin.register(LogroDesbloqueado)
+class LogroDesbloqueadoAdmin(admin.ModelAdmin):
+    list_display = ['perfil', 'logro_display', 'fecha_desbloqueo', 'visto']
+    list_filter = ['visto', 'fecha_desbloqueo', 'logro__tipo']
+    search_fields = ['perfil__user__username', 'logro__nombre']
+    ordering = ['-fecha_desbloqueo']
+    readonly_fields = ['fecha_desbloqueo']
+
+    def logro_display(self, obj):
+        return format_html('{} {}', obj.logro.icono, obj.logro.nombre)
+    logro_display.short_description = 'Logro'
+
+
+@admin.register(DesafioMensual)
+class DesafioMensualAdmin(admin.ModelAdmin):
+    list_display = ['icono_display', 'nombre', 'mes', 'anio', 'estado', 'puntos_premio']
+    list_filter = ['estado', 'anio', 'mes']
+    search_fields = ['nombre', 'descripcion']
+    ordering = ['-anio', '-mes']
+
+    def icono_display(self, obj):
+        return format_html('<span style="font-size: 24px;">{}</span>', obj.icono)
+    icono_display.short_description = 'Icono'
+
+
+@admin.register(ParticipacionDesafio)
+class ParticipacionDesafioAdmin(admin.ModelAdmin):
+    list_display = ['perfil', 'desafio', 'progreso_porcentaje', 'completado', 'fecha_inicio']
+    list_filter = ['completado', 'fecha_inicio']
+    search_fields = ['perfil__user__username', 'desafio__nombre']
+    ordering = ['-fecha_inicio']
+
+
+@admin.register(HistorialPuntos)
+class HistorialPuntosAdmin(admin.ModelAdmin):
+    list_display = ['perfil', 'puntos', 'razon', 'fecha']
+    list_filter = ['fecha']
+    search_fields = ['perfil__user__username', 'razon']
+    ordering = ['-fecha']
+    readonly_fields = ['fecha']
+
+
+@admin.register(NotificacionLogro)
+class NotificacionLogroAdmin(admin.ModelAdmin):
+    list_display = ['perfil', 'tipo', 'mensaje_corto', 'visto', 'fecha']
+    list_filter = ['tipo', 'visto', 'fecha']
+    search_fields = ['perfil__user__username', 'mensaje']
+    ordering = ['-fecha']
+    readonly_fields = ['fecha']
+
+    def mensaje_corto(self, obj):
+        return obj.mensaje[:50] + '...' if len(obj.mensaje) > 50 else obj.mensaje
+    mensaje_corto.short_description = 'Mensaje'
+
+
+# ==================== CHATBOT IA ====================
+
+class MensajeChatbotInline(admin.TabularInline):
+    model = MensajeChatbot
+    extra = 0
+    readonly_fields = ['role', 'contenido', 'fecha', 'tokens_usados']
+    can_delete = False
+    max_num = 10
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ConversacionChatbot)
+class ConversacionChatbotAdmin(admin.ModelAdmin):
+    list_display = ['user', 'familia', 'titulo_corto', 'total_mensajes', 'activa', 'iniciada_en', 'actualizada_en']
+    list_filter = ['activa', 'iniciada_en', 'familia']
+    search_fields = ['user__username', 'titulo']
+    ordering = ['-actualizada_en']
+    readonly_fields = ['iniciada_en', 'actualizada_en']
+    inlines = [MensajeChatbotInline]
+
+    def titulo_corto(self, obj):
+        return obj.titulo[:50] + '...' if len(obj.titulo) > 50 else obj.titulo
+    titulo_corto.short_description = 'Título'
+
+    def total_mensajes(self, obj):
+        return obj.mensajes.count()
+    total_mensajes.short_description = 'Mensajes'
+
+
+@admin.register(MensajeChatbot)
+class MensajeChatbotAdmin(admin.ModelAdmin):
+    list_display = ['conversacion', 'role', 'contenido_corto', 'tokens_usados', 'fecha']
+    list_filter = ['role', 'fecha']
+    search_fields = ['conversacion__titulo', 'contenido']
+    ordering = ['-fecha']
+    readonly_fields = ['fecha']
+
+    def contenido_corto(self, obj):
+        return obj.contenido[:80] + '...' if len(obj.contenido) > 80 else obj.contenido
+    contenido_corto.short_description = 'Contenido'
+
+
+@admin.register(AnalisisIA)
+class AnalisisIAAdmin(admin.ModelAdmin):
+    list_display = ['user', 'familia', 'tipo', 'titulo_corto', 'relevancia', 'visto', 'fecha_generacion']
+    list_filter = ['tipo', 'visto', 'relevancia', 'fecha_generacion']
+    search_fields = ['user__username', 'titulo', 'contenido']
+    ordering = ['-fecha_generacion']
+    readonly_fields = ['fecha_generacion']
+
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('user', 'familia')
+        }),
+        ('Análisis', {
+            'fields': ('tipo', 'titulo', 'contenido', 'relevancia')
+        }),
+        ('Datos Adicionales', {
+            'fields': ('datos_json',),
+            'classes': ('collapse',)
+        }),
+        ('Estado', {
+            'fields': ('visto', 'fecha_generacion')
+        }),
+    )
+
+    def titulo_corto(self, obj):
+        return obj.titulo[:60] + '...' if len(obj.titulo) > 60 else obj.titulo
+    titulo_corto.short_description = 'Título'
 

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_auth, views_pagos
+from . import views, views_auth, views_pagos, views_gamificacion, views_chatbot
 
 urlpatterns = [
     # Autenticación
@@ -32,6 +32,24 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+
+    # Chatbot IA
+    path('chatbot/', views_chatbot.chatbot_dashboard, name='chatbot_dashboard'),
+    path('chatbot/conversacion/', views_chatbot.chatbot_conversacion, name='chatbot_nueva_conversacion'),
+    path('chatbot/conversacion/<int:conversacion_id>/', views_chatbot.chatbot_conversacion, name='chatbot_conversacion'),
+    path('chatbot/enviar/', views_chatbot.chatbot_enviar_mensaje, name='chatbot_enviar_mensaje'),
+    path('chatbot/generar-analisis/', views_chatbot.chatbot_generar_analisis, name='chatbot_generar_analisis'),
+    path('chatbot/generar-prediccion/', views_chatbot.chatbot_generar_prediccion, name='chatbot_generar_prediccion'),
+    path('chatbot/cerrar/<int:conversacion_id>/', views_chatbot.chatbot_cerrar_conversacion, name='chatbot_cerrar_conversacion'),
+    path('chatbot/historial/', views_chatbot.chatbot_historial, name='chatbot_historial'),
+
+    # Gamificación
+    path('gamificacion/', views_gamificacion.dashboard_gamificacion, name='gamificacion_dashboard'),
+    path('gamificacion/logros/', views_gamificacion.logros_lista, name='logros_lista'),
+    path('gamificacion/ranking/', views_gamificacion.ranking_general, name='ranking_general'),
+    path('gamificacion/notificaciones/', views_gamificacion.notificaciones_logros, name='notificaciones_logros'),
+    path('gamificacion/estadisticas/', views_gamificacion.estadisticas_usuario, name='estadisticas_usuario'),
+    path('gamificacion/verificar-logros/', views_gamificacion.verificar_logros_ajax, name='verificar_logros_ajax'),
 
     # Aportantes
     path('aportantes/', views.lista_aportantes, name='lista_aportantes'),
@@ -71,5 +89,7 @@ urlpatterns = [
     path('metas/<int:pk>/agregar-ahorro/', views.agregar_ahorro, name='agregar_ahorro'),
     path('metas/<int:pk>/cambiar-estado/', views.cambiar_estado_meta, name='cambiar_estado_meta'),
     path('metas/<int:pk>/eliminar/', views.eliminar_meta, name='eliminar_meta'),
-]
 
+    # Onboarding
+    path('marcar-onboarding-completado/', views.marcar_onboarding_completado, name='marcar_onboarding_completado'),
+]

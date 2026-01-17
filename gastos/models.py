@@ -1047,3 +1047,313 @@ class Notificacion(models.Model):
             self.save()
 
 
+# ==================== GAMIFICACIÓN ====================
+
+class PerfilUsuario(models.Model):
+    """Perfil extendido del usuario con gamificación"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil_gamificacion')
+
+    # Gamificación
+    puntos_totales = models.IntegerField(default=0, verbose_name="Puntos Totales")
+    nivel = models.IntegerField(default=1, verbose_name="Nivel")
+    experiencia_nivel_actual = models.IntegerField(default=0, verbose_name="Experiencia en Nivel Actual")
+
+    # Estadísticas
+    dias_consecutivos = models.IntegerField(default=0, verbose_name="Días Consecutivos")
+    ultima_actividad = models.DateField(auto_now=True, verbose_name="Última Actividad")
+    fecha_registro_app = models.DateField(auto_now_add=True, verbose_name="Fecha de Registro")
+    total_gastos_registrados = models.IntegerField(default=0, verbose_name="Total Gastos Registrados")
+    total_ahorrado = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Total Ahorrado")
+
+    # Racha
+    racha_actual = models.IntegerField(default=0, verbose_name="Racha Actual")
+    mejor_racha = models.IntegerField(default=0, verbose_name="Mejor Racha")
+
+    # Visitas
+    visitas_dashboard = models.IntegerField(default=0, verbose_name="Visitas al Dashboard")
+
+    class Meta:
+        verbose_name = "Perfil de Usuario"
+        verbose_name_plural = "Perfiles de Usuarios"
+
+    def __str__(self):
+        return f"{self.user.username} - Nivel {self.nivel} ({self.puntos_totales} pts)"
+
+    def calcular_nivel(self):
+        """Calcula nivel basado en puntos"""
+        niveles = {
+            1: 0, 2: 100, 3: 300, 4: 600, 5: 1000,
+            6: 1500, 7: 2100, 8: 2800, 9: 3600, 10: 5000
+        }
+        for nivel, puntos_req in sorted(niveles.items(), reverse=True):
+            if self.puntos_totales >= puntos_req:
+                return nivel
+        return 1
+
+    def agregar_puntos(self, puntos, razon):
+        """Agrega puntos y registra el logro"""
+        self.puntos_totales += puntos
+        nivel_anterior = self.nivel
+        self.nivel = self.calcular_nivel()
+        self.save()
+
+        # Registrar historial
+        HistorialPuntos.objects.create(
+            perfil=self,
+            puntos=puntos,
+            razon=razon
+        )
+
+        # Si subió de nivel, crear notificación
+        if self.nivel > nivel_anterior:
+            NotificacionLogro.objects.create(
+                perfil=self,
+                tipo='NIVEL',
+                mensaje=f'¡Felicitaciones! Alcanzaste el nivel {self.nivel}'
+            )
+
+    def get_puntos_siguiente_nivel(self):
+        """Retorna puntos necesarios para el siguiente nivel"""
+        niveles = {
+            1: 0, 2: 100, 3: 300, 4: 600, 5: 1000,
+            6: 1500, 7: 2100, 8: 2800, 9: 3600, 10: 5000
+        }
+        siguiente = self.nivel + 1
+        if siguiente in niveles:
+            return niveles[siguiente] - self.puntos_totales
+        return 0
+
+
+class Logro(models.Model):
+    """Catálogo de logros disponibles"""
+    TIPO_LOGRO = [
+        ('ACTIVIDAD', 'Actividad Diaria'),
+        ('AHORRO', 'Ahorro'),
+        ('DISCIPLINA', 'Disciplina Financiera'),
+        ('SOCIAL', 'Social'),
+        ('ESPECIAL', 'Especial'),
+    ]
+
+    codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
+    nombre = models.CharField(max_length=100, verbose_name="Nombre")
+    descripcion = models.TextField(verbose_name="Descripción")
+    tipo = models.CharField(max_length=20, choices=TIPO_LOGRO, verbose_name="Tipo")
+    puntos_recompensa = models.IntegerField(default=10, verbose_name="Puntos de Recompensa")
+    icono = models.CharField(max_length=50, default='🏆', verbose_name="Icono")
+    requisito_numero = models.IntegerField(default=1, help_text="Ej: 7 días, 3 meses, $50000", verbose_name="Requisito Numérico")
+    requisito_tipo = models.CharField(max_length=50, help_text="dias_consecutivos, meses_cumplidos, monto_ahorrado", verbose_name="Tipo de Requisito")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    es_secreto = models.BooleanField(default=False, verbose_name="Es Secreto")
+
+    class Meta:
+        verbose_name = "Logro"
+        verbose_name_plural = "Logros"
+        ordering = ['tipo', 'puntos_recompensa']
+
+    def __str__(self):
+        return f"{self.icono} {self.nombre} ({self.puntos_recompensa} pts)"
+
+
+class LogroDesbloqueado(models.Model):
+    """Logros que ha desbloqueado cada usuario"""
+    perfil = models.ForeignKey(PerfilUsuario, on_delete=models.CASCADE, related_name='logros')
+    logro = models.ForeignKey(Logro, on_delete=models.CASCADE)
+    fecha_desbloqueo = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Desbloqueo")
+    visto = models.BooleanField(default=False, verbose_name="Visto")
+
+    class Meta:
+        unique_together = ('perfil', 'logro')
+        ordering = ['-fecha_desbloqueo']
+        verbose_name = "Logro Desbloqueado"
+        verbose_name_plural = "Logros Desbloqueados"
+
+    def __str__(self):
+        return f"{self.perfil.user.username} - {self.logro.nombre}"
+
+
+class DesafioMensual(models.Model):
+    """Desafíos especiales cada mes"""
+    ESTADO = [
+        ('ACTIVO', 'Activo'),
+        ('FINALIZADO', 'Finalizado'),
+        ('PROXIMO', 'Próximo'),
+    ]
+
+    nombre = models.CharField(max_length=100, verbose_name="Nombre")
+    descripcion = models.TextField(verbose_name="Descripción")
+    mes = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)], verbose_name="Mes")
+    anio = models.IntegerField(verbose_name="Año")
+    icono = models.CharField(max_length=50, default='🎯', verbose_name="Icono")
+    puntos_premio = models.IntegerField(default=150, verbose_name="Puntos de Premio")
+
+    # Requisitos
+    meta_reduccion_categoria = models.CharField(max_length=50, blank=True, verbose_name="Categoría a Reducir")
+    meta_porcentaje = models.IntegerField(default=0, verbose_name="Porcentaje de Reducción")
+    meta_monto = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Monto Meta")
+
+    estado = models.CharField(max_length=20, choices=ESTADO, default='PROXIMO', verbose_name="Estado")
+
+    class Meta:
+        verbose_name = "Desafío Mensual"
+        verbose_name_plural = "Desafíos Mensuales"
+        ordering = ['-anio', '-mes']
+
+    def __str__(self):
+        return f"{self.icono} {self.nombre} ({self.mes}/{self.anio})"
+
+
+class ParticipacionDesafio(models.Model):
+    """Participación de usuarios en desafíos"""
+    perfil = models.ForeignKey(PerfilUsuario, on_delete=models.CASCADE)
+    desafio = models.ForeignKey(DesafioMensual, on_delete=models.CASCADE)
+    completado = models.BooleanField(default=False, verbose_name="Completado")
+    progreso_porcentaje = models.IntegerField(default=0, verbose_name="Progreso (%)")
+    fecha_inicio = models.DateField(auto_now_add=True, verbose_name="Fecha de Inicio")
+    fecha_completado = models.DateField(null=True, blank=True, verbose_name="Fecha de Completado")
+
+    class Meta:
+        unique_together = ('perfil', 'desafio')
+        verbose_name = "Participación en Desafío"
+        verbose_name_plural = "Participaciones en Desafíos"
+
+    def __str__(self):
+        return f"{self.perfil.user.username} - {self.desafio.nombre}"
+
+
+class HistorialPuntos(models.Model):
+    """Historial de puntos ganados"""
+    perfil = models.ForeignKey(PerfilUsuario, on_delete=models.CASCADE, related_name='historial_puntos')
+    puntos = models.IntegerField(verbose_name="Puntos")
+    razon = models.CharField(max_length=200, verbose_name="Razón")
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Historial de Puntos"
+        verbose_name_plural = "Historial de Puntos"
+
+    def __str__(self):
+        return f"{self.perfil.user.username} - {self.puntos} pts - {self.razon}"
+
+
+class NotificacionLogro(models.Model):
+    """Notificaciones de logros y niveles"""
+    TIPO = [
+        ('LOGRO', 'Logro Desbloqueado'),
+        ('NIVEL', 'Subida de Nivel'),
+        ('DESAFIO', 'Desafío Completado'),
+        ('RACHA', 'Racha Alcanzada'),
+    ]
+
+    perfil = models.ForeignKey(PerfilUsuario, on_delete=models.CASCADE, related_name='notificaciones_logro')
+    tipo = models.CharField(max_length=20, choices=TIPO, verbose_name="Tipo")
+    mensaje = models.CharField(max_length=200, verbose_name="Mensaje")
+    visto = models.BooleanField(default=False, verbose_name="Visto")
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Notificación de Logro"
+        verbose_name_plural = "Notificaciones de Logros"
+
+    def __str__(self):
+        return f"{self.perfil.user.username} - {self.tipo} - {self.mensaje[:30]}"
+
+
+# ==================== CHATBOT IA ====================
+
+class ConversacionChatbot(models.Model):
+    """Conversaciones del chatbot con usuarios"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversaciones_chatbot')
+    familia = models.ForeignKey(
+        'Familia',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Familia"
+    )
+    titulo = models.CharField(max_length=200, verbose_name="Título de la Conversación")
+    iniciada_en = models.DateTimeField(auto_now_add=True, verbose_name="Iniciada en")
+    actualizada_en = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+    activa = models.BooleanField(default=True, verbose_name="Conversación Activa")
+
+    class Meta:
+        verbose_name = "Conversación Chatbot"
+        verbose_name_plural = "Conversaciones Chatbot"
+        ordering = ['-actualizada_en']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.titulo[:50]}"
+
+    def get_contexto_reciente(self, limite=10):
+        """Obtiene los últimos mensajes para contexto"""
+        mensajes = self.mensajes.order_by('-fecha')[:limite]
+        return reversed(list(mensajes))
+
+
+class MensajeChatbot(models.Model):
+    """Mensajes individuales en una conversación"""
+    ROLE_CHOICES = [
+        ('user', 'Usuario'),
+        ('assistant', 'Asistente'),
+        ('system', 'Sistema'),
+    ]
+
+    conversacion = models.ForeignKey(
+        ConversacionChatbot,
+        on_delete=models.CASCADE,
+        related_name='mensajes',
+        verbose_name="Conversación"
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, verbose_name="Rol")
+    contenido = models.TextField(verbose_name="Contenido del Mensaje")
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+    tokens_usados = models.IntegerField(default=0, verbose_name="Tokens Usados")
+
+    class Meta:
+        verbose_name = "Mensaje Chatbot"
+        verbose_name_plural = "Mensajes Chatbot"
+        ordering = ['fecha']
+
+    def __str__(self):
+        return f"{self.role} - {self.contenido[:50]}..."
+
+
+class AnalisisIA(models.Model):
+    """Análisis generados por IA para el usuario"""
+    TIPO_ANALISIS = [
+        ('AHORRO', 'Oportunidades de Ahorro'),
+        ('PATRON', 'Patrones de Gasto'),
+        ('PREDICCION', 'Predicción de Gastos'),
+        ('RECOMENDACION', 'Recomendación Personalizada'),
+        ('ALERTA', 'Alerta Financiera'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='analisis_ia')
+    familia = models.ForeignKey(
+        'Familia',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Familia"
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_ANALISIS, verbose_name="Tipo de Análisis")
+    titulo = models.CharField(max_length=200, verbose_name="Título")
+    contenido = models.TextField(verbose_name="Contenido del Análisis")
+    datos_json = models.JSONField(null=True, blank=True, verbose_name="Datos Adicionales")
+    fecha_generacion = models.DateTimeField(auto_now_add=True, verbose_name="Generado en")
+    visto = models.BooleanField(default=False, verbose_name="Visto por Usuario")
+    relevancia = models.IntegerField(
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        verbose_name="Relevancia (1-10)"
+    )
+
+    class Meta:
+        verbose_name = "Análisis IA"
+        verbose_name_plural = "Análisis IA"
+        ordering = ['-fecha_generacion']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tipo} - {self.titulo[:50]}"
+

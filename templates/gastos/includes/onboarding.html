@@ -1,0 +1,675 @@
+<!-- Onboarding Tutorial Overlay -->
+<div id="onboarding-overlay" class="onboarding-overlay" style="display: none;">
+    <div class="onboarding-backdrop"></div>
+
+    <!-- Paso 1: Bienvenida -->
+    <div class="onboarding-step" data-step="1">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <h2>🎉 ¡Bienvenido a Gestor de Gastos Familiares!</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='80' fill='%23667eea'/%3E%3Ctext x='100' y='120' font-size='80' text-anchor='middle' fill='white'%3E💰%3C/text%3E%3C/svg%3E" alt="Bienvenida">
+                </div>
+                <p class="lead">Te damos la bienvenida a la app más completa para administrar tus gastos familiares.</p>
+                <p>En los próximos pasos te mostraremos las <strong>funcionalidades clave</strong> para que aproveches al máximo la aplicación.</p>
+                <ul class="feature-list">
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Gestión de gastos inteligente</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Gamificación con logros</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Chatbot IA personalizado</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Reportes y análisis</li>
+                </ul>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-secondary" onclick="skipOnboarding()">Saltar Tutorial</button>
+                <button class="btn btn-primary" onclick="nextStep()">Comenzar <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paso 2: Dashboard -->
+    <div class="onboarding-step" data-step="2" style="display: none;">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <span class="step-badge">Paso 1/5</span>
+                <h2>📊 Dashboard Principal</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <i class="bi bi-graph-up-arrow" style="font-size: 5rem; color: #667eea;"></i>
+                </div>
+                <p class="lead">Aquí encontrarás un resumen completo de tus finanzas:</p>
+                <ul class="feature-list">
+                    <li><i class="bi bi-bar-chart-fill text-primary"></i> <strong>Gráficos interactivos</strong> de ingresos vs gastos</li>
+                    <li><i class="bi bi-pie-chart-fill text-success"></i> <strong>Distribución por categorías</strong> con colores</li>
+                    <li><i class="bi bi-calendar-check text-info"></i> <strong>Resumen mensual</strong> actualizado en tiempo real</li>
+                    <li><i class="bi bi-speedometer2 text-warning"></i> <strong>Indicadores clave</strong> de tu salud financiera</li>
+                </ul>
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb-fill"></i> <strong>Tip:</strong> El dashboard se actualiza automáticamente al registrar gastos.
+                </div>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-outline-secondary" onclick="prevStep()"><i class="bi bi-arrow-left"></i> Anterior</button>
+                <button class="btn btn-primary" onclick="nextStep()">Siguiente <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paso 3: Gastos -->
+    <div class="onboarding-step" data-step="3" style="display: none;">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <span class="step-badge">Paso 2/5</span>
+                <h2>💸 Registro de Gastos</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <i class="bi bi-wallet2" style="font-size: 5rem; color: #11998e;"></i>
+                </div>
+                <p class="lead">Registrar gastos es súper fácil:</p>
+                <div class="steps-visual">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-desc">Clic en <strong>"Gastos"</strong> en el menú</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-desc">Botón <strong>"+ Nuevo Gasto"</strong></div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-desc">Llena el formulario y <strong>¡listo!</strong></div>
+                    </div>
+                </div>
+                <div class="alert alert-success">
+                    <i class="bi bi-trophy-fill"></i> <strong>¡Cada gasto suma puntos!</strong> Desbloquea logros registrando gastos diariamente.
+                </div>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-outline-secondary" onclick="prevStep()"><i class="bi bi-arrow-left"></i> Anterior</button>
+                <button class="btn btn-primary" onclick="nextStep()">Siguiente <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paso 4: Gamificación -->
+    <div class="onboarding-step" data-step="4" style="display: none;">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <span class="step-badge">Paso 3/5</span>
+                <h2>🏆 Gamificación y Logros</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <i class="bi bi-trophy" style="font-size: 5rem; color: #fa709a;"></i>
+                </div>
+                <p class="lead">¡Administrar gastos nunca fue tan divertido!</p>
+                <div class="gamification-features">
+                    <div class="feature-card">
+                        <i class="bi bi-star-fill"></i>
+                        <h5>Niveles</h5>
+                        <p>Sube de nivel acumulando puntos</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="bi bi-trophy-fill"></i>
+                        <h5>17 Logros</h5>
+                        <p>Desbloquea logros automáticamente</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="bi bi-fire"></i>
+                        <h5>Racha</h5>
+                        <p>Mantén días consecutivos</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="bi bi-bar-chart"></i>
+                        <h5>Ranking</h5>
+                        <p>Compite con otros usuarios</p>
+                    </div>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle-fill"></i> Visita la sección <strong>"Logros"</strong> en el menú para ver tu progreso.
+                </div>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-outline-secondary" onclick="prevStep()"><i class="bi bi-arrow-left"></i> Anterior</button>
+                <button class="btn btn-primary" onclick="nextStep()">Siguiente <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paso 5: Chatbot IA -->
+    <div class="onboarding-step" data-step="5" style="display: none;">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <span class="step-badge">Paso 4/5</span>
+                <h2>🤖 Asistente IA Personal</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <i class="bi bi-robot" style="font-size: 5rem; color: #4facfe;"></i>
+                </div>
+                <p class="lead">Tu asistente financiero inteligente disponible 24/7:</p>
+                <div class="chat-examples">
+                    <div class="chat-bubble user">
+                        "¿Cuánto gasté este mes?"
+                    </div>
+                    <div class="chat-bubble bot">
+                        "Has gastado $850,000. Vas muy bien, llevas un ahorro de $650,000 este mes 💰"
+                    </div>
+                    <div class="chat-bubble user">
+                        "¿En qué puedo ahorrar?"
+                    </div>
+                    <div class="chat-bubble bot">
+                        "Detecté que gastas $180,000 en delivery. Reduciendo un 30% ahorrarías $54,000/mes 🎯"
+                    </div>
+                </div>
+                <p><i class="bi bi-lightbulb-fill text-warning"></i> El chatbot analiza tus datos reales y da recomendaciones personalizadas.</p>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-outline-secondary" onclick="prevStep()"><i class="bi bi-arrow-left"></i> Anterior</button>
+                <button class="btn btn-primary" onclick="nextStep()">Siguiente <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paso 6: Finalización -->
+    <div class="onboarding-step" data-step="6" style="display: none;">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <span class="step-badge">Paso 5/5</span>
+                <h2>✨ ¡Todo Listo!</h2>
+            </div>
+            <div class="onboarding-body">
+                <div class="onboarding-icon">
+                    <div class="success-checkmark">
+                        <div class="check-icon">
+                            <span class="icon-line line-tip"></span>
+                            <span class="icon-line line-long"></span>
+                            <div class="icon-circle"></div>
+                            <div class="icon-fix"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="lead">¡Estás listo para comenzar a administrar tus finanzas!</p>
+                <div class="next-steps">
+                    <h5>Próximos pasos sugeridos:</h5>
+                    <div class="action-card">
+                        <i class="bi bi-1-circle-fill"></i>
+                        <div>
+                            <strong>Agrega tu primer gasto</strong>
+                            <small>Ir a Gastos → + Nuevo Gasto</small>
+                        </div>
+                    </div>
+                    <div class="action-card">
+                        <i class="bi bi-2-circle-fill"></i>
+                        <div>
+                            <strong>Configura una meta de ahorro</strong>
+                            <small>Ir a Metas → + Nueva Meta</small>
+                        </div>
+                    </div>
+                    <div class="action-card">
+                        <i class="bi bi-3-circle-fill"></i>
+                        <div>
+                            <strong>Prueba el chatbot IA</strong>
+                            <small>Clic en "Asistente IA" en el menú</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="onboarding-footer">
+                <button class="btn btn-outline-secondary" onclick="prevStep()"><i class="bi bi-arrow-left"></i> Anterior</button>
+                <button class="btn btn-success btn-lg" onclick="completeOnboarding()">
+                    <i class="bi bi-check-circle-fill"></i> ¡Empezar Ahora!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ========== ONBOARDING STYLES ========== */
+    .onboarding-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .onboarding-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+    }
+
+    .onboarding-card {
+        position: relative;
+        background: white;
+        border-radius: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.5s ease-out;
+    }
+
+    .onboarding-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .onboarding-header h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .step-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .onboarding-body {
+        padding: 2rem;
+    }
+
+    .onboarding-icon {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .onboarding-icon img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .onboarding-footer {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 1.5rem 0;
+    }
+
+    .feature-list li {
+        padding: 0.75rem 0;
+        font-size: 1.05rem;
+    }
+
+    .feature-list i {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+    }
+
+    .steps-visual {
+        display: flex;
+        justify-content: space-around;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .step-item {
+        text-align: center;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 0 auto 1rem;
+    }
+
+    .gamification-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .feature-card {
+        text-align: center;
+        padding: 1.5rem 1rem;
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        border-radius: 12px;
+        border: 2px solid #e0e0ff;
+    }
+
+    .feature-card i {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .feature-card h5 {
+        margin: 0.75rem 0 0.25rem;
+        font-size: 1rem;
+    }
+
+    .feature-card p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .chat-examples {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .chat-bubble {
+        padding: 1rem 1.25rem;
+        border-radius: 18px;
+        margin-bottom: 1rem;
+        max-width: 80%;
+    }
+
+    .chat-bubble.user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.bot {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-bottom-left-radius: 4px;
+    }
+
+    .next-steps h5 {
+        margin-bottom: 1rem;
+    }
+
+    .action-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8f9ff;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+    }
+
+    .action-card i {
+        font-size: 2rem;
+        color: #667eea;
+    }
+
+    .action-card strong {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .action-card small {
+        color: #666;
+    }
+
+    /* Success Checkmark Animation */
+    .success-checkmark {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+    }
+
+    .check-icon {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        border-radius: 50%;
+        box-sizing: content-box;
+        border: 4px solid #4caf50;
+    }
+
+    .check-icon::before {
+        top: 3px;
+        left: -2px;
+        width: 30px;
+        transform-origin: 100% 50%;
+        border-radius: 100px 0 0 100px;
+    }
+
+    .check-icon::after {
+        top: 0;
+        left: 30px;
+        width: 60px;
+        transform-origin: 0 50%;
+        border-radius: 0 100px 100px 0;
+        animation: rotate-circle 4.25s ease-in;
+    }
+
+    .icon-line {
+        height: 5px;
+        background-color: #4caf50;
+        display: block;
+        border-radius: 2px;
+        position: absolute;
+        z-index: 10;
+    }
+
+    .icon-line.line-tip {
+        top: 46px;
+        left: 14px;
+        width: 25px;
+        transform: rotate(45deg);
+        animation: icon-line-tip 0.75s;
+    }
+
+    .icon-line.line-long {
+        top: 38px;
+        right: 8px;
+        width: 47px;
+        transform: rotate(-45deg);
+        animation: icon-line-long 0.75s;
+    }
+
+    .icon-circle {
+        top: -4px;
+        left: -4px;
+        z-index: 10;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        position: absolute;
+        box-sizing: content-box;
+        border: 4px solid rgba(76, 175, 80, .5);
+    }
+
+    .icon-fix {
+        top: 8px;
+        width: 5px;
+        left: 26px;
+        z-index: 1;
+        height: 85px;
+        position: absolute;
+        transform: rotate(-45deg);
+        background-color: white;
+    }
+
+    @keyframes icon-line-tip {
+        0% { width: 0; left: 1px; top: 19px; }
+        54% { width: 0; left: 1px; top: 19px; }
+        70% { width: 50px; left: -8px; top: 37px; }
+        84% { width: 17px; left: 21px; top: 48px; }
+        100% { width: 25px; left: 14px; top: 45px; }
+    }
+
+    @keyframes icon-line-long {
+        0% { width: 0; right: 46px; top: 54px; }
+        65% { width: 0; right: 46px; top: 54px; }
+        84% { width: 55px; right: 0px; top: 35px; }
+        100% { width: 47px; right: 8px; top: 38px; }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .onboarding-card {
+            width: 95%;
+            max-height: 95vh;
+        }
+
+        .onboarding-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .onboarding-body {
+            padding: 1.5rem;
+        }
+
+        .gamification-features {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .steps-visual {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+
+function showOnboarding() {
+    document.getElementById('onboarding-overlay').style.display = 'flex';
+    currentStep = 1;
+    showStep(1);
+}
+
+function hideOnboarding() {
+    document.getElementById('onboarding-overlay').style.display = 'none';
+}
+
+function showStep(step) {
+    document.querySelectorAll('.onboarding-step').forEach(el => {
+        el.style.display = 'none';
+    });
+    document.querySelector(`.onboarding-step[data-step="${step}"]`).style.display = 'block';
+}
+
+function nextStep() {
+    if (currentStep < totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+    }
+}
+
+function skipOnboarding() {
+    if (confirm('¿Seguro que quieres saltar el tutorial? Podrás verlo después desde tu perfil.')) {
+        completeOnboarding();
+    }
+}
+
+function completeOnboarding() {
+    // Marcar onboarding como completado
+    fetch('/marcar-onboarding-completado/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    }).then(() => {
+        hideOnboarding();
+        // Mostrar mensaje de bienvenida
+        showWelcomeMessage();
+    });
+}
+
+function showWelcomeMessage() {
+    const container = document.getElementById('messages-container') || document.querySelector('.container');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show message-animated';
+    alert.setAttribute('data-autoclose', 'true');
+    alert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="bi bi-check-circle-fill" style="font-size: 1.5rem;"></i>
+            </div>
+            <div class="flex-grow-1">
+                <strong>¡Bienvenido!</strong> Ya conoces las funcionalidades principales. ¡Empieza a registrar gastos y desbloquea logros! 🎉
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="progress-autoclose"></div>
+    `;
+
+    if (container) {
+        container.appendChild(alert);
+
+        // Autoclose
+        setTimeout(() => {
+            alert.classList.add('alert-fadeout');
+            setTimeout(() => {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    }
+}
+
+// Mostrar onboarding si es necesario
+document.addEventListener('DOMContentLoaded', function() {
+    {% if request.session.show_onboarding %}
+    showOnboarding();
+    {% endif %}
+});
+</script>
