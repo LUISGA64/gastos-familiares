@@ -298,6 +298,36 @@ class Pago(models.Model):
     )
     fecha_pago = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Pago")
     fecha_aprobacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aprobación")
+
+    # Campos de seguridad
+    expira_en = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Expira En",
+        help_text="Fecha de expiración del QR (24 horas por defecto)"
+    )
+    intentos_subida = models.IntegerField(
+        default=0,
+        verbose_name="Intentos de Subida",
+        help_text="Número de veces que se intentó subir comprobante"
+    )
+    max_intentos = models.IntegerField(
+        default=5,
+        verbose_name="Máximo de Intentos",
+        help_text="Máximo número de intentos permitidos"
+    )
+    ip_origen = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP de Origen",
+        help_text="IP desde donde se generó el pago"
+    )
+    firma_qr = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name="Firma del QR",
+        help_text="Firma digital para validar integridad"
+    )
     verificado_por = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -314,6 +344,45 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"{self.familia.nombre} - ${self.monto:,.0f} - {self.estado}"
+
+    def esta_expirado(self):
+        """Verifica si el QR está expirado"""
+        if not self.expira_en:
+            return False
+        return timezone.now() > self.expira_en
+
+    def puede_subir_comprobante(self):
+        """Verifica si puede subir más comprobantes"""
+        if self.estado in ['APROBADO', 'RECHAZADO']:
+            return False
+        if self.esta_expirado():
+            return False
+        if self.intentos_subida >= self.max_intentos:
+            return False
+        return True
+
+    def registrar_intento_subida(self):
+        """Registra un intento de subida de comprobante"""
+        self.intentos_subida += 1
+        self.save(update_fields=['intentos_subida'])
+
+    def generar_firma(self):
+        """Genera firma digital del QR para validar integridad"""
+        import hashlib
+        import hmac
+        from django.conf import settings
+
+        # Usar SECRET_KEY de Django como clave
+        secret = settings.SECRET_KEY.encode()
+        mensaje = f"{self.referencia_pago}{self.monto}{self.familia_id}{self.plan_id}".encode()
+
+        firma = hmac.new(secret, mensaje, hashlib.sha256).hexdigest()
+        return firma
+
+    def validar_firma(self, firma_recibida):
+        """Valida la firma del QR"""
+        firma_esperada = self.generar_firma()
+        return hmac.compare_digest(firma_esperada, firma_recibida)
 
     def aprobar_pago(self, verificado_por=None):
         """Aprueba el pago y extiende la suscripción"""
@@ -1356,4 +1425,102 @@ class AnalisisIA(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.tipo} - {self.titulo[:50]}"
+
+
+class ConfiguracionCuentaPago(models.Model):
+    """Configuración de cuentas bancarias para recibir pagos"""
+    METODO_CHOICES = [
+        ('BANCOLOMBIA', 'Bancolombia'),
+        ('NEQUI', 'Nequi'),
+        ('DAVIPLATA', 'Daviplata'),
+        ('OTRO', 'Otro'),
+    ]
+
+    TIPO_CUENTA_CHOICES = [
+        ('AHORROS', 'Ahorros'),
+        ('CORRIENTE', 'Corriente'),
+        ('NEQUI', 'Cuenta Nequi'),
+        ('DAVIPLATA', 'Cuenta Daviplata'),
+    ]
+
+    metodo = models.CharField(
+        max_length=20,
+        choices=METODO_CHOICES,
+        unique=True,
+        verbose_name="Método de Pago"
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo"
+    )
+    nombre_banco = models.CharField(
+        max_length=100,
+        verbose_name="Nombre del Banco/Entidad"
+    )
+    tipo_cuenta = models.CharField(
+        max_length=20,
+        choices=TIPO_CUENTA_CHOICES,
+        verbose_name="Tipo de Cuenta"
+    )
+    numero_cuenta = models.CharField(
+        max_length=50,
+        verbose_name="Número de Cuenta/Celular",
+        help_text="Para Bancolombia: número de cuenta. Para Nequi: número de celular"
+    )
+    titular = models.CharField(
+        max_length=200,
+        verbose_name="Titular de la Cuenta"
+    )
+    nit = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="NIT",
+        help_text="Opcional, solo para empresas"
+    )
+    color = models.CharField(
+        max_length=7,
+        default='#3498db',
+        verbose_name="Color del Botón",
+        help_text="Código hexadecimal, ej: #FFDD00"
+    )
+    icono = models.CharField(
+        max_length=10,
+        default='💳',
+        verbose_name="Emoji/Icono"
+    )
+    instrucciones = models.TextField(
+        blank=True,
+        verbose_name="Instrucciones para el Usuario",
+        help_text="Una instrucción por línea"
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuración de Cuenta de Pago"
+        verbose_name_plural = "Configuraciones de Cuentas de Pago"
+        ordering = ['metodo']
+
+    def __str__(self):
+        return f"{self.nombre_banco} - {self.numero_cuenta}"
+
+    def get_instrucciones_lista(self):
+        """Retorna las instrucciones como lista"""
+        if not self.instrucciones:
+            return []
+        return [linea.strip() for linea in self.instrucciones.split('\n') if linea.strip()]
+
+    def to_dict(self):
+        """Convierte la configuración a diccionario para usar en QR"""
+        return {
+            'nombre': self.nombre_banco,
+            'tipo': self.get_tipo_cuenta_display(),
+            'numero': self.numero_cuenta,
+            'titular': self.titular,
+            'nit': self.nit,
+            'color': self.color,
+            'icono': self.icono,
+            'instrucciones': self.get_instrucciones_lista()
+        }
+
 

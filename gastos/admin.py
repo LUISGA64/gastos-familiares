@@ -6,7 +6,7 @@ from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, Distri
                      PresupuestoCategoria, Notificacion, Pago, PerfilUsuario, Logro,
                      LogroDesbloqueado, DesafioMensual, ParticipacionDesafio,
                      HistorialPuntos, NotificacionLogro, ConversacionChatbot,
-                     MensajeChatbot, AnalisisIA)
+                     MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago)
 
 
 @admin.register(Aportante)
@@ -274,6 +274,33 @@ class PresupuestoCategoriaAdmin(admin.ModelAdmin):
         return f"{obj.porcentaje_usado:.1f}%"
     porcentaje_usado_display.short_description = "% Usado"
 
+    def estado_visual(self, obj):
+        """Indicador visual del estado del presupuesto"""
+        porcentaje = obj.porcentaje_usado
+
+        if porcentaje >= 100:
+            color = '#e74c3c'  # Rojo - excedido
+            estado = 'Excedido'
+            icono = '🔴'
+        elif porcentaje >= obj.alertar_en:
+            color = '#f39c12'  # Naranja - alerta
+            estado = 'Alerta'
+            icono = '⚠️'
+        elif porcentaje >= 50:
+            color = '#3498db'  # Azul - en progreso
+            estado = 'OK'
+            icono = '🔵'
+        else:
+            color = '#27ae60'  # Verde - bien
+            estado = 'Bien'
+            icono = '🟢'
+
+        return format_html(
+            '<span style="color: {};">{} {}</span>',
+            color, icono, estado
+        )
+    estado_visual.short_description = "Estado"
+
 
 @admin.register(Notificacion)
 class NotificacionAdmin(admin.ModelAdmin):
@@ -314,11 +341,11 @@ class NotificacionAdmin(admin.ModelAdmin):
 @admin.register(Pago)
 class PagoAdmin(admin.ModelAdmin):
     list_display = ['referencia_pago', 'familia', 'plan', 'monto_fmt', 'metodo_pago',
-                    'estado_display', 'fecha_pago', 'tiene_comprobante', 'acciones_rapidas']
+                    'estado', 'fecha_pago']
     list_filter = ['estado', 'metodo_pago', 'plan', 'fecha_pago']
     search_fields = ['referencia_pago', 'familia__nombre', 'numero_transaccion']
     readonly_fields = ['referencia_pago', 'fecha_pago', 'fecha_aprobacion', 'datos_qr',
-                       'ver_comprobante']
+                       'ver_comprobante', 'expira_en', 'intentos_subida', 'ip_origen', 'firma_qr']
     ordering = ['-fecha_pago']
 
     fieldsets = (
@@ -334,6 +361,10 @@ class PagoAdmin(admin.ModelAdmin):
         ('Estado y Verificación', {
             'fields': ('estado', 'verificado_por', 'fecha_aprobacion', 'notas')
         }),
+        ('Seguridad', {
+            'fields': ('expira_en', 'intentos_subida', 'max_intentos', 'ip_origen', 'firma_qr'),
+            'classes': ('collapse',)
+        }),
     )
 
     actions = ['aprobar_pagos', 'rechazar_pagos', 'marcar_verificando']
@@ -343,6 +374,9 @@ class PagoAdmin(admin.ModelAdmin):
     monto_fmt.short_description = "Monto"
 
     def estado_display(self, obj):
+        if not obj or not obj.estado:
+            return "-"
+
         colores = {
             'PENDIENTE': '#95a5a6',
             'VERIFICANDO': '#f39c12',
@@ -351,32 +385,37 @@ class PagoAdmin(admin.ModelAdmin):
             'REEMBOLSADO': '#3498db'
         }
         color = colores.get(obj.estado, '#95a5a6')
+        estado_texto = obj.get_estado_display() if hasattr(obj, 'get_estado_display') else obj.estado
+
         return format_html(
             '<span style="background-color: {}; color: white; padding: 4px 12px; '
             'border-radius: 12px; font-weight: bold;">{}</span>',
-            color, obj.get_estado_display()
+            color, estado_texto
         )
     estado_display.short_description = "Estado"
 
     def tiene_comprobante(self, obj):
         if obj.comprobante:
-            return format_html('<span style="color: green;">✓ Sí</span>')
-        return format_html('<span style="color: red;">✗ No</span>')
+            return format_html('<span style="color: green;">&#10003; Sí</span>')
+        return format_html('<span style="color: red;">&#10007; No</span>')
     tiene_comprobante.short_description = "Comprobante"
 
     def ver_comprobante(self, obj):
-        if obj.comprobante:
-            return format_html(
-                '<a href="{}" target="_blank">'
-                '<img src="{}" style="max-width: 200px; max-height: 200px;"/>'
-                '</a>',
-                obj.comprobante.url, obj.comprobante.url
-            )
+        if obj and obj.comprobante:
+            try:
+                return format_html(
+                    '<a href="{}" target="_blank">'
+                    '<img src="{}" style="max-width: 200px; max-height: 200px;"/>'
+                    '</a>',
+                    obj.comprobante.url, obj.comprobante.url
+                )
+            except Exception:
+                return "Error al cargar comprobante"
         return "Sin comprobante"
     ver_comprobante.short_description = "Vista Previa"
 
     def acciones_rapidas(self, obj):
-        if obj.estado == 'VERIFICANDO':
+        if obj and obj.estado == 'VERIFICANDO' and obj.pk:
             return format_html(
                 '<a class="button" href="/admin/gastos/pago/{}/change/">Revisar</a>',
                 obj.pk
@@ -591,4 +630,35 @@ class AnalisisIAAdmin(admin.ModelAdmin):
     def titulo_corto(self, obj):
         return obj.titulo[:60] + '...' if len(obj.titulo) > 60 else obj.titulo
     titulo_corto.short_description = 'Título'
+
+
+@admin.register(ConfiguracionCuentaPago)
+class ConfiguracionCuentaPagoAdmin(admin.ModelAdmin):
+    list_display = ['metodo', 'nombre_banco', 'numero_cuenta', 'titular', 'activo', 'actualizado_en']
+    list_filter = ['metodo', 'activo', 'tipo_cuenta']
+    search_fields = ['nombre_banco', 'numero_cuenta', 'titular']
+    ordering = ['metodo']
+
+    fieldsets = (
+        ('Información General', {
+            'fields': ('metodo', 'activo', 'nombre_banco', 'tipo_cuenta')
+        }),
+        ('Datos de la Cuenta', {
+            'fields': ('numero_cuenta', 'titular', 'nit')
+        }),
+        ('Personalización', {
+            'fields': ('color', 'icono', 'instrucciones')
+        }),
+    )
+
+    readonly_fields = ('creado_en', 'actualizado_en')
+
+    def activo_badge(self, obj):
+        if not obj:
+            return "-"
+        if obj.activo:
+            return format_html('<span style="color: green;">&#10003; Activo</span>')
+        return format_html('<span style="color: red;">&#10007; Inactivo</span>')
+    activo_badge.short_description = 'Estado'
+
 

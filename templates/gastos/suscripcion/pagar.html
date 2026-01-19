@@ -88,6 +88,38 @@
         font-weight: bold;
         box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
     }
+
+    /* Fix para modal y backdrop */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1040 !important;  /* Muy por debajo del modal */
+        pointer-events: none !important;  /* NO bloquea clics */
+    }
+
+    .modal-content {
+        position: relative;
+        z-index: 1060 !important;  /* Muy por encima */
+        pointer-events: auto !important;  /* SÍ permite clics */
+    }
+
+    /* Asegurar que los botones dentro del modal sean clickeables */
+    .modal-body .metodo-pago-card {
+        position: relative;
+        z-index: 1061 !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+
+    /* SweetAlert2 toast z-index */
+    .swal-toast-zindex {
+        z-index: 10000 !important;
+    }
+
+
+
 </style>
 {% endblock %}
 
@@ -246,28 +278,89 @@
 
 <script>
 let selectedPlanId = null;
+let modalInstance = null;
 
 // Capturar plan seleccionado
 document.addEventListener('DOMContentLoaded', function() {
     const metodosModal = document.getElementById('metodosModal');
 
+    // Crear modal SIN backdrop para evitar problemas de bloqueo
+    modalInstance = new bootstrap.Modal(metodosModal, {
+        backdrop: 'static',  // No cierra al hacer clic fuera
+        keyboard: true,
+        focus: true
+    });
+
     metodosModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
-        selectedPlanId = button.getAttribute('data-plan-id');
-        const planNombre = button.getAttribute('data-plan-nombre');
-        const planPrecio = button.getAttribute('data-plan-precio');
+        if (button) {
+            selectedPlanId = button.getAttribute('data-plan-id');
+            const planNombre = button.getAttribute('data-plan-nombre');
+            const planPrecio = button.getAttribute('data-plan-precio');
 
-        document.getElementById('selected-plan-name').textContent = planNombre;
-        document.getElementById('selected-plan-price').textContent = parseFloat(planPrecio).toLocaleString('es-CO');
+            document.getElementById('selected-plan-name').textContent = planNombre;
+            document.getElementById('selected-plan-price').textContent = parseFloat(planPrecio).toLocaleString('es-CO');
+        }
     });
+
+    // Después de que se muestra el modal
+    metodosModal.addEventListener('shown.bs.modal', function() {
+        // Asegurar que el backdrop (si existe) esté detrás
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.style.zIndex = '1040';
+            backdrop.style.pointerEvents = 'none';  // ← CLAVE: No bloquea clics
+        }
+
+        // Asegurar que el modal esté adelante
+        const modal = document.getElementById('metodosModal');
+        if (modal) {
+            modal.style.zIndex = '1055';
+        }
+    });
+
+    // Auto-abrir modal si viene plan seleccionado desde la página de planes
+    {% if plan_seleccionado %}
+    setTimeout(function() {
+        // Establecer el plan seleccionado
+        selectedPlanId = '{{ plan_seleccionado.id }}';
+
+        // Actualizar información del modal
+        document.getElementById('selected-plan-name').textContent = '{{ plan_seleccionado.nombre }}';
+        document.getElementById('selected-plan-price').textContent = parseFloat('{{ plan_seleccionado.precio_mensual }}').toLocaleString('es-CO');
+
+        // Abrir el modal
+        modalInstance.show();
+
+        // Mostrar toast de bienvenida
+        setTimeout(function() {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Excelente elección!',
+                html: '<p>Has seleccionado el plan <strong>{{ plan_seleccionado.nombre }}</strong></p>' +
+                      '<p class="mb-0">Precio: <strong>${{ plan_seleccionado.precio_mensual|floatformat:0 }}/mes</strong></p>',
+                timer: 3000,
+                showConfirmButton: false,
+                position: 'top-end',
+                toast: true
+            });
+        }, 400);
+    }, 600);
+    {% endif %}
 });
 
 function pagarConQR(metodo) {
     if (!selectedPlanId) {
-        alert('Por favor selecciona un plan primero');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Selecciona un plan',
+            text: 'Por favor selecciona un plan primero',
+            confirmButtonText: 'Entendido'
+        });
         return;
     }
 
+    // Redirigir directamente
     window.location.href = `/suscripcion/generar-qr/${selectedPlanId}/${metodo}/`;
 }
 </script>

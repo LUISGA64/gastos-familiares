@@ -12,10 +12,36 @@ from django.utils import timezone
 import uuid
 
 
+def obtener_info_cuentas():
+    """
+    Obtiene la información de cuentas desde la base de datos.
+    Si no existe, retorna datos de ejemplo.
+    """
+    try:
+        from .models import ConfiguracionCuentaPago
+
+        cuentas = {}
+        configs = ConfiguracionCuentaPago.objects.filter(activo=True)
+
+        for config in configs:
+            key = config.metodo.lower()
+            cuentas[key] = config.to_dict()
+
+        # Si no hay cuentas configuradas, retornar datos de ejemplo
+        if not cuentas:
+            return INFO_CUENTAS_COLOMBIA_DEFAULT
+
+        return cuentas
+    except Exception as e:
+        # En caso de error (ej: modelo no migrado aún), retornar defaults
+        print(f"Warning: No se pudieron cargar cuentas de la BD: {e}")
+        return INFO_CUENTAS_COLOMBIA_DEFAULT
+
+
 class GeneradorQRPago:
     """Clase para generar códigos QR de pago"""
 
-    # Configuración de cuentas de destino (CAMBIAR POR LAS REALES)
+    # Configuración de cuentas de destino (DEPRECATED - ahora se usa la BD)
     CUENTAS = {
         'BANCOLOMBIA': {
             'numero_cuenta': '12345678901',
@@ -258,7 +284,8 @@ class VerificadorPagos:
 
 
 # Información de cuentas para mostrar al usuario
-INFO_CUENTAS_COLOMBIA = {
+# Configuración de cuentas DEFAULT (fallback si no hay BD)
+INFO_CUENTAS_COLOMBIA_DEFAULT = {
     'bancolombia': {
         'nombre': 'Bancolombia',
         'tipo': 'Ahorros',
@@ -288,25 +315,18 @@ INFO_CUENTAS_COLOMBIA = {
             'Ve a "Enviar plata"',
             'Escanea el código QR',
             'Confirma el monto',
-            'Ingresa tu clave',
+            'Completa la transferencia',
             'Sube el comprobante aquí'
         ]
-    },
-    # DaviPlata - PRÓXIMAMENTE
-    # 'daviplata': {
-    #     'nombre': 'DaviPlata',
-    #     'tipo': 'Bolsillo',
-    #     'numero': '300 765 4321',
-    #     'titular': 'Gestor Gastos Familiares',
-    #     'color': '#ED1C24',
-    #     'icono': '📱',
-    #     'instrucciones': [
-    #         'Abre la app DaviPlata',
-    #         'Ve a "Enviar plata"',
-    #         'Ingresa el número destino',
-    #         'Confirma el monto y referencia',
-    #         'Sube el comprobante aquí'
-    #     ]
-    # }
+    }
 }
+
+# Función para obtener cuentas (dinámicamente desde BD)
+def get_info_cuentas_colombia():
+    """Retorna info de cuentas desde BD o defaults"""
+    return obtener_info_cuentas()
+
+# Por compatibilidad, mantener esta variable (pero ahora es dinámica)
+INFO_CUENTAS_COLOMBIA = INFO_CUENTAS_COLOMBIA_DEFAULT
+
 

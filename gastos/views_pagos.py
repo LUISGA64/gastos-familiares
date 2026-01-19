@@ -6,8 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import timedelta
 from .models import Pago, PlanSuscripcion, Familia
-from .qr_utils import GeneradorQRPago, VerificadorPagos, INFO_CUENTAS_COLOMBIA
+from .qr_utils import GeneradorQRPago, VerificadorPagos, get_info_cuentas_colombia
 from decimal import Decimal
 from django.utils import timezone
 
@@ -29,11 +31,21 @@ def pagar_suscripcion(request):
     # Obtener pagos previos
     pagos_anteriores = Pago.objects.filter(familia=familia).order_by('-fecha_pago')[:5]
 
+    # Obtener plan_id del query string si existe (desde página de planes)
+    plan_id_seleccionado = request.GET.get('plan_id', None)
+    plan_seleccionado = None
+    if plan_id_seleccionado:
+        try:
+            plan_seleccionado = PlanSuscripcion.objects.get(id=plan_id_seleccionado, activo=True)
+        except PlanSuscripcion.DoesNotExist:
+            pass
+
     context = {
         'familia': familia,
         'planes': planes,
+        'plan_seleccionado': plan_seleccionado,
         'pagos_anteriores': pagos_anteriores,
-        'info_cuentas': INFO_CUENTAS_COLOMBIA
+        'info_cuentas': get_info_cuentas_colombia()  # Obtener desde BD
     }
 
     return render(request, 'gastos/suscripcion/pagar.html', context)
@@ -58,13 +70,16 @@ def generar_qr_pago(request, plan_id, metodo):
     datos_qr = None
     info_cuenta = None
 
+    # Obtener info de cuentas desde BD
+    info_cuentas = get_info_cuentas_colombia()
+
     if metodo == 'bancolombia':
         qr_base64, datos_qr = GeneradorQRPago.generar_qr_bancolombia(
             plan.precio_mensual,
             referencia,
             f"Suscripción {plan.nombre}"
         )
-        info_cuenta = INFO_CUENTAS_COLOMBIA['bancolombia']
+        info_cuenta = info_cuentas.get('bancolombia', {})
         metodo_pago = 'QR_BANCOLOMBIA'
 
     elif metodo == 'nequi':
@@ -73,14 +88,14 @@ def generar_qr_pago(request, plan_id, metodo):
             referencia,
             f"Suscripción {plan.nombre}"
         )
-        info_cuenta = INFO_CUENTAS_COLOMBIA['nequi']
+        info_cuenta = info_cuentas.get('nequi', {})
         metodo_pago = 'QR_NEQUI'
 
     else:
         messages.error(request, 'Método de pago no soportado.')
         return redirect('pagar_suscripcion')
 
-    # Crear registro de pago pendiente
+    # Crear registro de pago pendiente con medidas de seguridad
     pago = Pago.objects.create(
         familia=familia,
         plan=plan,
@@ -88,8 +103,14 @@ def generar_qr_pago(request, plan_id, metodo):
         metodo_pago=metodo_pago,
         estado='PENDIENTE',
         referencia_pago=referencia,
-        datos_qr=datos_qr
+        datos_qr=datos_qr,
+        expira_en=timezone.now() + timedelta(hours=24),  # Expira en 24 horas
+        ip_origen=request.META.get('REMOTE_ADDR', None)
     )
+
+    # Generar y guardar firma digital
+    pago.firma_qr = pago.generar_firma()
+    pago.save(update_fields=['firma_qr'])
 
     context = {
         'familia': familia,
@@ -115,6 +136,24 @@ def subir_comprobante(request, pago_id):
     if pago.familia.id != familia_id:
         return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
 
+    # Validaciones de seguridad
+    if pago.esta_expirado():
+        return JsonResponse({
+            'success': False,
+            'error': 'Este QR ha expirado. Por favor genera uno nuevo.'
+        }, status=400)
+
+    if not pago.puede_subir_comprobante():
+        if pago.intentos_subida >= pago.max_intentos:
+            return JsonResponse({
+                'success': False,
+                'error': f'Has excedido el máximo de {pago.max_intentos} intentos. Contacta a soporte.'
+            }, status=400)
+        return JsonResponse({
+            'success': False,
+            'error': 'No puedes subir comprobantes para este pago.'
+        }, status=400)
+
     if 'comprobante' not in request.FILES:
         return JsonResponse({'success': False, 'error': 'No se envió ningún archivo'})
 
@@ -123,11 +162,13 @@ def subir_comprobante(request, pago_id):
     # Validar comprobante
     es_valido, mensaje_error = GeneradorQRPago.validar_comprobante(comprobante)
     if not es_valido:
+        pago.registrar_intento_subida()  # Registrar intento fallido
         return JsonResponse({'success': False, 'error': mensaje_error})
 
     # Guardar comprobante
     pago.comprobante = comprobante
     pago.estado = 'VERIFICANDO'
+    pago.registrar_intento_subida()  # Registrar intento exitoso
 
     # Guardar número de transacción si se proporcionó
     numero_transaccion = request.POST.get('numero_transaccion', '')

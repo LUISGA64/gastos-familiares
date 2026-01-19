@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_auth, views_pagos, views_gamificacion, views_chatbot
+from . import views, views_auth, views_pagos, views_gamificacion, views_chatbot, views_export
 
 urlpatterns = [
     # Autenticación
@@ -32,6 +32,8 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/exportar-pdf/', views_export.exportar_dashboard_pdf, name='exportar_dashboard_pdf'),
+    path('dashboard/exportar-excel/', views_export.exportar_dashboard_excel, name='exportar_dashboard_excel'),
 
     # Chatbot IA
     path('chatbot/', views_chatbot.chatbot_dashboard, name='chatbot_dashboard'),

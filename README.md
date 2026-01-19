@@ -18,6 +18,7 @@
 - **Distribución automática**: Cálculo proporcional de gastos según ingresos
 - **Conciliación mensual**: Cierre y revisión de períodos
 - **Metas de ahorro**: Seguimiento visual de objetivos financieros
+- **📊 Exportación PDF/Excel**: Reportes profesionales del dashboard (Premium)
 
 ### 🏆 Gamificación Completa
 - **17 logros automáticos**: Desbloqueables por acciones del usuario
@@ -69,6 +70,11 @@
 ### IA y APIs
 - **Groq API** - IA conversacional (Llama 3.3 70B) - GRATIS
 - **OpenAI GPT-4** - Opcional para plan premium
+
+### Reportes y Exportación
+- **ReportLab 4.0.7** - Generación de PDF profesionales
+- **XlsxWriter 3.1.9** - Exportación a Excel (.xlsx)
+- **Openpyxl 3.1.2** - Lectura/escritura Excel
 
 ---
 

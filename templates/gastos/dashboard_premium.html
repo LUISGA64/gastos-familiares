@@ -492,11 +492,30 @@
 
     // ========== FUNCIONES AUXILIARES ==========
     function exportDashboard(format) {
+        {% if not familia.tiene_exportar_datos %}
+            Swal.fire({
+                icon: 'warning',
+                title: 'Función Premium',
+                text: 'Esta función requiere Plan Premium o superior',
+                confirmButtonText: 'Ver Planes',
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '{% url "planes_precios" %}';
+                }
+            });
+            return;
+        {% endif %}
+
         showToast('Generando reporte en formato ' + format.toUpperCase() + '...', 'info');
-        // Aquí se implementaría la exportación real
-        setTimeout(() => {
-            showToast('Reporte generado exitosamente', 'success');
-        }, 1500);
+
+        // Redirigir a la URL de exportación correspondiente
+        if (format === 'pdf') {
+            window.location.href = '{% url "exportar_dashboard_pdf" %}';
+        } else if (format === 'excel') {
+            window.location.href = '{% url "exportar_dashboard_excel" %}';
+        }
     }
 
     function updateChart(period) {

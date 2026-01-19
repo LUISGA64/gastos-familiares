@@ -678,13 +678,31 @@
 
 {% block extra_js %}
 <script>
-// Aquí iría la integración con pasarela de pagos
+// Integración con sistema de pagos QR
 document.querySelectorAll('[data-plan]').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
         const planId = this.getAttribute('data-plan');
-        alert('Aquí se integraría la pasarela de pagos para el plan ' + planId);
-        // Redirigir a checkout o abrir modal de pago
+
+        // Verificar si el usuario está autenticado
+        {% if user.is_authenticated %}
+            // Redirigir a la página de pagar suscripción
+            window.location.href = "{% url 'pagar_suscripcion' %}?plan_id=" + planId;
+        {% else %}
+            // Si no está autenticado, mostrar mensaje y redirigir a login
+            Swal.fire({
+                icon: 'info',
+                title: 'Inicia Sesión',
+                text: 'Debes iniciar sesión para contratar un plan',
+                confirmButtonText: 'Ir a Login',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "{% url 'login' %}?next={% url 'pagar_suscripcion' %}%3Fplan_id=" + planId;
+                }
+            });
+        {% endif %}
     });
 });
 </script>

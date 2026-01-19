@@ -21,6 +21,9 @@ def dashboard(request):
         messages.warning(request, 'Debes seleccionar una familia primero.')
         return redirect('seleccionar_familia')
 
+    # Obtener objeto familia
+    familia = Familia.objects.get(id=familia_id)
+
     # Obtener aportantes activos de la familia
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
     total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
@@ -128,6 +131,7 @@ def dashboard(request):
     meta_ahorro = total_ingresos * Decimal('0.20') if total_ingresos else 0
 
     context = {
+        'familia': familia,
         'aportantes': aportantes,
         'total_ingresos': total_ingresos,
         'total_gastos_mes': total_gastos_mes,
