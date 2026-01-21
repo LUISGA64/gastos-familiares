@@ -217,54 +217,67 @@ AI_PROVIDER=demo
 
 ## 🚀 Deploy a Producción
 
-### Railway (Recomendado - GRATIS)
-✅ **Configuración ya lista** - Todos los archivos de deploy creados
+### 🖥️ VPS (Recomendado - Mayor Control)
+✅ **100% listo para VPS** - Compatible con cualquier proveedor
 
-**Paso a paso completo:**
-📖 Ver: [DEPLOY_RAILWAY.md](DEPLOY_RAILWAY.md) - Guía completa paso a paso
-📋 Ver: [RAILWAY_CHECKLIST.txt](RAILWAY_CHECKLIST.txt) - Checklist visual
-📋 Ver: [RAILWAY_RESUMEN.md](RAILWAY_RESUMEN.md) - Resumen rápido
-🤖 Ver: [GROQ_API_GUIA.md](GROQ_API_GUIA.md) - Cómo obtener API key gratis
+**Guías disponibles:**
+- 📖 **[DEPLOY_VPS_UNIVERSAL.md](DEPLOY_VPS_UNIVERSAL.md)** - Guía completa para CUALQUIER VPS
+- 📖 **[DEPLOY_RAPIDO.md](DEPLOY_RAPIDO.md)** - Guía específica para OVHcloud
+- 🔍 **[verificar_deploy_ovhcloud.py](verificar_deploy_ovhcloud.py)** - Script de verificación
+
+**Proveedores compatibles:**
+- **OVHcloud** (€4-15/mes) - ✨ Recomendado - Excelente precio/rendimiento
+- **Digital Ocean** ($6-24/mes) - Recomendado para LATAM
+- **Vultr** ($6-24/mes) - Global
+- **Linode** ($5-24/mes) - Global
+- **Hetzner** (€4-20/mes) - Excelente precio/rendimiento
+- **Contabo** (€5-15/mes) - Europa
+- **AWS Lightsail** ($5-20/mes) - Enterprise
+- **Y cualquier otro VPS con Ubuntu!**
 
 **Resumen rápido:**
 ```bash
 # 1. Generar SECRET_KEY
 python generar_secret_key.py
 
-# 2. Subir a GitHub
+# 2. Verificar que todo está listo
+python verificar_deploy_ovhcloud.py
+
+# 3. Subir a GitHub
 git init
 git add .
-git commit -m "Deploy a Railway"
+git commit -m "Deploy a VPS"
 git remote add origin https://github.com/TU_USUARIO/gastos-familiares.git
 git push -u origin main
 
-# 3. En Railway (railway.app):
-# - Login con GitHub
-# - New Project > Deploy from GitHub repo
-# - Agregar PostgreSQL: + New > Database > PostgreSQL
-# - Configurar Variables (ver RAILWAY_RESUMEN.md)
-# - Esperar deploy (2-5 min)
-# - Generate Domain
-# - Crear superusuario en Shell
+# 4. En tu VPS (OVHcloud, Vultr, Hetzner, etc):
+# - Crear servidor con Ubuntu 22.04
+# - Conectar por SSH
+# - Instalar: Python, PostgreSQL, Nginx
+# - Clonar repositorio
+# - Configurar Gunicorn y Nginx
+# - Configurar SSL (opcional)
+
+# Ver DEPLOY_VPS_UNIVERSAL.md para pasos detallados
 
 # ¡Listo! 🎉
 ```
 
-**Archivos de configuración creados:**
-- ✅ `Procfile` - Comando de Gunicorn
-- ✅ `runtime.txt` - Python 3.11
-- ✅ `railway.json` - Config de Railway
-- ✅ `nixpacks.toml` - Build config
-- ✅ `.env.example` - Variables ejemplo
-- ✅ `requirements.txt` - Con gunicorn, whitenoise, psycopg2
-- ✅ `settings.py` - Configurado para producción
+**Stack tecnológico:**
+- ✅ `Ubuntu 22.04 LTS` - Sistema operativo
+- ✅ `Python 3.13` - Runtime (compatible con 3.10+)
+- ✅ `PostgreSQL` - Base de datos
+- ✅ `Gunicorn` - Servidor WSGI
+- ✅ `Nginx` - Servidor web/proxy
+- ✅ `Certbot` - SSL/HTTPS gratis
+- ✅ `systemd` - Gestión de servicios
 
-### Render (Alternativa)
-1. Crea cuenta en render.com
-2. Nuevo Web Service
-3. Build: `pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput`
-4. Start: `gunicorn DjangoProject.wsgi:application`
-5. Variables: Igual que Railway
+### 🌐 Alternativas PaaS (Platform as a Service)
+Si prefieres NO gestionar un servidor:
+1. **Render:** render.com - Deploy automático desde Git
+2. **Heroku:** heroku.com - Clásico PaaS
+3. **Railway:** railway.app - Similar a Heroku
+4. **AWS Elastic Beanstalk:** - Enterprise
 
 ---
 
