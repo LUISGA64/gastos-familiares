@@ -28,54 +28,70 @@ def crear_planes():
         {
             'nombre': 'Plan Gratuito',
             'tipo': 'GRATIS',
-            'descripcion': 'Plan básico gratuito con funcionalidades limitadas',
             'precio_mensual': Decimal('0.00'),
-            'max_miembros': 3,
+            'max_aportantes': 2,
+            'max_gastos_mes': 50,
             'max_categorias': 10,
-            'soporte_prioritario': False,
-            'exportar_datos': False,
-            'reportes_avanzados': False,
             'dias_prueba': 0,
             'activo': True,
+            'caracteristicas': 'Funcionalidades básicas\nHasta 2 aportantes\n50 gastos por mes\n10 categorías\nHistorial de 3 meses',
+            'permite_reportes_avanzados': False,
+            'permite_conciliacion_automatica': False,
+            'permite_notificaciones_email': False,
+            'permite_historial_completo': False,
+            'permite_exportar_datos': False,
+            'soporte_prioritario': False,
         },
         {
             'nombre': 'Plan Básico',
             'tipo': 'BASICO',
-            'descripcion': 'Plan básico con funcionalidades estándar y periodo de prueba',
             'precio_mensual': Decimal('9990.00'),
-            'max_miembros': 5,
+            'max_aportantes': 4,
+            'max_gastos_mes': 200,
             'max_categorias': 20,
-            'soporte_prioritario': False,
-            'exportar_datos': True,
-            'reportes_avanzados': False,
             'dias_prueba': 15,
             'activo': True,
+            'caracteristicas': '15 días de prueba gratis\nHasta 4 aportantes\n200 gastos por mes\n20 categorías\nExportar a Excel/PDF',
+            'permite_reportes_avanzados': False,
+            'permite_conciliacion_automatica': True,
+            'permite_notificaciones_email': True,
+            'permite_historial_completo': False,
+            'permite_exportar_datos': True,
+            'soporte_prioritario': False,
         },
         {
             'nombre': 'Plan Familiar',
             'tipo': 'FAMILIAR',
-            'descripcion': 'Plan familiar con funcionalidades completas y periodo de prueba extendido',
             'precio_mensual': Decimal('19990.00'),
-            'max_miembros': 10,
+            'max_aportantes': 8,
+            'max_gastos_mes': 500,
             'max_categorias': 50,
-            'soporte_prioritario': True,
-            'exportar_datos': True,
-            'reportes_avanzados': True,
             'dias_prueba': 15,
             'activo': True,
+            'caracteristicas': '15 días de prueba gratis\nHasta 8 aportantes\n500 gastos por mes\n50 categorías\nReportes avanzados\nHistorial completo\nSoporte prioritario',
+            'permite_reportes_avanzados': True,
+            'permite_conciliacion_automatica': True,
+            'permite_notificaciones_email': True,
+            'permite_historial_completo': True,
+            'permite_exportar_datos': True,
+            'soporte_prioritario': True,
         },
         {
             'nombre': 'Plan Premium',
             'tipo': 'PREMIUM',
-            'descripcion': 'Plan premium con todas las funcionalidades y soporte prioritario',
             'precio_mensual': Decimal('29990.00'),
-            'max_miembros': 999,  # Sin límite
+            'max_aportantes': 999,  # Sin límite
+            'max_gastos_mes': 9999,  # Sin límite
             'max_categorias': 999,  # Sin límite
-            'soporte_prioritario': True,
-            'exportar_datos': True,
-            'reportes_avanzados': True,
             'dias_prueba': 30,
             'activo': True,
+            'caracteristicas': '30 días de prueba gratis\nAportantes ilimitados\nGastos ilimitados\nCategorías ilimitadas\nTodas las características\nSoporte prioritario 24/7',
+            'permite_reportes_avanzados': True,
+            'permite_conciliacion_automatica': True,
+            'permite_notificaciones_email': True,
+            'permite_historial_completo': True,
+            'permite_exportar_datos': True,
+            'soporte_prioritario': True,
         },
     ]
 
@@ -98,12 +114,14 @@ def crear_planes():
         print(f"✅ Plan creado: {plan.nombre}")
         print(f"   Tipo: {plan.tipo}")
         print(f"   Precio: ${plan.precio_mensual:,.0f}/mes")
-        print(f"   Max. miembros: {plan.max_miembros}")
+        print(f"   Max. aportantes: {plan.max_aportantes}")
+        print(f"   Max. gastos/mes: {plan.max_gastos_mes}")
         print(f"   Días de prueba: {plan.dias_prueba}")
         print(f"   Características:")
-        print(f"     - Exportar datos: {'Sí' if plan.exportar_datos else 'No'}")
-        print(f"     - Reportes avanzados: {'Sí' if plan.reportes_avanzados else 'No'}")
+        print(f"     - Exportar datos: {'Sí' if plan.permite_exportar_datos else 'No'}")
+        print(f"     - Reportes avanzados: {'Sí' if plan.permite_reportes_avanzados else 'No'}")
         print(f"     - Soporte prioritario: {'Sí' if plan.soporte_prioritario else 'No'}")
+        print(f"     - Conciliación automática: {'Sí' if plan.permite_conciliacion_automatica else 'No'}")
         print()
 
     print("=" * 70)
@@ -119,7 +137,7 @@ def crear_planes():
     print("-" * 70)
     for plan in PlanSuscripcion.objects.all().order_by('precio_mensual'):
         print(f"• {plan.nombre} ({plan.tipo})")
-        print(f"  ${plan.precio_mensual:,.0f}/mes - {plan.max_miembros} miembros - {plan.dias_prueba} días prueba")
+        print(f"  ${plan.precio_mensual:,.0f}/mes - {plan.max_aportantes} aportantes - {plan.dias_prueba} días prueba")
 
     print()
     print("=" * 70)
