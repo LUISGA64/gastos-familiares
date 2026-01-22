@@ -854,6 +854,38 @@
                         </a>
                     </li>
 
+                    <!-- Invitaciones -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'invita' in request.path or 'unirse' in request.path %}active{% endif %}"
+                           href="#" id="invitacionesDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span>Invitar</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="invitacionesDropdown">
+                            <li><h6 class="dropdown-header">Invitaciones</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'generar_invitacion_familia' %}">
+                                    <i class="bi bi-gift"></i>
+                                    <span>Generar Invitación</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'gestionar_invitaciones' %}">
+                                    <i class="bi bi-list-ul"></i>
+                                    <span>Gestionar Invitaciones</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'unirse_familia' %}">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    <span>Unirse a Familia</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <!-- Categorías Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if 'categoria' in request.path or 'subcategoria' in request.path %}active{% endif %}"
