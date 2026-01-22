@@ -107,6 +107,9 @@ media/comprobantes/*
 # Static files collected
 staticfiles/
 
+# Log files
+logs/
+*.log
 # Database backups
 *.dump
 *.sql

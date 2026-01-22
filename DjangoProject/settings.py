@@ -179,3 +179,119 @@ DEFAULT_FROM_EMAIL = 'gastos@familia.com'
 # EMAIL_HOST_PASSWORD = 'tu_contraseña_o_app_password'
 # DEFAULT_FROM_EMAIL = 'Gastos Familiares <gastos@familia.com>'
 
+# ============================================================================
+# CONFIGURACIÓN DE LOGGING
+# ============================================================================
+
+# Crear directorio de logs si no existe
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {module} {funcName}:{lineno} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '[{levelname}] {asctime} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        # Handler para errores críticos en archivo separado
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        # Handler para todos los logs de la aplicación
+        'file_app': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'application.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        # Handler para logs de Django (framework)
+        'file_django': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'django.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 3,
+            'formatter': 'verbose',
+        },
+        # Handler para la consola (solo en desarrollo)
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'filters': ['require_debug_true'],
+        },
+        # Handler para enviar emails de errores críticos (solo en producción)
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'filters': ['require_debug_false'],
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Logger para la aplicación 'gastos'
+        'gastos': {
+            'handlers': ['file_app', 'file_error', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Logger para Django
+        'django': {
+            'handlers': ['file_django', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Logger para errores de Django
+        'django.request': {
+            'handlers': ['file_error', 'mail_admins', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        # Logger para la base de datos (útil para debugging)
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Cambiar a DEBUG para ver queries SQL
+            'propagate': False,
+        },
+        # Logger raíz (catch-all)
+        'root': {
+            'handlers': ['file_app', 'console'],
+            'level': 'INFO',
+        },
+    },
+}
+
+# Configuración adicional para producción
+if not DEBUG:
+    # En producción, reducir logs de consola
+    LOGGING['handlers']['console']['level'] = 'ERROR'
+    # Habilitar emails de errores a administradores
+    ADMINS = [
+        ('Admin', config('ADMIN_EMAIL', default='admin@gastos-familiares.com')),
+    ]
+    MANAGERS = ADMINS
