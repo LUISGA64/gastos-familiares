@@ -459,6 +459,140 @@ class CodigoInvitacion(models.Model):
         self.save()
 
 
+class InvitacionFamilia(models.Model):
+    """Invitaciones para que usuarios se unan a una familia existente"""
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente'),
+        ('ACEPTADA', 'Aceptada'),
+        ('RECHAZADA', 'Rechazada'),
+        ('EXPIRADA', 'Expirada'),
+    ]
+
+    familia = models.ForeignKey(
+        Familia,
+        on_delete=models.CASCADE,
+        related_name='invitaciones',
+        verbose_name="Familia"
+    )
+    codigo = models.CharField(
+        max_length=12,
+        unique=True,
+        verbose_name="Código de Invitación",
+        help_text="Código único para unirse a la familia"
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='invitaciones_creadas',
+        verbose_name="Creado por"
+    )
+    usado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invitaciones_usadas',
+        verbose_name="Usado por"
+    )
+    email_invitado = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Email del Invitado",
+        help_text="Email opcional del usuario invitado"
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='PENDIENTE',
+        verbose_name="Estado"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación"
+    )
+    fecha_expiracion = models.DateTimeField(
+        verbose_name="Fecha de Expiración",
+        help_text="Fecha hasta la cual el código es válido"
+    )
+    fecha_uso = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Uso"
+    )
+    mensaje_invitacion = models.TextField(
+        blank=True,
+        verbose_name="Mensaje de Invitación",
+        help_text="Mensaje personalizado para el invitado"
+    )
+    usos_maximos = models.IntegerField(
+        default=1,
+        verbose_name="Usos Máximos",
+        help_text="Número máximo de veces que puede usarse el código (0 = ilimitado)"
+    )
+    usos_actuales = models.IntegerField(
+        default=0,
+        verbose_name="Usos Actuales"
+    )
+
+    class Meta:
+        verbose_name = "Invitación a Familia"
+        verbose_name_plural = "Invitaciones a Familias"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"Invitación a {self.familia.nombre} - {self.codigo} ({self.get_estado_display()})"
+
+    def esta_valido(self):
+        """Verifica si el código de invitación es válido"""
+        # Verificar si está expirado
+        if timezone.now() > self.fecha_expiracion:
+            if self.estado == 'PENDIENTE':
+                self.estado = 'EXPIRADA'
+                self.save()
+            return False
+
+        # Verificar estado
+        if self.estado != 'PENDIENTE':
+            return False
+
+        # Verificar usos máximos
+        if self.usos_maximos > 0 and self.usos_actuales >= self.usos_maximos:
+            return False
+
+        return True
+
+    def usar_invitacion(self, user):
+        """Marca la invitación como usada y agrega el usuario a la familia"""
+        from django.db import transaction
+
+        with transaction.atomic():
+            # Agregar usuario a la familia
+            self.familia.miembros.add(user)
+
+            # Actualizar invitación
+            self.usos_actuales += 1
+            self.usado_por = user
+            self.fecha_uso = timezone.now()
+
+            # Si alcanzó el máximo de usos, marcar como aceptada
+            if self.usos_maximos > 0 and self.usos_actuales >= self.usos_maximos:
+                self.estado = 'ACEPTADA'
+
+            self.save()
+
+            return True
+
+    def generar_codigo_unico():
+        """Genera un código único de 8 caracteres"""
+        import random
+        import string
+
+        while True:
+            codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not InvitacionFamilia.objects.filter(codigo=codigo).exists():
+                return codigo
+
+
 class Aportante(models.Model):
     """Modelo para representar un aportante de ingresos en la familia"""
     familia = models.ForeignKey(

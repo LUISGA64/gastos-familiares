@@ -15,6 +15,13 @@ urlpatterns = [
     path('familia/seleccionar/', views_auth.seleccionar_familia, name='seleccionar_familia'),
     path('suscripcion/', views_auth.estado_suscripcion, name='estado_suscripcion'),
 
+    # Invitaciones a familias
+    path('familia/invitar/', views_auth.generar_invitacion_familia, name='generar_invitacion_familia'),
+    path('familia/invitaciones/', views_auth.gestionar_invitaciones, name='gestionar_invitaciones'),
+    path('familia/invitaciones/cancelar/<int:invitacion_id>/', views_auth.cancelar_invitacion, name='cancelar_invitacion'),
+    path('familia/unirse/', views_auth.unirse_familia, name='unirse_familia'),
+    path('familia/unirse/<str:codigo>/', views_auth.unirse_familia, name='unirse_familia_codigo'),
+
     # Pagos con QR
     path('suscripcion/pagar/', views_pagos.pagar_suscripcion, name='pagar_suscripcion'),
     path('suscripcion/generar-qr/<int:plan_id>/<str:metodo>/', views_pagos.generar_qr_pago, name='generar_qr_pago'),

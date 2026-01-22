@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
-from .models import Familia, PlanSuscripcion, CodigoInvitacion
+from .models import Familia, PlanSuscripcion, CodigoInvitacion, InvitacionFamilia
 import random
 import string
 
@@ -289,3 +289,212 @@ def planes_precios(request):
 
     return render(request, 'gastos/publico/planes.html', context)
 
+
+@login_required
+def generar_invitacion_familia(request):
+    """Genera un código de invitación para que otros usuarios se unan a la familia"""
+    familia_id = request.session.get('familia_id')
+
+    if not familia_id:
+        messages.warning(request, 'Selecciona una familia primero.')
+        return redirect('seleccionar_familia')
+
+    try:
+        familia = Familia.objects.get(id=familia_id)
+
+        # Verificar que el usuario tenga permiso (creador o admin)
+        if familia.creado_por != request.user and not request.user.is_superuser:
+            messages.error(request, 'Solo el creador de la familia puede generar invitaciones.')
+            return redirect('dashboard')
+
+        if request.method == 'POST':
+            email_invitado = request.POST.get('email_invitado', '').strip()
+            mensaje = request.POST.get('mensaje', '').strip()
+            dias_validez = int(request.POST.get('dias_validez', 7))
+            usos_maximos = int(request.POST.get('usos_maximos', 1))
+
+            # Generar código único
+            codigo = InvitacionFamilia.generar_codigo_unico()
+
+            # Calcular fecha de expiración
+            fecha_expiracion = timezone.now() + timedelta(days=dias_validez)
+
+            # Crear invitación
+            invitacion = InvitacionFamilia.objects.create(
+                familia=familia,
+                codigo=codigo,
+                creado_por=request.user,
+                email_invitado=email_invitado or None,
+                mensaje_invitacion=mensaje,
+                fecha_expiracion=fecha_expiracion,
+                usos_maximos=usos_maximos
+            )
+
+            messages.success(
+                request,
+                f'¡Código de invitación generado! Código: {codigo}. '
+                f'Válido por {dias_validez} días.'
+            )
+
+            # Registrar en logs
+            import logging
+            logger = logging.getLogger('gastos')
+            logger.info(
+                f"Invitación creada - Familia: {familia.nombre} - Código: {codigo} - "
+                f"Creado por: {request.user.username}"
+            )
+
+            return redirect('gestionar_invitaciones')
+
+        # Obtener invitaciones activas de la familia
+        invitaciones_activas = familia.invitaciones.filter(
+            estado='PENDIENTE',
+            fecha_expiracion__gt=timezone.now()
+        ).order_by('-fecha_creacion')[:5]
+
+        context = {
+            'familia': familia,
+            'invitaciones_activas': invitaciones_activas,
+        }
+
+        return render(request, 'gastos/familias/generar_invitacion.html', context)
+
+    except Familia.DoesNotExist:
+        messages.error(request, 'Familia no encontrada.')
+        return redirect('seleccionar_familia')
+
+
+@login_required
+def gestionar_invitaciones(request):
+    """Vista para gestionar todas las invitaciones de la familia"""
+    familia_id = request.session.get('familia_id')
+
+    if not familia_id:
+        messages.warning(request, 'Selecciona una familia primero.')
+        return redirect('seleccionar_familia')
+
+    try:
+        familia = Familia.objects.get(id=familia_id)
+
+        # Verificar acceso
+        if not familia.puede_acceder(request.user):
+            messages.error(request, 'No tienes acceso a esta familia.')
+            return redirect('seleccionar_familia')
+
+        # Obtener todas las invitaciones
+        invitaciones = familia.invitaciones.all().order_by('-fecha_creacion')
+
+        # Separar por estado
+        pendientes = invitaciones.filter(estado='PENDIENTE', fecha_expiracion__gt=timezone.now())
+        aceptadas = invitaciones.filter(estado='ACEPTADA')
+        expiradas = invitaciones.filter(estado='EXPIRADA') | invitaciones.filter(
+            estado='PENDIENTE',
+            fecha_expiracion__lte=timezone.now()
+        )
+
+        context = {
+            'familia': familia,
+            'invitaciones_pendientes': pendientes,
+            'invitaciones_aceptadas': aceptadas,
+            'invitaciones_expiradas': expiradas,
+            'total_invitaciones': invitaciones.count(),
+        }
+
+        return render(request, 'gastos/familias/gestionar_invitaciones.html', context)
+
+    except Familia.DoesNotExist:
+        messages.error(request, 'Familia no encontrada.')
+        return redirect('seleccionar_familia')
+
+
+@login_required
+def cancelar_invitacion(request, invitacion_id):
+    """Cancela una invitación pendiente"""
+    try:
+        invitacion = InvitacionFamilia.objects.get(id=invitacion_id)
+
+        # Verificar que el usuario sea el creador de la familia
+        if invitacion.familia.creado_por != request.user and not request.user.is_superuser:
+            messages.error(request, 'No tienes permiso para cancelar esta invitación.')
+            return redirect('gestionar_invitaciones')
+
+        if invitacion.estado == 'PENDIENTE':
+            invitacion.estado = 'RECHAZADA'
+            invitacion.save()
+            messages.success(request, f'Invitación {invitacion.codigo} cancelada.')
+        else:
+            messages.warning(request, 'Esta invitación ya no está pendiente.')
+
+        return redirect('gestionar_invitaciones')
+
+    except InvitacionFamilia.DoesNotExist:
+        messages.error(request, 'Invitación no encontrada.')
+        return redirect('gestionar_invitaciones')
+
+
+def unirse_familia(request, codigo=None):
+    """Vista para que un usuario se una a una familia usando un código de invitación"""
+    if not request.user.is_authenticated:
+        messages.warning(request, 'Debes iniciar sesión para unirte a una familia.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip().upper()
+
+        if not codigo:
+            messages.error(request, 'Debes ingresar un código de invitación.')
+            return render(request, 'gastos/familias/unirse.html')
+
+        try:
+            invitacion = InvitacionFamilia.objects.get(codigo=codigo)
+
+            # Verificar si es válido
+            if not invitacion.esta_valido():
+                if invitacion.estado == 'EXPIRADA' or timezone.now() > invitacion.fecha_expiracion:
+                    messages.error(request, 'Este código de invitación ha expirado.')
+                elif invitacion.estado == 'ACEPTADA':
+                    messages.error(request, 'Este código ya alcanzó el máximo de usos.')
+                else:
+                    messages.error(request, 'Este código de invitación no es válido.')
+                return render(request, 'gastos/familias/unirse.html')
+
+            # Verificar que no esté ya en la familia
+            if invitacion.familia.miembros.filter(id=request.user.id).exists():
+                messages.warning(request, f'Ya eres miembro de {invitacion.familia.nombre}.')
+                request.session['familia_id'] = invitacion.familia.id
+                return redirect('dashboard')
+
+            # Unir a la familia
+            if invitacion.usar_invitacion(request.user):
+                request.session['familia_id'] = invitacion.familia.id
+                messages.success(
+                    request,
+                    f'¡Te has unido exitosamente a {invitacion.familia.nombre}!'
+                )
+
+                # Registrar en logs
+                import logging
+                logger = logging.getLogger('gastos')
+                logger.info(
+                    f"Usuario {request.user.username} se unió a familia {invitacion.familia.nombre} "
+                    f"usando código {codigo}"
+                )
+
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Hubo un error al unirte a la familia. Intenta de nuevo.')
+
+        except InvitacionFamilia.DoesNotExist:
+            messages.error(request, 'El código de invitación no existe.')
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('gastos')
+            logger.error(f"Error al unirse a familia: {e}", exc_info=True)
+            messages.error(request, 'Ocurrió un error. Por favor, intenta de nuevo.')
+
+    # Si viene con código en la URL, pre-llenar el formulario
+    context = {
+        'codigo_prellenado': codigo if codigo else ''
+    }
+
+    return render(request, 'gastos/familias/unirse.html', context)

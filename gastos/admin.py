@@ -6,7 +6,37 @@ from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, Distri
                      PresupuestoCategoria, Notificacion, Pago, PerfilUsuario, Logro,
                      LogroDesbloqueado, DesafioMensual, ParticipacionDesafio,
                      HistorialPuntos, NotificacionLogro, ConversacionChatbot,
-                     MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago)
+                     MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago, InvitacionFamilia,
+                     Familia, PlanSuscripcion, CodigoInvitacion)
+
+
+@admin.register(InvitacionFamilia)
+class InvitacionFamiliaAdmin(admin.ModelAdmin):
+    list_display = ['codigo', 'familia', 'creado_por', 'estado', 'usos_actuales', 'usos_maximos', 'fecha_creacion', 'fecha_expiracion']
+    list_filter = ['estado', 'fecha_creacion', 'fecha_expiracion']
+    search_fields = ['codigo', 'familia__nombre', 'email_invitado']
+    readonly_fields = ['codigo', 'fecha_creacion', 'fecha_uso', 'usos_actuales']
+    ordering = ['-fecha_creacion']
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('familia', 'codigo', 'creado_por', 'estado')
+        }),
+        ('Detalles de la Invitación', {
+            'fields': ('email_invitado', 'mensaje_invitacion')
+        }),
+        ('Configuración', {
+            'fields': ('usos_maximos', 'usos_actuales', 'fecha_expiracion')
+        }),
+        ('Uso', {
+            'fields': ('usado_por', 'fecha_uso'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def has_add_permission(self, request):
+        # Las invitaciones se crean desde la interfaz web
+        return False
 
 
 @admin.register(Aportante)
