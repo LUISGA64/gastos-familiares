@@ -8,7 +8,10 @@
         <h1><i class="bi bi-people-fill"></i> Aportantes</h1>
         <p class="text-muted">Gestión de aportantes y sus ingresos</p>
     </div>
-    <div class="col-auto">
+    <div class="col-auto d-flex gap-2">
+        <a href="{% url 'generar_invitacion_familia' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill"></i> Invitar Miembros
+        </a>
         <a href="{% url 'crear_aportante' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nuevo Aportante
         </a>
@@ -102,5 +105,68 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Sección de Invitaciones -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-gift"></i> Invita a más miembros a tu familia
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="card-title">¿Quieres agregar más personas a tu familia?</h5>
+                        <p class="card-text">
+                            Genera códigos de invitación para que otros usuarios puedan unirse a tu familia
+                            y ayudar en la gestión de gastos. Es rápido, seguro y sin complicaciones.
+                        </p>
+                        <ul class="mb-3">
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Genera códigos únicos en segundos</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Comparte por WhatsApp, Email o enlace directo</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Control total sobre quién puede unirse</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Códigos con fecha de expiración configurable</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 d-flex flex-column justify-content-center gap-3">
+                        <a href="{% url 'generar_invitacion_familia' %}" class="btn btn-success btn-lg">
+                            <i class="bi bi-gift me-2"></i>Generar Invitación
+                        </a>
+                        <a href="{% url 'gestionar_invitaciones' %}" class="btn btn-outline-success btn-lg">
+                            <i class="bi bi-list-ul me-2"></i>Ver Mis Invitaciones
+                        </a>
+                        <a href="{% url 'unirse_familia' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Unirse a Otra Familia
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card.border-success {
+        border-width: 2px;
+    }
+
+    .card.border-success .card-header {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .d-flex.gap-3 {
+        gap: 1rem !important;
+    }
+</style>
 {% endblock %}
 
