@@ -48,6 +48,15 @@ coverage.xml
 *.log
 local_settings.py
 db.sqlite3
+
+# Archivos con información sensible
+CONEXION_POSTGRESQL_REMOTA.md
+configurar_postgresql_remoto.sh
+gestionar_superusuario.sh
+DEPLOY_EXITOSO.md
+*_CREDENCIALES.md
+*_PASSWORDS.md
+backup_*.sql
 db.sqlite3-journal
 /media
 /staticfiles
