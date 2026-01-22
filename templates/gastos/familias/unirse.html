@@ -1,0 +1,402 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Unirse a una Familia - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 20px 0;
+    }
+
+    .unirse-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .unirse-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        overflow: hidden;
+        background: white;
+    }
+
+    .unirse-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .brand-icon {
+        font-size: 70px;
+        margin-bottom: 20px;
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .unirse-header h3 {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .unirse-header p {
+        opacity: 0.95;
+        margin: 0;
+        font-size: 15px;
+    }
+
+    .unirse-body {
+        padding: 40px;
+    }
+
+    .codigo-input-wrapper {
+        position: relative;
+        margin-bottom: 30px;
+    }
+
+    .codigo-input {
+        width: 100%;
+        border: 3px solid #e9ecef;
+        border-radius: 15px;
+        padding: 20px 25px;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        font-family: 'Courier New', monospace;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+
+    .codigo-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.3rem rgba(102, 126, 234, 0.25);
+        background: white;
+        outline: none;
+    }
+
+    .codigo-input::placeholder {
+        font-size: 18px;
+        letter-spacing: 2px;
+        color: #adb5bd;
+    }
+
+    .btn-unirse {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        border-radius: 12px;
+        padding: 16px 32px;
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        margin-bottom: 20px;
+    }
+
+    .btn-unirse:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-unirse:active {
+        transform: translateY(-1px);
+    }
+
+    .familia-preview {
+        background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 25px;
+        display: none;
+    }
+
+    .familia-preview.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .familia-preview-header {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .familia-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .familia-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        flex-shrink: 0;
+    }
+
+    .familia-details h5 {
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .familia-details p {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .info-badge {
+        display: inline-block;
+        background: #e7f3ff;
+        color: #0056b3;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-right: 5px;
+    }
+
+    .divider {
+        position: relative;
+        text-align: center;
+        margin: 30px 0;
+    }
+
+    .divider span {
+        background: white;
+        padding: 0 15px;
+        position: relative;
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e9ecef;
+    }
+
+    .btn-volver {
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .btn-volver:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .help-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 25px;
+    }
+
+    .help-section h6 {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .help-section ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .help-section li {
+        margin-bottom: 8px;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    @media (max-width: 576px) {
+        .unirse-body {
+            padding: 25px;
+        }
+
+        .codigo-input {
+            font-size: 20px;
+            padding: 15px 20px;
+            letter-spacing: 2px;
+        }
+
+        .brand-icon {
+            font-size: 50px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container unirse-container">
+    <div class="unirse-card">
+        <div class="unirse-header">
+            <div class="brand-icon">🔑</div>
+            <h3>Unirse a una Familia</h3>
+            <p>Ingresa el código de invitación que recibiste</p>
+        </div>
+
+        <div class="unirse-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags or 'danger' in message.tags %}exclamation-triangle{% elif 'warning' in message.tags %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="unirseForm">
+                {% csrf_token %}
+
+                <div class="codigo-input-wrapper">
+                    <input
+                        type="text"
+                        class="codigo-input"
+                        id="codigo"
+                        name="codigo"
+                        placeholder="ABC12345"
+                        maxlength="12"
+                        value="{{ codigo_prellenado }}"
+                        required
+                        autofocus
+                    >
+                    <small class="d-block text-center text-muted mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Ingresa el código de 8 caracteres que recibiste
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-unirse">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Unirse a la Familia
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>o</span>
+            </div>
+
+            <a href="{% url 'seleccionar_familia' %}" class="btn btn-volver">
+                <i class="bi bi-arrow-left me-2"></i>Volver a Mis Familias
+            </a>
+
+            <!-- Ayuda -->
+            <div class="help-section">
+                <h6><i class="bi bi-question-circle me-2"></i>¿Cómo funciona?</h6>
+                <ul>
+                    <li>Solicita un código de invitación al creador de la familia</li>
+                    <li>Ingresa el código en el campo de arriba</li>
+                    <li>Haz clic en "Unirse a la Familia"</li>
+                    <li>¡Listo! Podrás ver y gestionar los gastos de la familia</li>
+                </ul>
+            </div>
+
+            <!-- Preview de familia (se mostrará cuando se valide el código) -->
+            <div class="familia-preview" id="familiaPreview">
+                <div class="familia-preview-header">
+                    <i class="bi bi-eye"></i>
+                    <span>Vista previa de la familia</span>
+                </div>
+                <div class="familia-info">
+                    <div class="familia-avatar">
+                        👥
+                    </div>
+                    <div class="familia-details">
+                        <h5 id="familiaNombre">Familia García</h5>
+                        <p>
+                            <i class="bi bi-person-check me-1"></i>
+                            <span id="familiaCreador">Creada por Juan García</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="info-badge">
+                        <i class="bi bi-people me-1"></i>
+                        <span id="familiaMiembros">3</span> miembros
+                    </span>
+                    <span class="info-badge">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Código válido
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Convertir input a mayúsculas automáticamente
+document.getElementById('codigo').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+
+    // Opcional: Validar el código en tiempo real (requeriría endpoint AJAX)
+    // validarCodigoEnTiempoReal(e.target.value);
+});
+
+// Auto-submit si viene el código pre-llenado
+{% if codigo_prellenado %}
+window.addEventListener('load', function() {
+    // Mostrar mensaje de confirmación antes de auto-unirse
+    const confirmar = confirm('¿Deseas unirte a esta familia usando el código {{ codigo_prellenado }}?');
+    if (confirmar) {
+        document.getElementById('unirseForm').submit();
+    }
+});
+{% endif %}
+
+// Función opcional para validar código en tiempo real (requiere endpoint AJAX)
+function validarCodigoEnTiempoReal(codigo) {
+    if (codigo.length === 8) {
+        // Aquí podrías hacer una llamada AJAX para validar el código
+        // y mostrar la preview de la familia
+        // Por ahora, solo mostramos un ejemplo
+        console.log('Validando código:', codigo);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,470 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}Generar Invitación - Gastos Familiares{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        min-height: 100vh;
+    }
+
+    .invitacion-container {
+        margin-top: 40px;
+        margin-bottom: 60px;
+    }
+
+    .invitacion-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+        background: white;
+        margin-bottom: 30px;
+    }
+
+    .invitacion-header {
+        background: linear-gradient(135deg, #11998e, #06665a);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .invitacion-header h3 {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .invitacion-header p {
+        opacity: 0.95;
+        margin: 0;
+        font-size: 15px;
+    }
+
+    .brand-icon {
+        font-size: 50px;
+        margin-bottom: 15px;
+    }
+
+    .invitacion-body {
+        padding: 35px;
+    }
+
+    .form-floating {
+        margin-bottom: 20px;
+    }
+
+    .form-floating .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-floating .form-control:focus {
+        border-color: #11998e;
+        box-shadow: 0 0 0 0.2rem rgba(17, 153, 142, 0.15);
+    }
+
+    .form-floating label {
+        padding: 1rem 16px;
+        color: #6c757d;
+    }
+
+    .btn-generar {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        border: none;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    }
+
+    .btn-generar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+    }
+
+    .invitaciones-activas {
+        margin-top: 40px;
+    }
+
+    .invitacion-item {
+        background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .invitacion-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+    }
+
+    .invitacion-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: #11998e;
+    }
+
+    .codigo-display {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 15px 0;
+        position: relative;
+    }
+
+    .codigo-texto {
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 4px;
+        font-family: 'Courier New', monospace;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .btn-copiar {
+        background: rgba(255,255,255,0.2);
+        border: 2px solid white;
+        color: white;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-copiar:hover {
+        background: white;
+        color: #667eea;
+    }
+
+    .info-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        margin: 5px;
+    }
+
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .share-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn-share {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-whatsapp {
+        background: #25D366;
+        color: white;
+    }
+
+    .btn-whatsapp:hover {
+        background: #128C7E;
+        transform: scale(1.05);
+    }
+
+    .btn-email {
+        background: #EA4335;
+        color: white;
+    }
+
+    .btn-email:hover {
+        background: #c5221f;
+        transform: scale(1.05);
+    }
+
+    .btn-link {
+        background: #0084ff;
+        color: white;
+    }
+
+    .btn-link:hover {
+        background: #0056b3;
+        transform: scale(1.05);
+    }
+
+    .help-text {
+        font-size: 13px;
+        color: #6c757d;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 60px;
+        margin-bottom: 15px;
+        opacity: 0.3;
+    }
+
+    @media (max-width: 768px) {
+        .invitacion-body {
+            padding: 25px;
+        }
+
+        .codigo-texto {
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container invitacion-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Card de Generar Invitación -->
+            <div class="invitacion-card">
+                <div class="invitacion-header">
+                    <div class="brand-icon">👥</div>
+                    <h3>Invitar Miembros a {{ familia.nombre }}</h3>
+                    <p>Genera códigos de invitación para que otros usuarios se unan a tu familia</p>
+                </div>
+
+                <div class="invitacion-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="form-floating">
+                            <input type="email" class="form-control" id="email_invitado" name="email_invitado" placeholder="Email">
+                            <label for="email_invitado"><i class="bi bi-envelope me-2"></i>Email del Invitado (Opcional)</label>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Si lo proporcionas, se enviará una notificación automática</span>
+                            </div>
+                        </div>
+
+                        <div class="form-floating">
+                            <textarea class="form-control" id="mensaje" name="mensaje" placeholder="Mensaje" style="height: 100px"></textarea>
+                            <label for="mensaje"><i class="bi bi-chat-text me-2"></i>Mensaje Personalizado (Opcional)</label>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Mensaje que verá el invitado al recibir la invitación</span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="dias_validez" name="dias_validez" value="7" min="1" max="365" placeholder="Días">
+                                    <label for="dias_validez"><i class="bi bi-calendar-event me-2"></i>Días de Validez</label>
+                                    <div class="help-text">
+                                        <i class="bi bi-clock"></i>
+                                        <span>Tiempo que el código estará activo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="usos_maximos" name="usos_maximos" value="1" min="1" max="10" placeholder="Usos">
+                                    <label for="usos_maximos"><i class="bi bi-people me-2"></i>Usos Máximos</label>
+                                    <div class="help-text">
+                                        <i class="bi bi-person-plus"></i>
+                                        <span>Número de personas que pueden usar el código</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-generar">
+                            <i class="bi bi-key me-2"></i>Generar Código de Invitación
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'gestionar_invitaciones' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-list-ul me-2"></i>Ver Todas las Invitaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invitaciones Activas Recientes -->
+            {% if invitaciones_activas %}
+            <div class="invitaciones-activas">
+                <h4 class="mb-4 text-white">
+                    <i class="bi bi-clock-history me-2"></i>Invitaciones Activas Recientes
+                </h4>
+
+                {% for invitacion in invitaciones_activas %}
+                <div class="invitacion-item">
+                    <div class="row align-items-center">
+                        <div class="col-lg-5">
+                            <div class="codigo-display">
+                                <div class="codigo-texto">{{ invitacion.codigo }}</div>
+                                <button class="btn btn-copiar" onclick="copiarCodigo('{{ invitacion.codigo }}')">
+                                    <i class="bi bi-clipboard me-1"></i>Copiar Código
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="mb-2">
+                                <span class="info-badge badge-success">
+                                    <i class="bi bi-check-circle me-1"></i>Activa
+                                </span>
+                                <span class="info-badge badge-info">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {% if invitacion.fecha_expiracion > invitacion.fecha_creacion %}
+                                        Expira: {{ invitacion.fecha_expiracion|date:"d/m/Y" }}
+                                    {% endif %}
+                                </span>
+                                <span class="info-badge badge-warning">
+                                    <i class="bi bi-person me-1"></i>
+                                    Usos: {{ invitacion.usos_actuales }}/{{ invitacion.usos_maximos }}
+                                </span>
+                            </div>
+
+                            <div class="share-buttons">
+                                <button class="btn-share btn-whatsapp" onclick="compartirWhatsApp('{{ invitacion.codigo }}', '{{ familia.nombre }}')">
+                                    <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                                </button>
+                                <button class="btn-share btn-email" onclick="compartirEmail('{{ invitacion.codigo }}', '{{ familia.nombre }}')">
+                                    <i class="bi bi-envelope me-1"></i>Email
+                                </button>
+                                <button class="btn-share btn-link" onclick="copiarEnlace('{{ invitacion.codigo }}')">
+                                    <i class="bi bi-link-45deg me-1"></i>Copiar Enlace
+                                </button>
+                            </div>
+
+                            {% if invitacion.mensaje_invitacion %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-chat-quote me-1"></i>{{ invitacion.mensaje_invitacion|truncatewords:10 }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarCodigo(codigo) {
+    navigator.clipboard.writeText(codigo).then(() => {
+        mostrarNotificacion('✅ Código copiado: ' + codigo, 'success');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        mostrarNotificacion('❌ No se pudo copiar el código', 'error');
+    });
+}
+
+function copiarEnlace(codigo) {
+    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
+    navigator.clipboard.writeText(enlace).then(() => {
+        mostrarNotificacion('🔗 Enlace copiado al portapapeles', 'success');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        mostrarNotificacion('❌ No se pudo copiar el enlace', 'error');
+    });
+}
+
+function compartirWhatsApp(codigo, familia) {
+    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
+    const mensaje = encodeURIComponent(
+        `¡Hola! 👋\n\n` +
+        `Te invito a unirte a "${familia}" en Gastos Familiares.\n\n` +
+        `🔑 Código: ${codigo}\n` +
+        `🔗 Enlace directo: ${enlace}\n\n` +
+        `¡Nos vemos allí!`
+    );
+    window.open(`https://wa.me/?text=${mensaje}`, '_blank');
+}
+
+function compartirEmail(codigo, familia) {
+    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
+    const asunto = encodeURIComponent(`Invitación a ${familia}`);
+    const cuerpo = encodeURIComponent(
+        `¡Hola!\n\n` +
+        `Te invito a unirte a "${familia}" en Gastos Familiares.\n\n` +
+        `Código de invitación: ${codigo}\n` +
+        `Enlace directo: ${enlace}\n\n` +
+        `Simplemente haz clic en el enlace o ingresa el código en la aplicación.\n\n` +
+        `¡Nos vemos allí!`
+    );
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}
