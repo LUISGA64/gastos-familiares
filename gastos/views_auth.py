@@ -160,6 +160,15 @@ def crear_familia(request):
         except PlanSuscripcion.DoesNotExist:
             plan = PlanSuscripcion.objects.first()
 
+        # Si no hay ningún plan en la base de datos, mostrar error
+        if plan is None:
+            messages.error(
+                request,
+                'Error: No hay planes de suscripción configurados. '
+                'Por favor contacta al administrador del sistema.'
+            )
+            return render(request, 'gastos/familias/crear.html')
+
         familia = Familia.objects.create(
             nombre=nombre,
             descripcion=descripcion,
