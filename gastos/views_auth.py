@@ -78,7 +78,7 @@ def logout_view(request):
 
 
 def registro_view(request):
-    """Vista de registro con código de invitación"""
+    """Vista de registro simplificada - sin necesidad de código de invitación"""
     if request.user.is_authenticated:
         return redirect('dashboard')
 
@@ -89,7 +89,7 @@ def registro_view(request):
         password2 = request.POST.get('password2')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
-        codigo_invitacion = request.POST.get('codigo_invitacion')
+        codigo_invitacion = request.POST.get('codigo_invitacion', '').strip()
 
         # Validaciones
         if password != password2:
@@ -104,15 +104,48 @@ def registro_view(request):
             messages.error(request, 'El email ya está registrado.')
             return render(request, 'gastos/auth/registro.html')
 
-        # Validar código de invitación
-        try:
-            codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion)
-            if not codigo.esta_valido():
-                messages.error(request, 'El código de invitación no es válido o ya fue usado.')
-                return render(request, 'gastos/auth/registro.html')
-        except CodigoInvitacion.DoesNotExist:
-            messages.error(request, 'El código de invitación no existe.')
-            return render(request, 'gastos/auth/registro.html')
+        # Determinar el plan a asignar
+        plan = None
+        dias_prueba = 0
+        mensaje_plan = ""
+
+        # Si proporciona un código de invitación, validarlo
+        if codigo_invitacion:
+            try:
+                codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion)
+                if codigo.esta_valido():
+                    plan = codigo.plan
+                    dias_prueba = plan.dias_prueba
+                    # Marcar código como usado
+                    codigo.marcar_como_usado(None)  # Se marcará con el usuario después
+                    mensaje_plan = f"Tienes {dias_prueba} días de prueba del {plan.nombre}."
+                else:
+                    messages.warning(request, 'El código de invitación no es válido. Se te asignará el plan gratuito.')
+            except CodigoInvitacion.DoesNotExist:
+                messages.warning(request, 'El código de invitación no existe. Se te asignará el plan gratuito.')
+
+        # Si no hay código o el código es inválido, asignar plan gratuito con periodo de prueba
+        if plan is None:
+            try:
+                # Intentar obtener el plan básico para darles un periodo de prueba
+                plan = PlanSuscripcion.objects.get(tipo='BASICO')
+                dias_prueba = plan.dias_prueba
+                mensaje_plan = f"¡Bienvenido! Tienes {dias_prueba} días de prueba gratis del {plan.nombre}."
+            except PlanSuscripcion.DoesNotExist:
+                # Si no existe plan básico, usar el gratuito
+                try:
+                    plan = PlanSuscripcion.objects.get(tipo='GRATIS')
+                    dias_prueba = 0
+                    mensaje_plan = "Has sido registrado con el plan gratuito."
+                except PlanSuscripcion.DoesNotExist:
+                    # Si no hay ningún plan, usar el primero disponible
+                    plan = PlanSuscripcion.objects.first()
+                    if plan:
+                        dias_prueba = plan.dias_prueba
+                        mensaje_plan = f"Has sido registrado con el {plan.nombre}."
+                    else:
+                        messages.error(request, 'Error: No hay planes disponibles. Contacta al administrador.')
+                        return render(request, 'gastos/auth/registro.html')
 
         # Crear usuario
         user = User.objects.create_user(
@@ -123,17 +156,22 @@ def registro_view(request):
             last_name=last_name
         )
 
-        # Marcar código como usado
-        codigo.marcar_como_usado(user)
+        # Si usó un código, actualizar el usuario asociado
+        if codigo_invitacion:
+            try:
+                codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion)
+                codigo.marcar_como_usado(user)
+            except:
+                pass
 
         # Crear familia automáticamente
         familia = Familia.objects.create(
             nombre=f"Familia {last_name}",
             creado_por=user,
-            plan=codigo.plan,
-            en_periodo_prueba=codigo.plan.dias_prueba > 0,
+            plan=plan,
+            en_periodo_prueba=dias_prueba > 0,
             fecha_inicio_suscripcion=timezone.now(),
-            fecha_fin_suscripcion=timezone.now() + timedelta(days=codigo.plan.dias_prueba) if codigo.plan.dias_prueba > 0 else None
+            fecha_fin_suscripcion=timezone.now() + timedelta(days=dias_prueba) if dias_prueba > 0 else None
         )
         familia.miembros.add(user)
 
@@ -141,7 +179,7 @@ def registro_view(request):
         login(request, user)
         request.session['familia_id'] = familia.id
 
-        messages.success(request, f'¡Registro exitoso! Bienvenido {first_name}. Tienes {codigo.plan.dias_prueba} días de prueba gratis.')
+        messages.success(request, f'¡Registro exitoso! Bienvenido {first_name}. {mensaje_plan}')
         return redirect('dashboard')
 
     return render(request, 'gastos/auth/registro.html')
