@@ -417,9 +417,9 @@ function copiarCodigo(codigo) {
 }
 
 function copiarEnlace(codigo) {
-    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
-    navigator.clipboard.writeText(enlace).then(() => {
-        mostrarNotificacion('🔗 Enlace copiado al portapapeles', 'success');
+    const enlaceRegistro = window.location.origin + '/registro/' + codigo + '/';
+    navigator.clipboard.writeText(enlaceRegistro).then(() => {
+        mostrarNotificacion('🔗 Enlace de registro copiado al portapapeles', 'success');
     }).catch(err => {
         console.error('Error al copiar:', err);
         mostrarNotificacion('❌ No se pudo copiar el enlace', 'error');
@@ -427,26 +427,28 @@ function copiarEnlace(codigo) {
 }
 
 function compartirWhatsApp(codigo, familia) {
-    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
+    const enlaceRegistro = window.location.origin + '/registro/' + codigo + '/';
     const mensaje = encodeURIComponent(
         `¡Hola! 👋\n\n` +
         `Te invito a unirte a "${familia}" en Gastos Familiares.\n\n` +
         `🔑 Código: ${codigo}\n` +
-        `🔗 Enlace directo: ${enlace}\n\n` +
+        `🔗 Regístrate aquí: ${enlaceRegistro}\n\n` +
+        `El código ya viene incluido en el enlace. Solo completa tus datos y te unirás automáticamente.\n\n` +
         `¡Nos vemos allí!`
     );
     window.open(`https://wa.me/?text=${mensaje}`, '_blank');
 }
 
 function compartirEmail(codigo, familia) {
-    const enlace = window.location.origin + '/familia/unirse/' + codigo + '/';
+    const enlaceRegistro = window.location.origin + '/registro/' + codigo + '/';
     const asunto = encodeURIComponent(`Invitación a ${familia}`);
     const cuerpo = encodeURIComponent(
         `¡Hola!\n\n` +
         `Te invito a unirte a "${familia}" en Gastos Familiares.\n\n` +
         `Código de invitación: ${codigo}\n` +
-        `Enlace directo: ${enlace}\n\n` +
-        `Simplemente haz clic en el enlace o ingresa el código en la aplicación.\n\n` +
+        `Enlace de registro directo: ${enlaceRegistro}\n\n` +
+        `Simplemente haz clic en el enlace y completa tus datos.\n` +
+        `El código ya viene incluido, así que te unirás automáticamente a la familia al registrarte.\n\n` +
         `¡Nos vemos allí!`
     );
     window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;

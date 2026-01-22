@@ -77,10 +77,13 @@ def logout_view(request):
     return redirect('login')
 
 
-def registro_view(request):
-    """Vista de registro simplificada - sin necesidad de código de invitación"""
+def registro_view(request, codigo=None):
+    """Vista de registro simplificada - acepta código de invitación por URL"""
     if request.user.is_authenticated:
         return redirect('dashboard')
+
+    # Obtener código de invitación de URL o query params
+    codigo_url = codigo or request.GET.get('codigo', '')
 
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -108,21 +111,35 @@ def registro_view(request):
         plan = None
         dias_prueba = 0
         mensaje_plan = ""
+        invitacion_familia = None
 
         # Si proporciona un código de invitación, validarlo
         if codigo_invitacion:
+            # Primero verificar si es una invitación a familia
             try:
-                codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion)
-                if codigo.esta_valido():
-                    plan = codigo.plan
-                    dias_prueba = plan.dias_prueba
-                    # Marcar código como usado
-                    codigo.marcar_como_usado(None)  # Se marcará con el usuario después
-                    mensaje_plan = f"Tienes {dias_prueba} días de prueba del {plan.nombre}."
+                invitacion_familia = InvitacionFamilia.objects.get(codigo=codigo_invitacion.upper())
+                if invitacion_familia.esta_valido():
+                    # Es una invitación a familia, usar el plan de esa familia
+                    plan = invitacion_familia.familia.plan
+                    dias_prueba = 0  # Ya se une a familia existente
+                    mensaje_plan = f"Te has unido a {invitacion_familia.familia.nombre}."
                 else:
-                    messages.warning(request, 'El código de invitación no es válido. Se te asignará el plan gratuito.')
-            except CodigoInvitacion.DoesNotExist:
-                messages.warning(request, 'El código de invitación no existe. Se te asignará el plan gratuito.')
+                    invitacion_familia = None
+                    messages.warning(request, 'El código de invitación ha expirado o no es válido.')
+            except InvitacionFamilia.DoesNotExist:
+                # No es invitación a familia, verificar si es código de plan
+                try:
+                    codigo = CodigoInvitacion.objects.get(codigo=codigo_invitacion)
+                    if codigo.esta_valido():
+                        plan = codigo.plan
+                        dias_prueba = plan.dias_prueba
+                        # Marcar código como usado
+                        codigo.marcar_como_usado(None)  # Se marcará con el usuario después
+                        mensaje_plan = f"Tienes {dias_prueba} días de prueba del {plan.nombre}."
+                    else:
+                        messages.warning(request, 'El código de invitación no es válido. Se te asignará el plan gratuito.')
+                except CodigoInvitacion.DoesNotExist:
+                    messages.warning(request, 'El código de invitación no existe. Se te asignará el plan gratuito.')
 
         # Si no hay código o el código es inválido, asignar plan gratuito con periodo de prueba
         if plan is None:
@@ -164,25 +181,56 @@ def registro_view(request):
             except:
                 pass
 
-        # Crear familia automáticamente
-        familia = Familia.objects.create(
-            nombre=f"Familia {last_name}",
-            creado_por=user,
-            plan=plan,
-            en_periodo_prueba=dias_prueba > 0,
-            fecha_inicio_suscripcion=timezone.now(),
-            fecha_fin_suscripcion=timezone.now() + timedelta(days=dias_prueba) if dias_prueba > 0 else None
-        )
-        familia.miembros.add(user)
+        # Decidir si crear nueva familia o unirse a una existente
+        if invitacion_familia:
+            # Unirse a familia existente
+            familia = invitacion_familia.familia
+            invitacion_familia.usar_invitacion(user)
 
-        # Login automático
-        login(request, user)
-        request.session['familia_id'] = familia.id
+            # Crear aportante automáticamente
+            from .models import Aportante
+            Aportante.objects.create(
+                familia=familia,
+                nombre=f"{first_name} {last_name}",
+                email=email,
+                ingreso_mensual=0,  # Por defecto, puede actualizar después
+                activo=True
+            )
 
-        messages.success(request, f'¡Registro exitoso! Bienvenido {first_name}. {mensaje_plan}')
-        return redirect('dashboard')
+            # Login automático
+            login(request, user)
+            request.session['familia_id'] = familia.id
 
-    return render(request, 'gastos/auth/registro.html')
+            messages.success(
+                request,
+                f'¡Registro exitoso! Te has unido a {familia.nombre}. '
+                f'No olvides actualizar tu ingreso mensual en la sección de Aportantes.'
+            )
+            return redirect('dashboard')
+        else:
+            # Crear familia automáticamente
+            familia = Familia.objects.create(
+                nombre=f"Familia {last_name}",
+                creado_por=user,
+                plan=plan,
+                en_periodo_prueba=dias_prueba > 0,
+                fecha_inicio_suscripcion=timezone.now(),
+                fecha_fin_suscripcion=timezone.now() + timedelta(days=dias_prueba) if dias_prueba > 0 else None
+            )
+            familia.miembros.add(user)
+
+            # Login automático
+            login(request, user)
+            request.session['familia_id'] = familia.id
+
+            messages.success(request, f'¡Registro exitoso! Bienvenido {first_name}. {mensaje_plan}')
+            return redirect('dashboard')
+
+    # Pasar código al template
+    context = {
+        'codigo_prellenado': codigo_url
+    }
+    return render(request, 'gastos/auth/registro.html', context)
 
 
 @login_required

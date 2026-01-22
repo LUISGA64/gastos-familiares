@@ -227,11 +227,11 @@
 
         .auth-illustration {
             padding: 40px 30px;
-            min-height: 250px;
+            min-height: 200px;
         }
 
         .welcome-icon {
-            font-size: 70px;
+            font-size: 60px;
         }
 
         .benefits-list {
@@ -239,22 +239,66 @@
         }
 
         .auth-form {
-            padding: 35px 25px;
+            padding: 30px 20px;
             max-height: none;
         }
     }
 
     @media (max-width: 576px) {
+        body {
+            padding: 10px 0;
+        }
+
+        .auth-container {
+            padding: 0 10px;
+        }
+
+        .auth-card {
+            border-radius: 15px;
+        }
+
+        .auth-illustration {
+            padding: 30px 20px;
+            min-height: 180px;
+        }
+
+        .welcome-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.5rem;
+        }
+
+        .welcome-text p {
+            font-size: 0.9rem;
+        }
+
         .auth-form {
-            padding: 25px 20px;
+            padding: 20px 15px;
         }
 
         .auth-form-header h3 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
+        }
+
+        .auth-form-header p {
+            font-size: 0.8rem;
         }
 
         .form-floating .form-control {
             height: 50px;
+            font-size: 16px; /* Evita zoom en iOS */
+        }
+
+        .form-floating label {
+            font-size: 0.85rem;
+        }
+
+        .btn-registro {
+            height: 50px;
+            font-size: 1rem;
         }
     }
 </style>
@@ -349,11 +393,16 @@
 
                 <!-- Código de invitación OPCIONAL -->
                 <div class="form-floating">
-                    <input type="text" class="form-control" id="codigo_invitacion" name="codigo_invitacion" placeholder="Código (Opcional)">
+                    <input type="text" class="form-control" id="codigo_invitacion" name="codigo_invitacion" placeholder="Código (Opcional)" value="{{ codigo_prellenado|default:'' }}">
                     <label for="codigo_invitacion"><i class="bi bi-gift"></i> Código de Invitación (Opcional)</label>
                 </div>
                 <div class="text-muted mb-3" style="font-size: 0.85rem; margin-top: -8px;">
-                    <i class="bi bi-info-circle"></i> Si no tienes código, se te asignará el plan básico con 15 días de prueba gratis
+                    <i class="bi bi-info-circle"></i>
+                    {% if codigo_prellenado %}
+                        Código de invitación detectado. Al registrarte, te unirás automáticamente a la familia.
+                    {% else %}
+                        Si no tienes código, se te asignará el plan básico con 15 días de prueba gratis
+                    {% endif %}
                 </div>
 
                 <div class="d-grid">

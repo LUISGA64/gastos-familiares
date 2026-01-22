@@ -6,6 +6,7 @@ urlpatterns = [
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
     path('registro/', views_auth.registro_view, name='registro'),
+    path('registro/<str:codigo>/', views_auth.registro_view, name='registro_con_codigo'),
 
     # Planes y comercialización (público)
     path('planes/', views_auth.planes_precios, name='planes_precios'),
