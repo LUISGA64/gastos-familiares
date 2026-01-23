@@ -1658,3 +1658,68 @@ class ConfiguracionCuentaPago(models.Model):
         }
 
 
+class PasswordResetToken(models.Model):
+    """Token para restablecer contraseña sin dependencia de email"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reset_tokens',
+        verbose_name="Usuario"
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        verbose_name="Token"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación"
+    )
+    expires_at = models.DateTimeField(
+        verbose_name="Fecha de Expiración"
+    )
+    used = models.BooleanField(
+        default=False,
+        verbose_name="Token Usado"
+    )
+    used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Uso"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="Dirección IP"
+    )
+
+    class Meta:
+        verbose_name = "Token de Reseteo de Contraseña"
+        verbose_name_plural = "Tokens de Reseteo de Contraseña"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Token para {self.user.username} - {'Usado' if self.used else 'Activo'}"
+
+    def is_valid(self):
+        """Verifica si el token es válido"""
+        if self.used:
+            return False
+        if timezone.now() > self.expires_at:
+            return False
+        return True
+
+    def mark_as_used(self):
+        """Marca el token como usado"""
+        self.used = True
+        self.used_at = timezone.now()
+        self.save()
+
+    @classmethod
+    def cleanup_expired(cls):
+        """Elimina tokens expirados (tarea de mantenimiento)"""
+        expired = cls.objects.filter(expires_at__lt=timezone.now())
+        count = expired.count()
+        expired.delete()
+        return count

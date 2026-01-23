@@ -1,13 +1,19 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
+from django.urls import reverse
 from datetime import timedelta
 from .models import Familia, PlanSuscripcion, CodigoInvitacion, InvitacionFamilia
 import random
 import string
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def inicio(request):
@@ -546,3 +552,127 @@ def unirse_familia(request, codigo=None):
     }
 
     return render(request, 'gastos/familias/unirse.html', context)
+
+
+def password_reset_request(request):
+    """Vista para solicitar restablecimiento de contraseña"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+
+        try:
+            user = User.objects.get(email=email)
+
+            # Generar token único
+            token = ''.join(random.choices(string.ascii_letters + string.digits, k=64))
+
+            # Guardar token en sesión (expira en 1 hora)
+            request.session[f'reset_token_{token}'] = {
+                'user_id': user.id,
+                'created_at': timezone.now().isoformat()
+            }
+
+            # Crear URL de restablecimiento
+            reset_url = request.build_absolute_uri(
+                reverse('password_reset_confirm', kwargs={'token': token})
+            )
+
+            # Enviar email
+            try:
+                send_mail(
+                    subject='Restablecer Contraseña - Gastos Familiares',
+                    message=f'''Hola {user.first_name or user.username},
+
+Has solicitado restablecer tu contraseña.
+
+Para crear una nueva contraseña, haz clic en el siguiente enlace:
+{reset_url}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, ignora este correo.
+
+Saludos,
+Equipo de Gastos Familiares
+''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+
+                messages.success(request, f'Se ha enviado un enlace de recuperación a {email}. Por favor, revisa tu correo.')
+                logger.info(f"Email de recuperación enviado a {email}")
+
+            except Exception as e:
+                logger.error(f"Error al enviar email de recuperación: {e}")
+                # En desarrollo, mostrar el enlace directamente
+                if settings.DEBUG:
+                    messages.warning(request, f'Error al enviar email. Enlace de recuperación: {reset_url}')
+                else:
+                    messages.error(request, 'Error al enviar el correo. Inténtalo de nuevo más tarde.')
+
+        except User.DoesNotExist:
+            # Por seguridad, no revelar si el email existe o no
+            messages.success(request, 'Si el correo está registrado, recibirás un enlace de recuperación.')
+            logger.warning(f"Intento de reset para email no registrado: {email}")
+
+    return render(request, 'gastos/auth/password_reset.html')
+
+
+def password_reset_confirm(request, token):
+    """Vista para confirmar y establecer nueva contraseña usando token de BD"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    # Buscar token en BD
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, '❌ El enlace de recuperación no es válido.')
+        return redirect('password_reset')
+
+    # Verificar que el token sea válido
+    if not reset_token.is_valid():
+        if reset_token.used:
+            messages.error(request, '❌ Este enlace ya fue utilizado. Solicita uno nuevo.')
+        else:
+            messages.error(request, '⏰ El enlace ha expirado (válido por 1 hora). Solicita uno nuevo.')
+        return redirect('password_reset')
+
+    user = reset_token.user
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if new_password != confirm_password:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'gastos/auth/password_reset_confirm.html')
+
+        if len(new_password) < 6:
+            messages.error(request, 'La contraseña debe tener al menos 6 caracteres.')
+            return render(request, 'gastos/auth/password_reset_confirm.html')
+
+        # Cambiar contraseña
+        user.set_password(new_password)
+        user.save()
+
+        # Marcar token como usado
+        reset_token.mark_as_used()
+
+        messages.success(request, '✅ ¡Contraseña restablecida exitosamente! Ya puedes iniciar sesión.')
+        logger.info(f"Contraseña restablecida para usuario: {user.username}")
+
+        return redirect('login')
+
+    # Pasar datos del usuario al template
+    context = {
+        'user_name': user.first_name or user.username,
+        'token_valid': True
+    }
+
+    return render(request, 'gastos/auth/password_reset_confirm.html', context)
+
+

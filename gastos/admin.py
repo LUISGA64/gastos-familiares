@@ -7,7 +7,7 @@ from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, Distri
                      LogroDesbloqueado, DesafioMensual, ParticipacionDesafio,
                      HistorialPuntos, NotificacionLogro, ConversacionChatbot,
                      MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago, InvitacionFamilia,
-                     Familia, PlanSuscripcion, CodigoInvitacion)
+                     Familia, PlanSuscripcion, CodigoInvitacion, PasswordResetToken)
 
 
 @admin.register(InvitacionFamilia)
@@ -691,4 +691,39 @@ class ConfiguracionCuentaPagoAdmin(admin.ModelAdmin):
         return format_html('<span style="color: red;">&#10007; Inactivo</span>')
     activo_badge.short_description = 'Estado'
 
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = ['user', 'token_preview', 'created_at', 'expires_at', 'used_badge', 'valid_badge']
+    list_filter = ['used', 'created_at', 'expires_at']
+    search_fields = ['user__username', 'user__email', 'token']
+    readonly_fields = ['user', 'token', 'created_at', 'expires_at', 'used', 'used_at', 'ip_address']
+    ordering = ['-created_at']
+
+    def token_preview(self, obj):
+        """Muestra los primeros y últimos caracteres del token"""
+        if len(obj.token) > 16:
+            return f"{obj.token[:8]}...{obj.token[-8:]}"
+        return obj.token
+    token_preview.short_description = 'Token'
+
+    def used_badge(self, obj):
+        if obj.used:
+            return format_html('<span style="color: red;">✓ Usado</span>')
+        return format_html('<span style="color: green;">○ Disponible</span>')
+    used_badge.short_description = 'Estado'
+
+    def valid_badge(self, obj):
+        if obj.is_valid():
+            return format_html('<span style="color: green;">✓ Válido</span>')
+        return format_html('<span style="color: gray;">✗ Expirado/Usado</span>')
+    valid_badge.short_description = 'Validez'
+
+    def has_add_permission(self, request):
+        # Los tokens se generan automáticamente
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        # Los tokens no se pueden modificar
+        return False
 

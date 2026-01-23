@@ -410,14 +410,28 @@
                     <label for="email"><i class="bi bi-envelope"></i> Email</label>
                 </div>
 
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+                <div class="form-floating position-relative">
+                    <input type="password" class="form-control pe-5" id="password" name="password" placeholder="Contraseña" required>
                     <label for="password"><i class="bi bi-lock"></i> Contraseña</label>
+                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-password" data-target="password" style="z-index: 10; text-decoration: none; padding-right: 15px;">
+                        <i class="bi bi-eye" style="font-size: 1.1rem;"></i>
+                    </button>
                 </div>
 
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="password2" name="password2" placeholder="Confirmar" required>
+                <div class="form-floating position-relative mb-2">
+                    <input type="password" class="form-control pe-5" id="password2" name="password2" placeholder="Confirmar" required>
                     <label for="password2"><i class="bi bi-lock-fill"></i> Confirmar Contraseña</label>
+                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-password" data-target="password2" style="z-index: 10; text-decoration: none; padding-right: 15px;">
+                        <i class="bi bi-eye" style="font-size: 1.1rem;"></i>
+                    </button>
+                </div>
+
+                <!-- Indicador compacto de coincidencia -->
+                <div id="password-match-indicator" class="mb-3" style="display: none; font-size: 0.85rem; margin-top: -8px;">
+                    <small id="password-match-text" class="d-flex align-items-center">
+                        <i id="password-match-icon" class="me-1"></i>
+                        <span id="password-match-message"></span>
+                    </small>
                 </div>
 
                 <!-- Código de invitación OPCIONAL -->
@@ -453,4 +467,92 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Función para mostrar/ocultar contraseña
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    });
+
+    // Validación de coincidencia de contraseñas en tiempo real
+    const password = document.getElementById('password');
+    const password2 = document.getElementById('password2');
+    const matchIndicator = document.getElementById('password-match-indicator');
+    const matchIcon = document.getElementById('password-match-icon');
+    const matchMessage = document.getElementById('password-match-message');
+    const matchText = document.getElementById('password-match-text');
+
+    function checkPasswordMatch() {
+        const pass1 = password.value;
+        const pass2 = password2.value;
+
+        // Solo mostrar indicador si el segundo campo tiene contenido
+        if (pass2.length > 0) {
+            matchIndicator.style.display = 'block';
+
+            if (pass1 === pass2 && pass1.length > 0) {
+                // Contraseñas coinciden - Mostrar mensaje verde y luego ocultarlo
+                matchText.className = 'text-success d-flex align-items-center';
+                matchIcon.className = 'bi bi-check-circle-fill me-1';
+                matchMessage.textContent = 'Las contraseñas coinciden ✓';
+                password2.classList.remove('is-invalid');
+                password2.classList.add('is-valid');
+
+                // Ocultar el indicador después de 1.5 segundos
+                setTimeout(() => {
+                    matchIndicator.style.display = 'none';
+                }, 1500);
+            } else {
+                // Contraseñas no coinciden - Mostrar error
+                matchText.className = 'text-danger d-flex align-items-center';
+                matchIcon.className = 'bi bi-x-circle-fill me-1';
+                matchMessage.textContent = 'Las contraseñas no coinciden';
+                password2.classList.remove('is-valid');
+                password2.classList.add('is-invalid');
+            }
+        } else {
+            matchIndicator.style.display = 'none';
+            password2.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+
+    // Agregar eventos para verificar en tiempo real
+    password.addEventListener('input', checkPasswordMatch);
+    password2.addEventListener('input', checkPasswordMatch);
+
+    // Validación antes de enviar el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const pass1 = password.value;
+        const pass2 = password2.value;
+
+        if (pass1 !== pass2) {
+            e.preventDefault();
+            matchIndicator.style.display = 'block';
+            matchText.className = 'text-danger d-flex align-items-center';
+            matchIcon.className = 'bi bi-exclamation-triangle-fill me-1';
+            matchMessage.textContent = 'Las contraseñas no coinciden. Por favor, verifica.';
+            password2.classList.remove('is-valid');
+            password2.classList.add('is-invalid');
+            password2.focus();
+
+            // Scroll al campo
+            password2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+</script>
 {% endblock %}

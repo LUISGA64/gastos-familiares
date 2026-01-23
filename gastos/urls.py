@@ -8,6 +8,10 @@ urlpatterns = [
     path('registro/', views_auth.registro_view, name='registro'),
     path('registro/<str:codigo>/', views_auth.registro_view, name='registro_con_codigo'),
 
+    # Restablecer contraseña
+    path('password-reset/', views_auth.password_reset_request, name='password_reset'),
+    path('password-reset/<str:token>/', views_auth.password_reset_confirm, name='password_reset_confirm'),
+
     # Planes y comercialización (público)
     path('planes/', views_auth.planes_precios, name='planes_precios'),
 
