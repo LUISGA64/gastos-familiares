@@ -555,31 +555,45 @@ def unirse_familia(request, codigo=None):
 
 
 def password_reset_request(request):
-    """Vista para solicitar restablecimiento de contraseña"""
+    """Vista para solicitar restablecimiento de contraseña - Con validación de email"""
     if request.user.is_authenticated:
         return redirect('dashboard')
 
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
 
+        # Validar que el email no esté vacío
+        if not email:
+            messages.error(request, '❌ Por favor ingresa un correo electrónico.')
+            return render(request, 'gastos/auth/password_reset.html')
+
+        # Validar formato de email básico
+        if '@' not in email or '.' not in email:
+            messages.error(request, '❌ Por favor ingresa un correo electrónico válido.')
+            return render(request, 'gastos/auth/password_reset.html')
+
+        # Buscar usuario por email
         try:
             user = User.objects.get(email=email)
 
             # Generar token único
             token = ''.join(random.choices(string.ascii_letters + string.digits, k=64))
 
-            # Guardar token en sesión (expira en 1 hora)
-            request.session[f'reset_token_{token}'] = {
-                'user_id': user.id,
-                'created_at': timezone.now().isoformat()
-            }
+            # Crear token en BD (expira en 1 hora)
+            reset_token = PasswordResetToken.objects.create(
+                user=user,
+                token=token,
+                expires_at=timezone.now() + timedelta(hours=1),
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
 
             # Crear URL de restablecimiento
             reset_url = request.build_absolute_uri(
                 reverse('password_reset_confirm', kwargs={'token': token})
             )
 
-            # Enviar email
+            # Intentar enviar email
+            email_sent = False
             try:
                 send_mail(
                     subject='Restablecer Contraseña - Gastos Familiares',
@@ -602,20 +616,37 @@ Equipo de Gastos Familiares
                     fail_silently=False,
                 )
 
-                messages.success(request, f'Se ha enviado un enlace de recuperación a {email}. Por favor, revisa tu correo.')
+                email_sent = True
+                messages.success(
+                    request,
+                    f'✅ Se ha enviado un enlace de recuperación a {email}. Por favor, revisa tu correo.'
+                )
                 logger.info(f"Email de recuperación enviado a {email}")
 
             except Exception as e:
                 logger.error(f"Error al enviar email de recuperación: {e}")
-                # En desarrollo, mostrar el enlace directamente
-                if settings.DEBUG:
-                    messages.warning(request, f'Error al enviar email. Enlace de recuperación: {reset_url}')
-                else:
-                    messages.error(request, 'Error al enviar el correo. Inténtalo de nuevo más tarde.')
+
+                # Si no se pudo enviar email, mostrar el enlace directamente
+                messages.warning(
+                    request,
+                    '⚠️ No se pudo enviar el email. Usa este enlace para restablecer tu contraseña:'
+                )
+                messages.info(request, f'🔗 {reset_url}')
+                messages.info(
+                    request,
+                    '💡 Copia y pega el enlace en tu navegador. El enlace expira en 1 hora.'
+                )
 
         except User.DoesNotExist:
-            # Por seguridad, no revelar si el email existe o no
-            messages.success(request, 'Si el correo está registrado, recibirás un enlace de recuperación.')
+            # MEJORA: Mostrar mensaje claro de que el email NO está registrado
+            messages.error(
+                request,
+                f'❌ El correo electrónico "{email}" no está registrado en el sistema.'
+            )
+            messages.info(
+                request,
+                '💡 Verifica que el correo sea correcto o regístrate si no tienes una cuenta.'
+            )
             logger.warning(f"Intento de reset para email no registrado: {email}")
 
     return render(request, 'gastos/auth/password_reset.html')
