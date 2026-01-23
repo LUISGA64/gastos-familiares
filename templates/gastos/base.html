@@ -731,10 +731,28 @@
             font-size: 0.9rem;
         }
 
-        /* Ocultar footer en páginas de autenticación en móviles */
-        @media (max-width: 768px) {
-            body:has(.auth-container) footer {
+        /* Ocultar footer en páginas de autenticación en móviles y tablets */
+        @media (max-width: 992px) {
+            body:has(.auth-container) footer,
+            body:has(.reset-container) footer {
                 display: none;
+            }
+        }
+
+        /* En desktop también ocultar si el formulario ocupa toda la pantalla */
+        body:has(.auth-card[style*="min-height: 100vh"]) footer,
+        body:has(.reset-card) footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            margin-top: 0;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            body:has(.auth-card) footer,
+            body:has(.reset-card) footer {
+                display: none !important;
             }
         }
 

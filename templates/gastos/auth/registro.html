@@ -248,24 +248,25 @@
         body {
             padding: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
+            display: block; /* Cambiar de flex a block */
         }
 
         .auth-container {
             padding: 0;
             margin: 0;
             width: 100%;
+            max-width: 100%;
         }
 
         .auth-card {
             border-radius: 0;
             min-height: 100vh;
             box-shadow: none;
+            display: block; /* Cambiar de flex a block */
         }
 
         .auth-illustration {
-            padding: 20px 15px;
+            padding: 15px;
             min-height: auto;
         }
 
@@ -284,15 +285,17 @@
         }
 
         .auth-form {
-            padding: 20px 15px 30px;
+            padding: 25px 20px 30px; /* Más padding horizontal */
+            width: 100%;
+            max-width: 100%;
         }
 
         .auth-form-header h3 {
-            font-size: 1.3rem;
+            font-size: 1.4rem; /* Más grande */
         }
 
         .auth-form-header p {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
 
         .form-floating .form-control {
@@ -317,6 +320,19 @@
             height: 48px;
             font-size: 0.95rem;
         }
+
+        /* Alertas */
+        .alert {
+            font-size: 0.85rem;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Indicador de coincidencia de contraseñas */
+        #password-match-indicator {
+            font-size: 0.8rem;
+        }
+    }
 
         /* Ajustar mensajes de alerta en móviles */
         .alert {
