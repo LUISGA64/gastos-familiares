@@ -77,9 +77,9 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
-    """Vista de logout"""
+    """Vista de logout - sin mensaje para evitar duplicación"""
     logout(request)
-    messages.success(request, 'Has cerrado sesión exitosamente.')
+    # No agregar mensaje aquí para evitar alertas duplicadas
     return redirect('login')
 
 
