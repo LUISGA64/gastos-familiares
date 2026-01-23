@@ -49,12 +49,17 @@ USE_X_FORWARDED_PORT = True
 
 # Seguridad HTTPS en producción
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False  # Nginx maneja la redirección
+    SECURE_SSL_REDIRECT = False  # Nginx maneja la redirección (silencia W008)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000  # 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# Silenciar warnings de seguridad conocidos y configurados correctamente
+SILENCED_SYSTEM_CHECKS = [
+    'security.W008',  # SECURE_SSL_REDIRECT - Nginx maneja la redirección
+]
 
 # Application definition
 
