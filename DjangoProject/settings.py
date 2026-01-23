@@ -32,10 +32,15 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default='tu-api-key-aqui')
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-3g3-z!3s6yt-ti@#xjkpkxpxfasem#sp051m(3c_j5@%p&8xm-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='gastosweb.com,www.gastosweb.com,167.114.2.88,192.168.28.93,localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://gastosweb.com,https://www.gastosweb.com,http://167.114.2.88').split(',') if config('CSRF_TRUSTED_ORIGINS', default='') else []
+# Configuración de hosts permitidos
+ALLOWED_HOSTS_STR = config('ALLOWED_HOSTS', default='gastosweb.com,www.gastosweb.com,167.114.2.88,localhost,127.0.0.1')
+ALLOWED_HOSTS = [host.strip().replace('\\', '') for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
+
+# Orígenes de confianza para CSRF
+CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='https://gastosweb.com,https://www.gastosweb.com,http://167.114.2.88')
+CSRF_TRUSTED_ORIGINS = [origin.strip().replace('\\', '') for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
 # Application definition
 
