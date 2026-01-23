@@ -42,6 +42,20 @@ ALLOWED_HOSTS = [host.strip().replace('\\', '') for host in ALLOWED_HOSTS_STR.sp
 CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='https://gastosweb.com,https://www.gastosweb.com,http://167.114.2.88')
 CSRF_TRUSTED_ORIGINS = [origin.strip().replace('\\', '') for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
+# Configuración de proxy inverso (Nginx)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Seguridad HTTPS en producción
+if not DEBUG:
+    SECURE_SSL_REDIRECT = False  # Nginx maneja la redirección
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 # Application definition
 
 INSTALLED_APPS = [
