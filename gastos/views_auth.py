@@ -619,33 +619,24 @@ Equipo de Gastos Familiares
                 email_sent = True
                 messages.success(
                     request,
-                    f'✅ Se ha enviado un enlace de recuperación a {email}. Por favor, revisa tu correo.'
+                    f'✅ Se ha enviado un enlace de recuperación a {email}. Por favor, revisa tu correo (y carpeta de spam).'
                 )
                 logger.info(f"Email de recuperación enviado a {email}")
 
             except Exception as e:
                 logger.error(f"Error al enviar email de recuperación: {e}")
 
-                # Si no se pudo enviar email, mostrar el enlace directamente
+                # Si no se pudo enviar email, mostrar el enlace directamente (UN SOLO MENSAJE)
                 messages.warning(
                     request,
-                    '⚠️ No se pudo enviar el email. Usa este enlace para restablecer tu contraseña:'
-                )
-                messages.info(request, f'🔗 {reset_url}')
-                messages.info(
-                    request,
-                    '💡 Copia y pega el enlace en tu navegador. El enlace expira en 1 hora.'
+                    f'⚠️ No se pudo enviar el email. Copia y pega este enlace en tu navegador (expira en 1 hora): {reset_url}'
                 )
 
         except User.DoesNotExist:
-            # MEJORA: Mostrar mensaje claro de que el email NO está registrado
+            # UN SOLO MENSAJE con toda la información
             messages.error(
                 request,
-                f'❌ El correo electrónico "{email}" no está registrado en el sistema.'
-            )
-            messages.info(
-                request,
-                '💡 Verifica que el correo sea correcto o regístrate si no tienes una cuenta.'
+                f'❌ El correo "{email}" no está registrado en el sistema. Verifica que sea correcto o <a href="/registro/" class="alert-link fw-bold">regístrate aquí</a>.'
             )
             logger.warning(f"Intento de reset para email no registrado: {email}")
 
