@@ -728,6 +728,14 @@
             background-color: var(--primary-color);
             color: white;
             text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Ocultar footer en páginas de autenticación en móviles */
+        @media (max-width: 768px) {
+            body:has(.auth-container) footer {
+                display: none;
+            }
         }
 
         /* ========== ALERTAS MEJORADAS CON AUTOCLOSE ========== */

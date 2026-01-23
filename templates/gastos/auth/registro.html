@@ -246,41 +246,49 @@
 
     @media (max-width: 576px) {
         body {
-            padding: 10px 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
         }
 
         .auth-container {
-            padding: 0 10px;
+            padding: 0;
+            margin: 0;
+            width: 100%;
         }
 
         .auth-card {
-            border-radius: 15px;
+            border-radius: 0;
+            min-height: 100vh;
+            box-shadow: none;
         }
 
         .auth-illustration {
-            padding: 30px 20px;
-            min-height: 180px;
+            padding: 20px 15px;
+            min-height: auto;
         }
 
         .welcome-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
+            font-size: 40px;
+            margin-bottom: 10px;
         }
 
         .welcome-text h2 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
         }
 
         .welcome-text p {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .auth-form {
-            padding: 20px 15px;
+            padding: 20px 15px 30px;
         }
 
         .auth-form-header h3 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
         }
 
         .auth-form-header p {
@@ -299,6 +307,27 @@
         .btn-registro {
             height: 50px;
             font-size: 1rem;
+        }
+
+        .divider {
+            margin: 20px 0 15px;
+        }
+
+        .btn-login-link {
+            height: 48px;
+            font-size: 0.95rem;
+        }
+
+        /* Ajustar mensajes de alerta en móviles */
+        .alert {
+            font-size: 0.85rem;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Texto informativo más pequeño */
+        .text-muted {
+            font-size: 0.75rem !important;
         }
     }
 </style>
