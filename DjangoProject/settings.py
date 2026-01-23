@@ -34,8 +34,8 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-3g3-z!3s6yt-ti@#xjkpk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='192.168.28.93,localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='').split(',') if config('CSRF_TRUSTED_ORIGINS', default='') else []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='gastosweb.com,www.gastosweb.com,167.114.2.88,192.168.28.93,localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://gastosweb.com,https://www.gastosweb.com,http://167.114.2.88').split(',') if config('CSRF_TRUSTED_ORIGINS', default='') else []
 
 # Application definition
 
