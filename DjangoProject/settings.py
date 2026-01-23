@@ -52,9 +52,16 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = False  # Nginx maneja la redirección (silencia W008)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = False  # Permitir acceso desde JavaScript si necesario
+    CSRF_COOKIE_SAMESITE = 'Lax'  # Más flexible que 'Strict'
+    SESSION_COOKIE_SAMESITE = 'Lax'
     SECURE_HSTS_SECONDS = 31536000  # 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+else:
+    # Desarrollo
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
 
 # Silenciar warnings de seguridad conocidos y configurados correctamente
 SILENCED_SYSTEM_CHECKS = [
