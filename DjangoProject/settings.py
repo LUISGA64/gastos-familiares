@@ -34,13 +34,11 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-3g3-z!3s6yt-ti@#xjkpk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# Configuración de hosts permitidos
-ALLOWED_HOSTS_STR = config('ALLOWED_HOSTS', default='gastosweb.com,www.gastosweb.com,167.114.2.88,localhost,127.0.0.1')
-ALLOWED_HOSTS = [host.strip().replace('\\', '') for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
+# Configuración de hosts permitidos - Simplificada
+ALLOWED_HOSTS = ['gastosweb.com', 'www.gastosweb.com', '167.114.2.88', 'localhost', '127.0.0.1']
 
-# Orígenes de confianza para CSRF
-CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='https://gastosweb.com,https://www.gastosweb.com,http://167.114.2.88')
-CSRF_TRUSTED_ORIGINS = [origin.strip().replace('\\', '') for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
+# Orígenes de confianza para CSRF - Simplificada
+CSRF_TRUSTED_ORIGINS = ['https://gastosweb.com', 'https://www.gastosweb.com', 'http://167.114.2.88']
 
 # Configuración de proxy inverso (Nginx)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
