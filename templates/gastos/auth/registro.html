@@ -328,9 +328,48 @@
             margin-bottom: 15px;
         }
 
+        /* Botones toggle password MEJORADOS para móviles */
+        .toggle-password {
+            padding: 10px 14px !important;
+            margin-right: 4px !important;
+            background: rgba(255,255,255,0.95) !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+            border: 1px solid rgba(0,0,0,0.1) !important;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .toggle-password i {
+            font-size: 1.3rem !important;
+        }
+
+        .toggle-password:active {
+            transform: scale(0.95);
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
         /* Indicador de coincidencia de contraseñas */
         #password-match-indicator {
-            font-size: 0.8rem;
+            font-size: 0.9rem !important;
+            padding: 10px 14px !important;
+            margin-top: -6px !important;
+            background: rgba(0,0,0,0.06) !important;
+            border-left: 3px solid;
+        }
+
+        #password-match-indicator .text-success {
+            border-left-color: #28a745;
+        }
+
+        #password-match-indicator .text-danger {
+            border-left-color: #dc3545;
+        }
+
+        #password-match-message {
+            font-weight: 600 !important;
         }
     }
 
@@ -408,24 +447,28 @@
                 <div class="form-floating position-relative">
                     <input type="password" class="form-control pe-5" id="password" name="password" placeholder="Contraseña" required>
                     <label for="password"><i class="bi bi-lock"></i> Contraseña</label>
-                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-password" data-target="password" style="z-index: 10; text-decoration: none; padding-right: 15px;">
-                        <i class="bi bi-eye" style="font-size: 1.1rem;"></i>
+                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y toggle-password" data-target="password"
+                            style="z-index: 100; text-decoration: none; padding: 8px 12px; color: #6c757d; background: rgba(255,255,255,0.9); border-radius: 6px; margin-right: 8px;"
+                            aria-label="Mostrar/Ocultar contraseña">
+                        <i class="bi bi-eye" style="font-size: 1.2rem;"></i>
                     </button>
                 </div>
 
                 <div class="form-floating position-relative mb-2">
                     <input type="password" class="form-control pe-5" id="password2" name="password2" placeholder="Confirmar" required>
                     <label for="password2"><i class="bi bi-lock-fill"></i> Confirmar Contraseña</label>
-                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted toggle-password" data-target="password2" style="z-index: 10; text-decoration: none; padding-right: 15px;">
-                        <i class="bi bi-eye" style="font-size: 1.1rem;"></i>
+                    <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y toggle-password" data-target="password2"
+                            style="z-index: 100; text-decoration: none; padding: 8px 12px; color: #6c757d; background: rgba(255,255,255,0.9); border-radius: 6px; margin-right: 8px;"
+                            aria-label="Mostrar/Ocultar contraseña de confirmación">
+                        <i class="bi bi-eye" style="font-size: 1.2rem;"></i>
                     </button>
                 </div>
 
-                <!-- Indicador compacto de coincidencia -->
-                <div id="password-match-indicator" class="mb-3" style="display: none; font-size: 0.85rem; margin-top: -8px;">
+                <!-- Indicador compacto de coincidencia - MEJORADO para móviles -->
+                <div id="password-match-indicator" class="mb-3" style="display: none; font-size: 0.9rem; margin-top: -8px; padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.05);">
                     <small id="password-match-text" class="d-flex align-items-center">
-                        <i id="password-match-icon" class="me-1"></i>
-                        <span id="password-match-message"></span>
+                        <i id="password-match-icon" class="me-2" style="font-size: 1.1rem;"></i>
+                        <span id="password-match-message" style="font-weight: 500;"></span>
                     </small>
                 </div>
 
