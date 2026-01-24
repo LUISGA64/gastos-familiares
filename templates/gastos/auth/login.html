@@ -239,6 +239,30 @@
         margin-right: 8px;
     }
 
+    /* Enlace de recuperación de contraseña */
+    .forgot-password {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .forgot-password:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    .forgot-password i {
+        transition: transform 0.3s ease;
+    }
+
+    .forgot-password:hover i {
+        transform: translateX(-2px);
+    }
+
     /* Responsive */
     @media (max-width: 992px) {
         .auth-card {
@@ -341,8 +365,11 @@
         }
 
         .forgot-password {
-            font-size: 0.85rem;
-            margin-top: 10px;
+            font-size: 0.9rem; /* Más grande que antes (0.85rem) */
+            margin-top: 12px;
+            padding: 8px 0;
+            display: block;
+            text-align: center;
         }
 
         .btn-register-link {
@@ -455,6 +482,13 @@
                     <label for="password">
                         <i class="bi bi-lock"></i> Contraseña
                     </label>
+                </div>
+
+                <!-- Enlace de recuperación de contraseña -->
+                <div class="text-end mb-3">
+                    <a href="{% url 'password_reset_request' %}" class="forgot-password">
+                        <i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
+                    </a>
                 </div>
 
                 <div class="d-grid">
