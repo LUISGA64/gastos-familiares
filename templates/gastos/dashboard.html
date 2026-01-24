@@ -1,12 +1,23 @@
 {% extends 'gastos/base.html' %}
+{% load gastos_extras %}
 
 {% block title %}Dashboard - Gastos Familiares{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
-        <p class="text-muted">Resumen de {{ mes_actual }}</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+                <p class="text-muted">Resumen de {{ mes_actual }}</p>
+            </div>
+            <div>
+                <button id="togglePrivacidad" class="btn btn-outline-secondary" title="Ocultar/Mostrar valores">
+                    <i class="bi bi-eye-slash-fill" id="iconoPrivacidad"></i>
+                    <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -15,29 +26,35 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Ingresos Totales</div>
-            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+            <div class="stat-value text-success" id="valorIngresos">
+                {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">{{ aportantes|length }} aportante{{ aportantes|length|pluralize }}</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Gastos del Mes</div>
-            <div class="stat-value text-danger">${{ total_gastos_mes|floatformat:0 }}</div>
+            <div class="stat-value text-danger" id="valorGastos">
+                {% if ocultar_valores %}****{% else %}{{ total_gastos_mes|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">Total gastado</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Gastos Fijos</div>
-            <div class="stat-value text-warning">${{ gastos_fijos_mes|floatformat:0 }}</div>
+            <div class="stat-value text-warning" id="valorGastosFijos">
+                {% if ocultar_valores %}****{% else %}{{ gastos_fijos_mes|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">Obligatorios</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Balance</div>
-            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                ${{ balance|floatformat:0 }}
+            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}" id="valorBalance">
+                {% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Disponible</small>
         </div>
@@ -66,7 +83,9 @@
                             {% for aportante in aportantes %}
                             <tr>
                                 <td>{{ aportante.nombre }}</td>
-                                <td>${{ aportante.ingreso_mensual|floatformat:0 }}</td>
+                                <td class="valor-monetario">
+                                    {% if ocultar_valores %}****{% else %}{{ aportante.ingreso_mensual|formato_moneda }}{% endif %}
+                                </td>
                                 <td>
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-success" role="progressbar"
@@ -116,7 +135,9 @@
                                     {{ categoria.nombre }}
                                 </td>
                                 <td>{{ categoria.cantidad }}</td>
-                                <td>${{ categoria.total|floatformat:0 }}</td>
+                                <td class="valor-monetario">
+                                    {% if ocultar_valores %}****{% else %}{{ categoria.total|formato_moneda }}{% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -168,7 +189,9 @@
                                         {{ gasto.get_tipo_gasto }}
                                     </span>
                                 </td>
-                                <td class="fw-bold">${{ gasto.monto|floatformat:0 }}</td>
+                                <td class="fw-bold valor-monetario">
+                                    {% if ocultar_valores %}****{% else %}{{ gasto.monto|formato_moneda }}{% endif %}
+                                </td>
                                 <td>
                                     {% if gasto.pagado %}
                                     <span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagado</span>
@@ -243,6 +266,62 @@
         transform: translateY(-5px);
         box-shadow: 0 4px 12px rgba(0,0,0,.15);
     }
+    #togglePrivacidad {
+        transition: all 0.3s ease;
+    }
+    #togglePrivacidad:hover {
+        transform: scale(1.05);
+    }
 </style>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('togglePrivacidad');
+    const iconoPrivacidad = document.getElementById('iconoPrivacidad');
+    const textoPrivacidad = document.getElementById('textoPrivacidad');
+    let ocultarValores = {{ ocultar_valores|lower }};
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            // Hacer petición AJAX
+            fetch('{% url "toggle_privacidad_valores" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    ocultarValores = data.ocultar;
+
+                    // Actualizar icono y texto
+                    if (ocultarValores) {
+                        iconoPrivacidad.className = 'bi bi-eye-fill';
+                        textoPrivacidad.textContent = 'Mostrar Valores';
+                    } else {
+                        iconoPrivacidad.className = 'bi bi-eye-slash-fill';
+                        textoPrivacidad.textContent = 'Ocultar Valores';
+                    }
+
+                    // Recargar la página para actualizar todos los valores
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar la configuración de privacidad');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+
+
 

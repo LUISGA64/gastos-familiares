@@ -106,4 +106,7 @@ urlpatterns = [
 
     # Onboarding
     path('marcar-onboarding-completado/', views.marcar_onboarding_completado, name='marcar_onboarding_completado'),
+
+    # Preferencias de privacidad
+    path('toggle-privacidad-valores/', views.toggle_privacidad_valores, name='toggle_privacidad_valores'),
 ]

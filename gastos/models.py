@@ -593,6 +593,30 @@ class InvitacionFamilia(models.Model):
                 return codigo
 
 
+class PreferenciasUsuario(models.Model):
+    """Preferencias de privacidad y visualización del usuario"""
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='preferencias',
+        verbose_name="Usuario"
+    )
+    ocultar_valores_monetarios = models.BooleanField(
+        default=False,
+        verbose_name="Ocultar Valores Monetarios",
+        help_text="Cuando está activo, los valores se muestran como ****"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Preferencias de Usuario"
+        verbose_name_plural = "Preferencias de Usuarios"
+
+    def __str__(self):
+        return f"Preferencias de {self.usuario.username}"
+
+
 class Aportante(models.Model):
     """Modelo para representar un aportante de ingresos en la familia"""
     familia = models.ForeignKey(

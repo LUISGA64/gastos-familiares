@@ -7,7 +7,8 @@ from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, Distri
                      LogroDesbloqueado, DesafioMensual, ParticipacionDesafio,
                      HistorialPuntos, NotificacionLogro, ConversacionChatbot,
                      MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago, InvitacionFamilia,
-                     Familia, PlanSuscripcion, CodigoInvitacion, PasswordResetToken)
+                     Familia, PlanSuscripcion, CodigoInvitacion, PasswordResetToken,
+                     PreferenciasUsuario)
 
 
 @admin.register(InvitacionFamilia)
@@ -726,4 +727,27 @@ class PasswordResetTokenAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         # Los tokens no se pueden modificar
         return False
+
+
+@admin.register(PreferenciasUsuario)
+class PreferenciasUsuarioAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'ocultar_valores_monetarios', 'fecha_modificacion']
+    list_filter = ['ocultar_valores_monetarios', 'fecha_creacion']
+    search_fields = ['usuario__username', 'usuario__email']
+    readonly_fields = ['fecha_creacion', 'fecha_modificacion']
+    ordering = ['-fecha_modificacion']
+
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('usuario',)
+        }),
+        ('Preferencias de Privacidad', {
+            'fields': ('ocultar_valores_monetarios',)
+        }),
+        ('Información', {
+            'fields': ('fecha_creacion', 'fecha_modificacion'),
+            'classes': ('collapse',)
+        }),
+    )
+
 

@@ -1,5 +1,6 @@
 {% extends 'gastos/base.html' %}
 {% load static %}
+{% load gastos_extras %}
 
 {% block title %}Metas de Ahorro - Gastos Familiares{% endblock %}
 
@@ -535,7 +536,7 @@ y ver    /* Variables de colores moderna - Tailwind CSS */
             <div class="stat-card-icon success">
                 <i class="bi bi-trophy-fill"></i>
             </div>
-            <div class="stat-card-value">${{ total_ahorrado|floatformat:0|default:"0" }}</div>
+            <div class="stat-card-value">{{ total_ahorrado|formato_moneda|default:"$0" }}</div>
             <div class="stat-card-label">Total Ahorrado</div>
         </div>
 
@@ -543,7 +544,7 @@ y ver    /* Variables de colores moderna - Tailwind CSS */
             <div class="stat-card-icon info">
                 <i class="bi bi-bullseye"></i>
             </div>
-            <div class="stat-card-value">${{ total_objetivo|floatformat:0|default:"0" }}</div>
+            <div class="stat-card-value">{{ total_objetivo|formato_moneda|default:"$0" }}</div>
             <div class="stat-card-label">Meta Total</div>
         </div>
 
@@ -618,19 +619,19 @@ y ver    /* Variables de colores moderna - Tailwind CSS */
             <div class="montos-grid">
                 <div class="monto-item">
                     <div class="monto-valor" style="color: var(--success-color);">
-                        ${{ meta.monto_actual|floatformat:0 }}
+                        {{ meta.monto_actual|formato_moneda }}
                     </div>
                     <div class="monto-label">Ahorrado</div>
                 </div>
                 <div class="monto-item">
                     <div class="monto-valor" style="color: var(--secondary-color);">
-                        ${{ meta.monto_objetivo|floatformat:0 }}
+                        {{ meta.monto_objetivo|formato_moneda }}
                     </div>
                     <div class="monto-label">Meta</div>
                 </div>
                 <div class="monto-item">
                     <div class="monto-valor" style="color: var(--warning-color);">
-                        ${{ meta.monto_restante|floatformat:0 }}
+                        {{ meta.monto_restante|formato_moneda }}
                     </div>
                     <div class="monto-label">Falta</div>
                 </div>
@@ -706,7 +707,7 @@ y ver    /* Variables de colores moderna - Tailwind CSS */
                         </div>
                         <div class="badge-completado">
                             <i class="bi bi-trophy-fill"></i>
-                            <span>${{ meta.monto_objetivo|floatformat:0 }}</span>
+                            <span>{{ meta.monto_objetivo|formato_moneda }}</span>
                         </div>
                     </div>
                 </div>
@@ -741,7 +742,7 @@ y ver    /* Variables de colores moderna - Tailwind CSS */
                             </div>
                             <div>
                                 <h5 class="meta-title">{{ meta.nombre }}</h5>
-                                <span class="text-muted small">Cancelada | ${{ meta.monto_actual|floatformat:0 }} de ${{ meta.monto_objetivo|floatformat:0 }}</span>
+                                <span class="text-muted small">Cancelada | {{ meta.monto_actual|formato_moneda }} de {{ meta.monto_objetivo|formato_moneda }}</span>
                             </div>
                         </div>
                         <a href="{% url 'detalle_meta' meta.pk %}" class="btn btn-outline-secondary btn-sm">Ver</a>

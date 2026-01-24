@@ -13,6 +13,10 @@
     </div>
     <div class="col-lg-6 col-md-12">
         <div class="d-flex justify-content-lg-end justify-content-start gap-2 flex-wrap">
+            <button id="togglePrivacidad" class="btn btn-outline-secondary d-flex align-items-center gap-2" title="Ocultar/Mostrar valores">
+                <i class="bi {% if ocultar_valores %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %}" id="iconoPrivacidad"></i>
+                <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
+            </button>
             <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2"
                     onclick="exportDashboard('pdf')">
                 <i class="bi bi-file-pdf"></i>
@@ -33,7 +37,9 @@
         <div class="card stat-card">
             <i class="bi bi-wallet2 stat-icon text-success"></i>
             <div class="stat-label">Ingresos Totales</div>
-            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+            <div class="stat-value text-success">
+                {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">
                 <i class="bi bi-people-fill"></i> {{ aportantes|length }} aportante{{ aportantes|length|pluralize }}
             </small>
@@ -51,7 +57,9 @@
         <div class="card stat-card">
             <i class="bi bi-credit-card stat-icon text-danger"></i>
             <div class="stat-label">Gastos del Mes</div>
-            <div class="stat-value text-danger">${{ total_gastos_mes|floatformat:0 }}</div>
+            <div class="stat-value text-danger">
+                {% if ocultar_valores %}****{% else %}{{ total_gastos_mes|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">Total gastado</small>
             {% if tendencia_gastos %}
             <div class="mt-2">
@@ -68,7 +76,9 @@
         <div class="card stat-card">
             <i class="bi bi-pin-angle stat-icon text-warning"></i>
             <div class="stat-label">Gastos Fijos</div>
-            <div class="stat-value text-warning">${{ gastos_fijos_mes|floatformat:0 }}</div>
+            <div class="stat-value text-warning">
+                {% if ocultar_valores %}****{% else %}{{ gastos_fijos_mes|formato_moneda }}{% endif %}
+            </div>
             <small class="text-muted">Obligatorios</small>
             <div class="mt-2">
                 <div class="progress" style="height: 8px;">
@@ -85,7 +95,7 @@
             <i class="bi bi-piggy-bank stat-icon {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
             <div class="stat-label">Balance</div>
             <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                ${{ balance|floatformat:0 }}
+                {% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">
                 {% if balance >= 0 %}
@@ -168,7 +178,9 @@
                                 <td>
                                     <strong>{{ aportante.nombre }}</strong>
                                 </td>
-                                <td>${{ aportante.ingreso_mensual|floatformat:0 }}</td>
+                                <td>
+                                    {% if ocultar_valores %}****{% else %}{{ aportante.ingreso_mensual|formato_moneda }}{% endif %}
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="progress flex-grow-1" style="height: 24px;">
@@ -223,7 +235,9 @@
                             </small>
                         </div>
                         <div class="text-end">
-                            <strong class="text-danger">${{ gasto.monto|floatformat:0 }}</strong>
+                            <strong class="text-danger">
+                                {% if ocultar_valores %}****{% else %}{{ gasto.monto|formato_moneda }}{% endif %}
+                            </strong>
                             <br>
                             <span class="badge badge-{{ gasto.categoria.tipo|lower }}">
                                 {{ gasto.categoria.get_tipo_display }}
@@ -263,7 +277,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="alert alert-primary border-start border-primary border-4">
                             <h6><i class="bi bi-graph-up"></i> Proyección Próximo Mes</h6>
-                            <p class="mb-0">Basado en tu historial, se estima un gasto de <strong>${{ proyeccion_gastos|floatformat:0 }}</strong></p>
+                            <p class="mb-0">Basado en tu historial, se estima un gasto de <strong>{{ proyeccion_gastos|formato_moneda }}</strong></p>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
@@ -271,9 +285,9 @@
                             <h6><i class="bi bi-piggy-bank"></i> Estado Financiero</h6>
                             <p class="mb-0">
                                 {% if balance >= 0 %}
-                                    ¡Excelente! Estás ahorrando <strong>${{ balance|floatformat:0 }}</strong> este mes
+                                    ¡Excelente! Estás ahorrando <strong>{% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}</strong> este mes
                                 {% else %}
-                                    Atención: Tienes un déficit de <strong>${{ balance|abs_value|floatformat:0 }}</strong>
+                                    Atención: Tienes un déficit de <strong>{% if ocultar_valores %}****{% else %}{{ balance|abs_value|formato_moneda }}{% endif %}</strong>
                                 {% endif %}
                             </p>
                         </div>
@@ -281,7 +295,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="alert alert-info border-start border-info border-4">
                             <h6><i class="bi bi-trophy"></i> Meta de Ahorro</h6>
-                            <p class="mb-0">Intenta ahorrar el 20% de tus ingresos: <strong>${{ meta_ahorro|floatformat:0 }}</strong></p>
+                            <p class="mb-0">Intenta ahorrar el 20% de tus ingresos: <strong>{{ meta_ahorro|formato_moneda }}</strong></p>
                         </div>
                     </div>
                 </div>
@@ -522,6 +536,53 @@
         showToast('Actualizando datos para ' + period, 'info');
         // Aquí se implementaría la actualización real del gráfico
     }
+
+    // Toggle de privacidad
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('togglePrivacidad');
+        const iconoPrivacidad = document.getElementById('iconoPrivacidad');
+        const textoPrivacidad = document.getElementById('textoPrivacidad');
+        let ocultarValores = {{ ocultar_valores|lower }};
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                // Hacer petición AJAX
+                fetch('{% url "toggle_privacidad_valores" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        ocultarValores = data.ocultar;
+
+                        // Actualizar icono y texto
+                        if (ocultarValores) {
+                            iconoPrivacidad.className = 'bi bi-eye-fill';
+                            textoPrivacidad.textContent = 'Mostrar Valores';
+                        } else {
+                            iconoPrivacidad.className = 'bi bi-eye-slash-fill';
+                            textoPrivacidad.textContent = 'Ocultar Valores';
+                        }
+
+                        showToast(data.mensaje, 'success');
+
+                        // Recargar la página para actualizar todos los valores
+                        setTimeout(() => {
+                            location.reload();
+                        }, 500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error al cambiar la configuración de privacidad', 'error');
+                });
+            });
+        }
+    });
 </script>
 {% endblock %}
 

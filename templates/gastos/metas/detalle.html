@@ -1,4 +1,5 @@
 {% extends 'gastos/base.html' %}
+{% load gastos_extras %}
 {% block title %}{{ meta.nombre }} - Meta de Ahorro{% endblock %}
 
 {% block extra_css %}
@@ -173,7 +174,7 @@
                     <div class="progress-bar-modern mb-4">
                         <div class="progress-fill" style="width: {{ meta.porcentaje_completado }}%;">
                             {% if meta.porcentaje_completado >= 5 %}
-                            ${{ meta.monto_actual|floatformat:0 }}
+                            {{ meta.monto_actual|formato_moneda }}
                             {% endif %}
                         </div>
                     </div>
@@ -183,7 +184,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="stat-box">
                                 <div class="stat-value" style="color: #7bc96f;">
-                                    ${{ meta.monto_actual|floatformat:0 }}
+                                    {{ meta.monto_actual|formato_moneda }}
                                 </div>
                                 <div class="stat-label">Ahorrado</div>
                             </div>
@@ -191,7 +192,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="stat-box">
                                 <div class="stat-value" style="color: #4a90e2;">
-                                    ${{ meta.monto_objetivo|floatformat:0 }}
+                                    {{ meta.monto_objetivo|formato_moneda }}
                                 </div>
                                 <div class="stat-label">Meta</div>
                             </div>
@@ -199,7 +200,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="stat-box">
                                 <div class="stat-value" style="color: #f5a623;">
-                                    ${{ meta.monto_restante|floatformat:0 }}
+                                    {{ meta.monto_restante|formato_moneda }}
                                 </div>
                                 <div class="stat-label">Falta</div>
                             </div>
@@ -266,7 +267,7 @@
                             <i class="bi bi-trophy-fill me-2" style="font-size: 1.5rem;"></i>
                             <strong style="font-size: 1.1rem;">¡Meta Completada!</strong>
                             <br>
-                            <span>Felicidades por alcanzar tu objetivo de ${{ meta.monto_objetivo|floatformat:0 }}</span>
+                            <span>Felicidades por alcanzar tu objetivo de {{ meta.monto_objetivo|formato_moneda }}</span>
                         </div>
                         {% else %}
                         <form method="post" action="{% url 'cambiar_estado_meta' meta.pk %}">

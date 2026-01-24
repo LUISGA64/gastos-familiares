@@ -618,7 +618,7 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="stat-card-label">Total Ingresos</div>
-            <div class="stat-card-value">${{ total_ingresos|floatformat:0 }}</div>
+            <div class="stat-card-value">{{ total_ingresos|formato_moneda }}</div>
             <div class="stat-card-subtitle">{{ conciliacion_aportantes|length }} aportante{{ conciliacion_aportantes|length|pluralize }}</div>
         </div>
     </div>
@@ -628,7 +628,7 @@
                 <i class="bi bi-receipt"></i>
             </div>
             <div class="stat-card-label">Total Gastos</div>
-            <div class="stat-card-value">${{ total_gastos_mes|floatformat:0 }}</div>
+            <div class="stat-card-value">{{ total_gastos_mes|formato_moneda }}</div>
             <div class="stat-card-subtitle">Del mes seleccionado</div>
         </div>
     </div>
@@ -638,8 +638,8 @@
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
             <div class="stat-card-label">Balance</div>
-            <div class="stat-card-value">${{ total_ingresos|floatformat:0|add:"-"|add:total_gastos_mes|floatformat:0 }}</div>
-            <div class="stat-card-subtitle">{% if total_ingresos >= total_gastos_mes %}Superávit{% else %}Déficit{% endif %}</div>
+            <div class="stat-card-value">{{ balance|formato_moneda }}</div>
+            <div class="stat-card-subtitle">{% if balance >= 0 %}Superávit{% else %}Déficit{% endif %}</div>
         </div>
     </div>
 </div>
@@ -673,15 +673,15 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 600;">{{ item.aportante.nombre }}</div>
-                                    <small class="text-muted">${{ item.aportante.ingreso_mensual|floatformat:0 }}/mes</small>
+                                    <small class="text-muted">{{ item.aportante.ingreso_mensual|formato_moneda }}/mes</small>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
                             <span class="badge bg-light text-dark" style="font-size: 0.875rem;">{{ item.porcentaje_esperado|floatformat:1 }}%</span>
                         </td>
-                        <td class="text-end" style="font-weight: 500;">${{ item.gastos_asignados|floatformat:0 }}</td>
-                        <td class="text-end" style="font-weight: 600;">${{ item.pagos_realizados|floatformat:0 }}</td>
+                        <td class="text-end" style="font-weight: 500;">{{ item.gastos_asignados|formato_moneda }}</td>
+                        <td class="text-end" style="font-weight: 600;">{{ item.pagos_realizados|formato_moneda }}</td>
                         <td style="min-width: 200px;">
                             <div class="progress-modern">
                                 <div class="progress-bar"
@@ -693,9 +693,9 @@
                         </td>
                         <td class="text-end" style="font-weight: 700; color: {% if item.balance > 0 %}var(--success-soft){% elif item.balance < 0 %}var(--danger-soft){% else %}var(--text-muted){% endif %};">
                             {% if item.balance > 0 %}
-                            +${{ item.balance|floatformat:0 }}
+                            +{{ item.balance|formato_moneda }}
                             {% elif item.balance < 0 %}
-                            -${{ item.balance|floatformat:0|cut:"-" }}
+                            {{ item.balance|formato_moneda }}
                             {% else %}
                             $0
                             {% endif %}
@@ -765,7 +765,7 @@
                 </div>
                 <div class="col-md-4 text-md-end">
                     <div class="reintegro-amount">
-                        ${{ reintegro.monto|floatformat:0 }}
+                        {{ reintegro.monto|formato_moneda }}
                     </div>
                 </div>
             </div>
@@ -801,7 +801,7 @@
                     </h6>
                 </div>
                 <div class="badge bg-light text-dark" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
-                    Total: ${{ item.pagos_realizados|floatformat:0 }}
+                    Total: {{ item.pagos_realizados|formato_moneda }}
                 </div>
             </div>
 
@@ -825,7 +825,7 @@
                                 <small class="text-muted">{{ gasto.descripcion }}</small>
                                 {% endif %}
                             </td>
-                            <td class="text-end" style="font-weight: 600;">${{ gasto.monto|floatformat:0 }}</td>
+                            <td class="text-end" style="font-weight: 600;">{{ gasto.monto|formato_moneda }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -891,7 +891,7 @@
                 <div class="col-md-3">
                     <small class="text-muted">Balance:</small><br>
                     <strong style="color: {% if detalle.balance > 0 %}var(--success-soft){% elif detalle.balance < 0 %}var(--danger-soft){% else %}var(--text-muted){% endif %}; font-size: 1.1rem;">
-                        ${{ detalle.balance|floatformat:0 }}
+                        {{ detalle.balance|formato_moneda }}
                     </strong>
                 </div>
                 <div class="col-md-6">

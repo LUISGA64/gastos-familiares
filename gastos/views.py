@@ -171,6 +171,15 @@ def dashboard(request):
     except Exception as e:
         print(f"Error en gamificación: {e}")
 
+    # PREFERENCIAS DE PRIVACIDAD
+    try:
+        from .models import PreferenciasUsuario
+        preferencias, created = PreferenciasUsuario.objects.get_or_create(usuario=request.user)
+        context['ocultar_valores'] = preferencias.ocultar_valores_monetarios
+    except Exception as e:
+        print(f"Error al obtener preferencias: {e}")
+        context['ocultar_valores'] = False
+
     return render(request, 'gastos/dashboard_premium.html', context)
 
 
@@ -753,11 +762,15 @@ def conciliacion(request):
     # Verificar si hay aportantes sin email
     hay_aportantes_sin_email = any(not a.email for a in aportantes)
 
+    # Calcular balance
+    balance = total_ingresos - total_gastos_mes
+
     context = {
         'mes': mes,
         'anio': anio,
         'total_ingresos': total_ingresos,
         'total_gastos_mes': total_gastos_mes,
+        'balance': balance,
         'conciliacion_aportantes': conciliacion_aportantes,
         'reintegros': reintegros,
         'detalles_pagos': detalles_pagos,
@@ -1269,4 +1282,28 @@ def marcar_onboarding_completado(request):
     request.session['onboarding_completed'] = True
     request.session['show_onboarding'] = False
     return JsonResponse({'success': True})
+
+
+# ==================== PREFERENCIAS DE PRIVACIDAD ====================
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_privacidad_valores(request):
+    """Alterna la privacidad de valores monetarios"""
+    from .models import PreferenciasUsuario
+
+    # Obtener o crear preferencias del usuario
+    preferencias, created = PreferenciasUsuario.objects.get_or_create(usuario=request.user)
+
+    # Alternar el valor
+    preferencias.ocultar_valores_monetarios = not preferencias.ocultar_valores_monetarios
+    preferencias.save()
+
+    return JsonResponse({
+        'success': True,
+        'ocultar': preferencias.ocultar_valores_monetarios,
+        'mensaje': 'Valores ocultos' if preferencias.ocultar_valores_monetarios else 'Valores visibles'
+    })
+
+
 

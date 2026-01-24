@@ -1,4 +1,5 @@
 {% extends 'gastos/base.html' %}
+{% load gastos_extras %}
 
 {% block title %}Aportantes - Gastos Familiares{% endblock %}
 
@@ -21,7 +22,7 @@
 <div class="card">
     <div class="card-header">
         <i class="bi bi-list"></i> Lista de Aportantes
-        <span class="badge bg-primary float-end">Total Ingresos: ${{ total_ingresos|floatformat:0 }}</span>
+        <span class="badge bg-primary float-end">Total Ingresos: {{ total_ingresos|formato_moneda }}</span>
     </div>
     <div class="card-body">
         {% if aportantes %}
@@ -71,12 +72,12 @@
                             <br><small class="text-muted">Necesario para confirmación de conciliaciones</small>
                             {% endif %}
                         </td>
-                        <td>${{ aportante.ingreso_mensual|floatformat:0 }}</td>
+                        <td>{{ aportante.ingreso_mensual|formato_moneda }}</td>
                         <td>
                             <div class="progress" style="height: 20px;">
                                 <div class="progress-bar bg-success" role="progressbar"
                                      style="width: {{ aportante.calcular_porcentaje_aporte }}%">
-                                    {{ aportante.calcular_porcentaje_aporte|floatformat:2 }}%
+                                    {{ aportante.calcular_porcentaje_aporte|floatformat:1 }}%
                                 </div>
                             </div>
                         </td>
