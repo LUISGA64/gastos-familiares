@@ -95,6 +95,7 @@
                         {% endif %}
                     </div>
 
+                    {% if not es_personal %}
                     <div class="mb-3 form-check">
                         {{ form.distribuir_automaticamente }}
                         <label class="form-check-label" for="{{ form.distribuir_automaticamente.id_for_label }}">
@@ -104,12 +105,13 @@
                             Al activar esta opción, el gasto se distribuirá automáticamente entre todos los aportantes activos según su porcentaje de aporte.
                         </small>
                     </div>
+                    {% endif %}
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-save"></i> Guardar Gasto
                         </button>
-                        <a href="{% url 'lista_gastos' %}" class="btn btn-secondary">
+                        <a href="{% if es_personal %}{% url 'lista_gastos_personales' %}{% else %}{% url 'lista_gastos' %}{% endif %}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -124,6 +126,25 @@
                 <i class="bi bi-info-circle"></i> Ayuda
             </div>
             <div class="card-body">
+                {% if es_personal %}
+                <h6>Gastos Personales</h6>
+                <p class="small">
+                    Los gastos personales son aquellos que no se comparten con la familia y no se incluyen en la conciliación mensual.
+                </p>
+
+                <h6 class="mt-3">Ejemplos</h6>
+                <p class="small">
+                    - Compras personales<br>
+                    - Entretenimiento individual<br>
+                    - Gastos privados<br>
+                    - Hobbies personales
+                </p>
+
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-shield-lock"></i>
+                    <strong>Privacidad:</strong> Estos gastos son visibles solo para ti y no afectan la distribución familiar.
+                </div>
+                {% else %}
                 <h6>Distribución automática</h6>
                 <p class="small">
                     Si activas la distribución automática, el sistema calculará cuánto debe aportar cada miembro de la familia según su porcentaje de ingreso.
@@ -140,6 +161,7 @@
                     <i class="bi bi-exclamation-triangle"></i>
                     <strong>Nota:</strong> Puedes editar la distribución manualmente después desde el detalle del gasto.
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

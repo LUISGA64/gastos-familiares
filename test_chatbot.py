@@ -7,16 +7,14 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DjangoProject.settings')
 django.setup()
 
-from django.test import Client
+from django.test import Client, RequestFactory
 from django.contrib.auth.models import User
 from gastos.models import Familia
+from gastos.views_chatbot import chatbot_dashboard
 
 print("=" * 80)
 print("PRUEBA: Chatbot Dashboard")
 print("=" * 80)
-
-# Crear cliente de prueba
-client = Client()
 
 # Obtener usuario
 user = User.objects.first()
@@ -24,39 +22,45 @@ if not user:
     print("❌ No hay usuarios en la base de datos")
     exit(1)
 
-print(f"Usuario: {user.username}")
-
-# Login
-client.force_login(user)
+print(f"✅ Usuario: {user.username}")
 
 # Obtener familia
 familia = Familia.objects.filter(miembros=user).first()
-if familia:
-    print(f"Familia: {familia.nombre}")
-    # Simular sesión con familia_id
-    session = client.session
-    session['familia_id'] = familia.id
-    session.save()
-else:
-    print("⚠️  Usuario no tiene familia asignada")
+if not familia:
+    print("❌ Usuario no tiene familia asignada")
+    exit(1)
 
-# Probar chatbot dashboard
-print("\nProbando /chatbot/...")
-response = client.get('/chatbot/')
+print(f"✅ Familia: {familia.nombre}")
 
-print(f"Status Code: {response.status_code}")
+# Probar directamente la vista
+print("\nProbando vista chatbot_dashboard directamente...")
+try:
+    factory = RequestFactory()
+    request = factory.get('/chatbot/')
+    request.user = user
 
-if response.status_code == 200:
-    print("✅ Chatbot Dashboard funciona correctamente")
-elif response.status_code == 500:
-    print("❌ Error 500 - Ver detalles en logs/errors.log")
-    # Intentar obtener el error
-    try:
-        print("\nError detectado:")
-        print(str(response.content[:500], 'utf-8', errors='ignore'))
-    except:
-        pass
-else:
-    print(f"⚠️  Status inesperado: {response.status_code}")
+    # Simular sesión
+    from django.contrib.sessions.middleware import SessionMiddleware
+    middleware = SessionMiddleware(lambda x: None)
+    middleware.process_request(request)
+    request.session['familia_id'] = familia.id
+    request.session.save()
+
+    # Llamar a la vista
+    response = chatbot_dashboard(request)
+
+    print(f"✅ Status Code: {response.status_code}")
+
+    if response.status_code == 200:
+        print("✅ ¡CHATBOT DASHBOARD FUNCIONA CORRECTAMENTE!")
+    else:
+        print(f"❌ Error: Status {response.status_code}")
+
+except Exception as e:
+    print(f"❌ Error al ejecutar la vista: {e}")
+    import traceback
+    traceback.print_exc()
 
 print("\n" + "=" * 80)
+print("FIN DE LA PRUEBA")
+print("=" * 80)

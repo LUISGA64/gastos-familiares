@@ -503,14 +503,23 @@ def crear_gasto(request):
         messages.warning(request, 'Debes seleccionar una familia primero.')
         return redirect('seleccionar_familia')
 
+    # Determinar si es gasto personal (parámetro en la URL)
+    es_personal = request.GET.get('personal', 'false').lower() == 'true'
+
     if request.method == 'POST':
-        form = GastoForm(request.POST, familia_id=familia_id)
+        # Usar el formulario adecuado según el tipo
+        if es_personal or request.POST.get('tipo_gasto') == 'PERSONAL':
+            from .forms import GastoPersonalForm
+            form = GastoPersonalForm(request.POST, familia_id=familia_id)
+        else:
+            form = GastoForm(request.POST, familia_id=familia_id)
+
         if form.is_valid():
             gasto = form.save()
             # La familia se determina automáticamente por la subcategoría seleccionada
 
-            # Si se marcó distribuir automáticamente
-            if form.cleaned_data.get('distribuir_automaticamente'):
+            # Si NO es personal y se marcó distribuir automáticamente
+            if not es_personal and hasattr(form, 'cleaned_data') and form.cleaned_data.get('distribuir_automaticamente'):
                 aportantes_activos = Aportante.objects.filter(familia_id=familia_id, activo=True)
 
                 for aportante in aportantes_activos:
@@ -533,16 +542,31 @@ def crear_gasto(request):
                 # No detener el flujo si falla la gamificación
                 print(f"Error en gamificación: {e}")
 
-            return redirect('lista_gastos')
+            # Redirigir según el tipo
+            if es_personal or gasto.tipo_gasto == 'PERSONAL':
+                return redirect('lista_gastos_personales')
+            else:
+                return redirect('lista_gastos')
         else:
             # Mostrar errores del formulario
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f'Error en {field}: {error}')
     else:
-        form = GastoForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
+        # Usar el formulario adecuado según el parámetro
+        if es_personal:
+            from .forms import GastoPersonalForm
+            form = GastoPersonalForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
+        else:
+            form = GastoForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
 
-    return render(request, 'gastos/gasto_form.html', {'form': form, 'titulo': 'Nuevo Gasto'})
+    context = {
+        'form': form,
+        'titulo': 'Nuevo Gasto Personal' if es_personal else 'Nuevo Gasto',
+        'es_personal': es_personal
+    }
+
+    return render(request, 'gastos/gasto_form.html', context)
 
 
 @login_required

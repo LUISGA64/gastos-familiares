@@ -271,19 +271,19 @@
 
         .auth-illustration {
             padding: 40px 30px;
-            min-height: 250px;
+            min-height: 200px;
         }
 
         .finanbot-icon {
-            font-size: 70px;
+            font-size: 60px;
         }
 
         .finanbot-text h2 {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
         }
 
         .finanbot-text p {
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .features-list {
@@ -297,100 +297,103 @@
 
     @media (max-width: 576px) {
         body {
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
+            padding: 10px 0;
+            align-items: flex-start;
         }
 
         .auth-container {
-            padding: 0;
-            margin: 0;
-            width: 100%;
+            padding: 0 10px;
         }
 
         .auth-card {
-            border-radius: 0;
-            min-height: 100vh;
-            box-shadow: none;
+            border-radius: 15px;
+            min-height: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
         .auth-illustration {
-            padding: 20px 15px;
+            padding: 25px 15px;
             min-height: auto;
         }
 
         .finanbot-icon {
-            font-size: 50px;
+            font-size: 60px;
             margin-bottom: 10px;
         }
 
         .finanbot-text h2 {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             margin-bottom: 8px;
         }
 
         .finanbot-text p {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
 
         .auth-form {
-            padding: 20px 15px 30px;
+            padding: 25px 20px 30px;
         }
 
         .auth-form-header {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .auth-form-header h3 {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
         }
 
         .auth-form-header p {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .form-floating {
+            margin-bottom: 15px;
         }
 
         .form-floating .form-control {
-            height: 50px;
+            height: 55px;
             font-size: 16px; /* Evita zoom en iOS */
         }
 
         .form-floating label {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
         .btn-login {
-            height: 50px;
+            height: 52px;
             font-size: 1rem;
         }
 
         .forgot-password {
-            font-size: 0.9rem; /* Más grande que antes (0.85rem) */
-            margin-top: 12px;
-            padding: 8px 0;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            padding: 5px 0;
             display: block;
-            text-align: center;
+            text-align: right;
         }
 
-        .btn-register-link {
-            height: 48px;
+        .btn-register {
+            height: 50px;
             font-size: 0.95rem;
         }
 
         .divider {
-            margin: 20px 0 15px;
+            margin: 25px 0 20px;
         }
 
         .info-footer {
             margin-top: 20px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
+            padding: 15px;
         }
 
         /* Ajustar mensajes de alerta en móviles */
         .alert {
             font-size: 0.85rem;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 15px;
+            border-radius: 10px;
         }
     }
 

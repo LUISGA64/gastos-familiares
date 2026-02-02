@@ -129,6 +129,75 @@ class GastoForm(forms.ModelForm):
         self.fields['subcategoria'].label_from_instance = lambda obj: f"{obj.categoria.nombre} → {obj.nombre} ({obj.get_tipo_display()})"
 
 
+class GastoPersonalForm(forms.ModelForm):
+    """Formulario para gastos personales - sin distribución automática"""
+
+    # Campo adicional para filtrar subcategorías por categoría
+    categoria_filter = forms.ModelChoiceField(
+        queryset=CategoriaGasto.objects.filter(activo=True),
+        required=False,
+        label='Filtrar por categoría',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        empty_label="Todas las categorías"
+    )
+
+    class Meta:
+        model = Gasto
+        fields = ['subcategoria', 'descripcion', 'monto', 'fecha', 'pagado_por', 'observaciones', 'pagado']
+        widgets = {
+            'subcategoria': forms.Select(attrs={'class': 'form-select'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Compra personal (opcional)'}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00', 'step': '0.01'}),
+            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'pagado_por': forms.Select(attrs={'class': 'form-select'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones opcionales'}),
+            'pagado': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'subcategoria': 'Tipo de Gasto',
+            'descripcion': 'Descripción Adicional (Opcional)',
+            'monto': 'Monto (COP)',
+            'fecha': 'Fecha',
+            'pagado_por': 'Pagado por',
+            'observaciones': 'Observaciones',
+            'pagado': 'Pagado',
+        }
+
+    def __init__(self, *args, **kwargs):
+        familia_id = kwargs.pop('familia_id', None)
+        super().__init__(*args, **kwargs)
+
+        # Establecer tipo_gasto como PERSONAL por defecto
+        self.instance.tipo_gasto = 'PERSONAL'
+
+        # Filtrar subcategorías y aportantes por familia si se proporciona
+        if familia_id:
+            self.fields['subcategoria'].queryset = SubcategoriaGasto.objects.filter(
+                categoria__familia_id=familia_id,
+                activo=True
+            ).select_related('categoria').order_by('categoria__nombre', 'nombre')
+
+            self.fields['pagado_por'].queryset = Aportante.objects.filter(
+                familia_id=familia_id,
+                activo=True
+            )
+
+            self.fields['categoria_filter'].queryset = CategoriaGasto.objects.filter(
+                familia_id=familia_id,
+                activo=True
+            )
+        else:
+            # Sin familia_id, mostrar todas (compatibilidad)
+            self.fields['subcategoria'].queryset = SubcategoriaGasto.objects.filter(
+                activo=True
+            ).select_related('categoria').order_by('categoria__nombre', 'nombre')
+
+            self.fields['pagado_por'].queryset = Aportante.objects.filter(activo=True)
+
+        # Personalizar el label de subcategoría para mostrar la jerarquía
+        self.fields['subcategoria'].label_from_instance = lambda obj: f"{obj.categoria.nombre} → {obj.nombre} ({obj.get_tipo_display()})"
+
+
 
 class DistribucionGastoForm(forms.ModelForm):
     class Meta:
