@@ -22,11 +22,20 @@ def chatbot_dashboard(request):
 
     # Obtener familia
     from .models import Familia
+    from django.conf import settings
     familia = Familia.objects.get(id=familia_id)
 
     # Obtener conversaciones recientes
     chatbot_service = ChatbotIAService()
     conversaciones = chatbot_service.obtener_conversaciones_usuario(request.user, familia)
+
+    # Calcular estadísticas ANTES de hacer slice
+    total_conversaciones = conversaciones.count()
+    conversaciones_activas = conversaciones.filter(activa=True).count()
+    total_mensajes = sum(conv.mensajes.count() for conv in conversaciones)
+
+    # Ahora sí hacer el slice para conversaciones recientes
+    conversaciones_recientes = conversaciones[:5]  # Últimas 5
 
     # Obtener análisis recientes
     analisis_recientes = AnalisisIA.objects.filter(
@@ -35,9 +44,13 @@ def chatbot_dashboard(request):
     ).order_by('-fecha_generacion')[:5]
 
     context = {
-        'conversaciones': conversaciones,
+        'conversaciones_recientes': conversaciones_recientes,
+        'total_conversaciones': total_conversaciones,
+        'total_mensajes': total_mensajes,
+        'conversaciones_activas': conversaciones_activas,
         'analisis_recientes': analisis_recientes,
         'familia': familia,
+        'proveedor_ia': getattr(settings, 'AI_PROVIDER', 'demo'),
     }
 
     return render(request, 'gastos/chatbot/dashboard.html', context)

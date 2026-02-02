@@ -739,4 +739,4 @@ Incluye:
         query = ConversacionChatbot.objects.filter(user=user)
         if familia:
             query = query.filter(familia=familia)
-        return query.order_by('-actualizada_en')[:10]
+        return query.order_by('-actualizada_en')  # Sin slice para permitir filtros posteriores

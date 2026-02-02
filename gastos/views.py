@@ -1306,4 +1306,213 @@ def toggle_privacidad_valores(request):
     })
 
 
+# ==================== GESTIÓN DE INGRESOS ====================
 
+@login_required
+def lista_ingresos(request):
+    """Lista de ingresos de aportantes"""
+    from .models import IngresoAportante
+    from .forms import IngresoAportanteForm
+
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    familia = get_object_or_404(Familia, id=familia_id)
+
+    # Obtener ingresos de todos los aportantes de la familia
+    ingresos = IngresoAportante.objects.filter(
+        aportante__familia_id=familia_id
+    ).select_related('aportante').order_by('-fecha', '-fecha_registro')
+
+    # Obtener estadísticas
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+
+    # Ingresos del mes actual
+    ingresos_mes = ingresos.filter(fecha__month=mes_actual, fecha__year=anio_actual)
+
+    # Asegurar que total_ingresos_mes sea un número, no None
+    total_result = ingresos_mes.aggregate(total=Sum('monto'))['total']
+    total_ingresos_mes = Decimal(str(total_result)) if total_result else Decimal('0')
+
+    # Ingresos por tipo
+    ingresos_por_tipo = ingresos_mes.values('tipo_ingreso').annotate(
+        total=Sum('monto')
+    ).order_by('-total')
+
+    # Ingresos por aportante
+    ingresos_por_aportante = ingresos_mes.values('aportante__nombre').annotate(
+        total=Sum('monto')
+    ).order_by('-total')
+
+    context = {
+        'familia': familia,
+        'ingresos': ingresos,
+        'total_ingresos_mes': total_ingresos_mes,
+        'ingresos_por_tipo': ingresos_por_tipo,
+        'ingresos_por_aportante': ingresos_por_aportante,
+        'mes_actual': timezone.now().strftime('%B %Y'),
+    }
+
+    return render(request, 'gastos/ingresos/lista_ingresos.html', context)
+
+
+@login_required
+def crear_ingreso(request):
+    """Crear un nuevo ingreso"""
+    from .models import IngresoAportante
+    from .forms import IngresoAportanteForm
+
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    if request.method == 'POST':
+        form = IngresoAportanteForm(request.POST, familia_id=familia_id)
+        if form.is_valid():
+            ingreso = form.save()
+            messages.success(request, f'Ingreso de {ingreso.aportante.nombre} registrado correctamente.')
+            return redirect('lista_ingresos')
+    else:
+        # Pre-llenar con la fecha actual
+        initial_data = {'fecha': timezone.now().date()}
+        form = IngresoAportanteForm(familia_id=familia_id, initial=initial_data)
+
+    context = {
+        'form': form,
+        'titulo': 'Registrar Nuevo Ingreso',
+        'boton_texto': 'Guardar Ingreso',
+    }
+
+    return render(request, 'gastos/ingresos/form_ingreso.html', context)
+
+
+@login_required
+def editar_ingreso(request, pk):
+    """Editar un ingreso existente"""
+    from .models import IngresoAportante
+    from .forms import IngresoAportanteForm
+
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que el ingreso pertenece a la familia del usuario
+    ingreso = get_object_or_404(IngresoAportante, pk=pk, aportante__familia_id=familia_id)
+
+    if request.method == 'POST':
+        form = IngresoAportanteForm(request.POST, instance=ingreso, familia_id=familia_id)
+        if form.is_valid():
+            ingreso = form.save()
+            messages.success(request, 'Ingreso actualizado correctamente.')
+            return redirect('lista_ingresos')
+    else:
+        form = IngresoAportanteForm(instance=ingreso, familia_id=familia_id)
+
+    context = {
+        'form': form,
+        'ingreso': ingreso,
+        'titulo': 'Editar Ingreso',
+        'boton_texto': 'Actualizar Ingreso',
+    }
+
+    return render(request, 'gastos/ingresos/form_ingreso.html', context)
+
+
+@login_required
+def eliminar_ingreso(request, pk):
+    """Eliminar un ingreso"""
+    from .models import IngresoAportante
+
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    # Verificar que el ingreso pertenece a la familia del usuario
+    ingreso = get_object_or_404(IngresoAportante, pk=pk, aportante__familia_id=familia_id)
+
+    if request.method == 'POST':
+        ingreso.delete()
+        messages.success(request, 'Ingreso eliminado correctamente.')
+        return redirect('lista_ingresos')
+
+    context = {
+        'ingreso': ingreso,
+    }
+
+    return render(request, 'gastos/ingresos/confirmar_eliminar.html', context)
+
+
+# ==================== GASTOS PERSONALES ====================
+
+@login_required
+def lista_gastos_personales(request):
+    """Lista de gastos personales (no compartidos) del usuario"""
+    # Obtener familia del usuario
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.warning(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    familia = get_object_or_404(Familia, id=familia_id)
+
+    # Obtener aportantes de la familia
+    aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
+
+    # Filtro de aportante (opcional)
+    aportante_id = request.GET.get('aportante')
+
+    # Obtener solo gastos personales
+    gastos = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
+        tipo_gasto='PERSONAL'
+    ).select_related('subcategoria__categoria', 'pagado_por')
+
+    # Filtrar por aportante si se especifica
+    if aportante_id:
+        gastos = gastos.filter(pagado_por_id=aportante_id)
+
+    # Ordenar
+    gastos = gastos.order_by('-fecha', '-fecha_registro')
+
+    # Estadísticas del mes actual
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+
+    gastos_mes = gastos.filter(fecha__month=mes_actual, fecha__year=anio_actual)
+
+    # Asegurar que total_gastos_mes sea un número, no None
+    total_result = gastos_mes.aggregate(total=Sum('monto'))['total']
+    total_gastos_mes = Decimal(str(total_result)) if total_result else Decimal('0')
+
+    # Gastos por aportante este mes
+    gastos_por_aportante = gastos_mes.values('pagado_por__nombre').annotate(
+        total=Sum('monto')
+    ).order_by('-total')
+
+    # Gastos por categoría este mes
+    gastos_por_categoria = gastos_mes.values('subcategoria__categoria__nombre').annotate(
+        total=Sum('monto')
+    ).order_by('-total')
+
+    context = {
+        'familia': familia,
+        'gastos': gastos,
+        'aportantes': aportantes,
+        'aportante_seleccionado': aportante_id,
+        'total_gastos_mes': total_gastos_mes,
+        'gastos_por_aportante': gastos_por_aportante,
+        'gastos_por_categoria': gastos_por_categoria,
+        'mes_actual': timezone.now().strftime('%B %Y'),
+    }
+
+    return render(request, 'gastos/gastos_personales/lista_gastos_personales.html', context)

@@ -642,7 +642,7 @@ class Aportante(models.Model):
         ordering = ['-activo', 'nombre']
 
     def __str__(self):
-        return f"{self.nombre} - ${self.ingreso_mensual:,.0f}"
+        return f"{self.nombre}"
 
     def calcular_porcentaje_aporte(self):
         """Calcula el porcentaje que representa el ingreso de este aportante del total"""
@@ -686,6 +686,65 @@ class Aportante(models.Model):
         pagado = self.calcular_pagos_realizados(mes, anio)
         asignado = self.calcular_gastos_asignados(mes, anio)
         return pagado - asignado
+
+
+class IngresoAportante(models.Model):
+    """Modelo para registrar ingresos de cada aportante (salarios, bonos, etc.)"""
+    TIPO_INGRESO_CHOICES = [
+        ('SALARIO', 'Salario'),
+        ('BONO', 'Bono/Prima'),
+        ('COMISION', 'Comisión'),
+        ('FREELANCE', 'Trabajo Freelance'),
+        ('INVERSION', 'Rendimiento Inversión'),
+        ('ARRIENDO', 'Arriendo'),
+        ('PENSION', 'Pensión'),
+        ('SUBSIDIO', 'Subsidio'),
+        ('OTRO', 'Otro Ingreso'),
+    ]
+
+    aportante = models.ForeignKey(
+        Aportante,
+        on_delete=models.CASCADE,
+        related_name='ingresos',
+        verbose_name="Aportante"
+    )
+    tipo_ingreso = models.CharField(
+        max_length=20,
+        choices=TIPO_INGRESO_CHOICES,
+        default='SALARIO',
+        verbose_name="Tipo de Ingreso"
+    )
+    descripcion = models.CharField(
+        max_length=200,
+        verbose_name="Descripción",
+        blank=True,
+        help_text="Descripción adicional (opcional)"
+    )
+    monto = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name="Monto (COP)"
+    )
+    fecha = models.DateField(verbose_name="Fecha del Ingreso")
+    recurrente = models.BooleanField(
+        default=False,
+        verbose_name="Recurrente",
+        help_text="Marcar si es un ingreso mensual recurrente"
+    )
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
+    fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+
+    class Meta:
+        verbose_name = "Ingreso de Aportante"
+        verbose_name_plural = "Ingresos de Aportantes"
+        ordering = ['-fecha', '-fecha_registro']
+
+    def __str__(self):
+        if self.descripcion:
+            return f"{self.get_tipo_ingreso_display()} - {self.descripcion} - ${self.monto:,.0f} ({self.fecha})"
+        return f"{self.get_tipo_ingreso_display()} - ${self.monto:,.0f} ({self.fecha})"
 
 
 class CategoriaGasto(models.Model):
@@ -765,6 +824,11 @@ class SubcategoriaGasto(models.Model):
 
 class Gasto(models.Model):
     """Modelo para registrar los gastos del hogar"""
+    TIPO_GASTO_CHOICES = [
+        ('COMPARTIDO', 'Gasto Compartido'),
+        ('PERSONAL', 'Gasto Personal'),
+    ]
+
     subcategoria = models.ForeignKey(
         SubcategoriaGasto,
         on_delete=models.PROTECT,
@@ -784,6 +848,22 @@ class Gasto(models.Model):
         verbose_name="Monto (COP)"
     )
     fecha = models.DateField(verbose_name="Fecha del Gasto")
+
+    # Campos de Soft Delete
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Eliminación",
+        help_text="Si tiene valor, el registro está eliminado (soft delete)"
+    )
+    deleted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gastos_eliminados',
+        verbose_name="Eliminado por"
+    )
     pagado_por = models.ForeignKey(
         Aportante,
         on_delete=models.PROTECT,
@@ -791,10 +871,34 @@ class Gasto(models.Model):
         verbose_name="Pagado por",
         help_text="Aportante que realizó el pago de este gasto"
     )
+    tipo_gasto = models.CharField(
+        max_length=20,
+        choices=TIPO_GASTO_CHOICES,
+        default='COMPARTIDO',
+        verbose_name="Tipo de Gasto",
+        help_text="Compartido: se distribuye entre aportantes. Personal: solo afecta al pagador"
+    )
     observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
     pagado = models.BooleanField(default=False, verbose_name="Pagado")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+
+    # Manager personalizado para soft delete
+    objects = models.Manager()  # Manager por defecto (incluye eliminados)
+
+    class ActiveManager(models.Manager):
+        """Manager que solo devuelve registros no eliminados"""
+        def get_queryset(self):
+            return super().get_queryset().filter(deleted_at__isnull=True)
+
+    active = ActiveManager()  # Manager para registros activos
+
+    class DeletedManager(models.Manager):
+        """Manager que solo devuelve registros eliminados"""
+        def get_queryset(self):
+            return super().get_queryset().filter(deleted_at__isnull=False)
+
+    deleted = DeletedManager()  # Manager para registros eliminados
 
     class Meta:
         verbose_name = "Gasto"
@@ -817,6 +921,45 @@ class Gasto(models.Model):
     def get_nombre_completo(self):
         """Retorna el nombre completo: Categoría → Subcategoría"""
         return f"{self.subcategoria.categoria.nombre} → {self.subcategoria.nombre}"
+
+    def soft_delete(self, user):
+        """Marca el gasto como eliminado (soft delete) sin borrarlo de la BD"""
+        self.deleted_at = timezone.now()
+        self.deleted_by = user
+        self.save()
+
+        # Registrar en audit log
+        from .models import AuditLog
+        AuditLog.registrar(
+            usuario=user,
+            accion='DELETE',
+            modelo='Gasto',
+            objeto_id=self.id,
+            descripcion=f'Gasto eliminado (soft delete): {self}',
+            familia=self.subcategoria.categoria.familia
+        )
+
+    def restore(self, user):
+        """Restaura un gasto eliminado"""
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save()
+
+        # Registrar en audit log
+        from .models import AuditLog
+        AuditLog.registrar(
+            usuario=user,
+            accion='UPDATE',
+            modelo='Gasto',
+            objeto_id=self.id,
+            descripcion=f'Gasto restaurado: {self}',
+            familia=self.subcategoria.categoria.familia
+        )
+
+    @property
+    def is_deleted(self):
+        """Verifica si el gasto está eliminado"""
+        return self.deleted_at is not None
 
 
 class DistribucionGasto(models.Model):
@@ -1747,3 +1890,156 @@ class PasswordResetToken(models.Model):
         count = expired.count()
         expired.delete()
         return count
+
+
+class AuditLog(models.Model):
+    """Registro de auditoría para tracking de acciones importantes"""
+    ACCION_CHOICES = [
+        ('CREATE', 'Crear'),
+        ('UPDATE', 'Actualizar'),
+        ('DELETE', 'Eliminar'),
+        ('VIEW', 'Ver'),
+        ('EXPORT', 'Exportar'),
+        ('LOGIN', 'Inicio de Sesión'),
+        ('LOGOUT', 'Cierre de Sesión'),
+        ('LOGIN_FAILED', 'Intento de Login Fallido'),
+        ('PASSWORD_CHANGE', 'Cambio de Contraseña'),
+        ('PAYMENT', 'Pago/Suscripción'),
+    ]
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        verbose_name="Usuario"
+    )
+    accion = models.CharField(
+        max_length=20,
+        choices=ACCION_CHOICES,
+        verbose_name="Acción"
+    )
+    modelo = models.CharField(
+        max_length=100,
+        verbose_name="Modelo/Entidad",
+        help_text="Nombre del modelo afectado (Gasto, Aportante, etc.)"
+    )
+    objeto_id = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="ID del Objeto"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="Dirección IP"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name="User Agent"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha y Hora"
+    )
+    datos_anteriores = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Datos Anteriores",
+        help_text="Estado antes del cambio (JSON)"
+    )
+    datos_nuevos = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Datos Nuevos",
+        help_text="Estado después del cambio (JSON)"
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+        help_text="Descripción adicional de la acción"
+    )
+    familia = models.ForeignKey(
+        'Familia',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        verbose_name="Familia"
+    )
+
+    class Meta:
+        verbose_name = "Registro de Auditoría"
+        verbose_name_plural = "Registros de Auditoría"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['usuario', '-timestamp']),
+            models.Index(fields=['accion', '-timestamp']),
+            models.Index(fields=['familia', '-timestamp']),
+        ]
+
+    def __str__(self):
+        usuario_str = self.usuario.username if self.usuario else "Anónimo"
+        return f"{usuario_str} - {self.get_accion_display()} {self.modelo} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
+    @staticmethod
+    def registrar(usuario, accion, modelo, objeto_id=None, ip_address=None,
+                  user_agent=None, datos_anteriores=None, datos_nuevos=None,
+                  descripcion='', familia=None):
+        """
+        Método helper para registrar una acción de auditoría
+
+        Ejemplo de uso:
+        AuditLog.registrar(
+            usuario=request.user,
+            accion='CREATE',
+            modelo='Gasto',
+            objeto_id=gasto.id,
+            ip_address=get_client_ip(request),
+            descripcion=f'Gasto creado: {gasto.descripcion}'
+        )
+        """
+        return AuditLog.objects.create(
+            usuario=usuario,
+            accion=accion,
+            modelo=modelo,
+            objeto_id=objeto_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            datos_anteriores=datos_anteriores,
+            datos_nuevos=datos_nuevos,
+            descripcion=descripcion,
+            familia=familia
+        )
+
+    @classmethod
+    def obtener_historial_usuario(cls, usuario, limite=50):
+        """Obtiene el historial de acciones de un usuario"""
+        return cls.objects.filter(usuario=usuario).order_by('-timestamp')[:limite]
+
+    @classmethod
+    def obtener_historial_familia(cls, familia, limite=100):
+        """Obtiene el historial de acciones de una familia"""
+        return cls.objects.filter(familia=familia).order_by('-timestamp')[:limite]
+
+    @classmethod
+    def obtener_logins_recientes(cls, usuario, dias=30):
+        """Obtiene los logins recientes de un usuario"""
+        fecha_inicio = timezone.now() - timedelta(days=dias)
+        return cls.objects.filter(
+            usuario=usuario,
+            accion='LOGIN',
+            timestamp__gte=fecha_inicio
+        ).order_by('-timestamp')
+
+    @classmethod
+    def cleanup_old_logs(cls, dias=90):
+        """Elimina logs antiguos (tarea de mantenimiento)"""
+        fecha_limite = timezone.now() - timedelta(days=dias)
+        old_logs = cls.objects.filter(timestamp__lt=fecha_limite)
+        count = old_logs.count()
+        old_logs.delete()
+        return count
+
+

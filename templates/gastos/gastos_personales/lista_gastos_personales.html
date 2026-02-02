@@ -1,0 +1,269 @@
+{% extends 'gastos/base.html' %}
+{% load humanize %}
+{% load gastos_extras %}
+
+{% block title %}Gastos Personales - FinanBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado con gradiente -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-person-badge"></i> Gastos Personales
+                            </h2>
+                            <p class="mb-0 opacity-75">Gastos individuales que no se comparten con la familia</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'crear_gasto' %}" class="btn btn-light btn-lg">
+                                <i class="bi bi-plus-circle"></i> Nuevo Gasto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="aportante" class="form-label">Filtrar por Aportante</label>
+                            <select name="aportante" id="aportante" class="form-select">
+                                <option value="">Todos los aportantes</option>
+                                {% for aportante in aportantes %}
+                                <option value="{{ aportante.id }}" {% if aportante_seleccionado == aportante.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ aportante.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-funnel"></i> Aplicar Filtros
+                            </button>
+                            <a href="{% url 'lista_gastos_personales' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-wallet2 text-danger fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Total {{ mes_actual }}</p>
+                            <h3 class="mb-0 text-danger">{{ total_gastos_mes|format_currency }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-receipt text-info fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Total de Registros</p>
+                            <h3 class="mb-0">{{ gastos.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-pie-chart text-warning fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Categorías Usadas</p>
+                            <h3 class="mb-0">{{ gastos_por_categoria|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por aportante -->
+    {% if gastos_por_aportante %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart-fill"></i> Gastos por Aportante ({{ mes_actual }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for gasto_aportante in gastos_por_aportante %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ gasto_aportante.pagado_por__nombre }}</span>
+                                <strong class="text-danger">{{ gasto_aportante.total|format_currency }}</strong>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                {% if total_gastos_mes > 0 %}
+                                <div class="progress-bar bg-danger"
+                                     style="width: {% widthratio gasto_aportante.total total_gastos_mes 100 %}%">
+                                </div>
+                                {% else %}
+                                <div class="progress-bar bg-danger" style="width: 0%"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de gastos personales -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Listado de Gastos Personales
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if gastos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tablaGastosPersonales">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Aportante</th>
+                                    <th>Categoría</th>
+                                    <th>Tipo de Gasto</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Monto</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in gastos %}
+                                <tr>
+                                    <td>
+                                        <span class="text-muted">
+                                            {{ gasto.fecha|date:"d/m/Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ gasto.pagado_por.nombre }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                            {{ gasto.subcategoria.categoria.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ gasto.subcategoria.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ gasto.descripcion|default:"Sin descripción" }}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-danger">{{ gasto.monto|format_currency }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'detalle_gasto' gasto.pk %}"
+                                               class="btn btn-outline-info"
+                                               title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'editar_gasto' gasto.pk %}"
+                                               class="btn btn-outline-primary"
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-3">No hay gastos personales registrados todavía.</p>
+                        <a href="{% url 'crear_gasto' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Registrar Primer Gasto
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading">
+                    <i class="bi bi-info-circle"></i> ¿Qué son los gastos personales?
+                </h6>
+                <p class="mb-0">
+                    Los gastos personales son aquellos que no se comparten con otros miembros de la familia.
+                    Estos gastos <strong>NO</strong> se incluyen en la conciliación familiar mensual,
+                    pero te permiten llevar un control completo de tus finanzas personales.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar DataTables si hay datos
+    {% if gastos %}
+    $(document).ready(function() {
+        $('#tablaGastosPersonales').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

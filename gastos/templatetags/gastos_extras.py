@@ -50,6 +50,12 @@ def formato_moneda(valor):
 
 
 @register.filter
+def format_currency(valor):
+    """Alias de formato_moneda para compatibilidad"""
+    return formato_moneda(valor)
+
+
+@register.filter
 def formato_moneda_privado(valor, ocultar=False):
     """Formatea un valor monetario pero lo oculta si la privacidad está activa"""
     if ocultar:

@@ -1,0 +1,228 @@
+{% extends 'gastos/base.html' %}
+{% load humanize %}
+{% load gastos_extras %}
+
+{% block title %}Ingresos - FinanBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Encabezado con gradiente -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-cash-stack"></i> Registro de Ingresos
+                            </h2>
+                            <p class="mb-0 opacity-75">Lleva un control completo de todos tus ingresos mensuales</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'crear_ingreso' %}" class="btn btn-light btn-lg">
+                                <i class="bi bi-plus-circle"></i> Registrar Ingreso
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas del mes actual -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-calendar-month text-success fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Ingresos de {{ mes_actual }}</p>
+                            <h3 class="mb-0">{{ total_ingresos_mes|format_currency }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-bar-chart-fill text-info fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Total de Registros</p>
+                            <h3 class="mb-0">{{ ingresos.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-people-fill text-primary fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Aportantes Activos</p>
+                            <h3 class="mb-0">{{ ingresos_por_aportante|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de ingresos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Historial de Ingresos
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if ingresos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tablaIngresos">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Aportante</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Monto</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ingreso in ingresos %}
+                                <tr>
+                                    <td>
+                                        <span class="text-muted">
+                                            {{ ingreso.fecha|date:"d/m/Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ ingreso.aportante.nombre }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                                            {{ ingreso.get_tipo_ingreso_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ ingreso.descripcion|default:"Sin descripción" }}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-success">{{ ingreso.monto|format_currency }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if ingreso.recurrente %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-arrow-repeat"></i> Recurrente
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                            Único
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'editar_ingreso' ingreso.pk %}"
+                                               class="btn btn-outline-primary"
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEliminar{{ ingreso.pk }}"
+                                                    title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Modal de confirmación de eliminación -->
+                                        <div class="modal fade" id="modalEliminar{{ ingreso.pk }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>¿Estás seguro que deseas eliminar este ingreso?</p>
+                                                        <div class="alert alert-warning">
+                                                            <strong>Aportante:</strong> {{ ingreso.aportante.nombre }}<br>
+                                                            <strong>Tipo:</strong> {{ ingreso.get_tipo_ingreso_display }}<br>
+                                                            <strong>Monto:</strong> {{ ingreso.monto|format_currency }}<br>
+                                                            <strong>Fecha:</strong> {{ ingreso.fecha|date:"d/m/Y" }}
+                                                        </div>
+                                                        <p class="text-danger mb-0">
+                                                            <i class="bi bi-exclamation-triangle"></i>
+                                                            Esta acción no se puede deshacer.
+                                                        </p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <form method="post" action="{% url 'eliminar_ingreso' ingreso.pk %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="bi bi-trash"></i> Sí, Eliminar
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-3">No hay ingresos registrados todavía.</p>
+                        <a href="{% url 'crear_ingreso' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Registrar Primer Ingreso
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar DataTables si hay datos
+    {% if ingresos %}
+    $(document).ready(function() {
+        $('#tablaIngresos').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

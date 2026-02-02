@@ -8,7 +8,7 @@ from .models import (Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, Distri
                      HistorialPuntos, NotificacionLogro, ConversacionChatbot,
                      MensajeChatbot, AnalisisIA, ConfiguracionCuentaPago, InvitacionFamilia,
                      Familia, PlanSuscripcion, CodigoInvitacion, PasswordResetToken,
-                     PreferenciasUsuario)
+                     PreferenciasUsuario, IngresoAportante, AuditLog)
 
 
 @admin.register(InvitacionFamilia)
@@ -750,4 +750,86 @@ class PreferenciasUsuarioAdmin(admin.ModelAdmin):
         }),
     )
 
+
+@admin.register(IngresoAportante)
+class IngresoAportanteAdmin(admin.ModelAdmin):
+    list_display = ['aportante', 'tipo_ingreso', 'descripcion_corta', 'monto_formateado', 'fecha', 'recurrente', 'fecha_registro']
+    list_filter = ['tipo_ingreso', 'recurrente', 'fecha', 'fecha_registro']
+    search_fields = ['aportante__nombre', 'descripcion', 'observaciones']
+    readonly_fields = ['fecha_registro', 'fecha_actualizacion']
+    ordering = ['-fecha', '-fecha_registro']
+    date_hierarchy = 'fecha'
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('aportante', 'tipo_ingreso', 'monto', 'fecha')
+        }),
+        ('Detalles', {
+            'fields': ('descripcion', 'recurrente', 'observaciones')
+        }),
+        ('Información del Sistema', {
+            'fields': ('fecha_registro', 'fecha_actualizacion'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def descripcion_corta(self, obj):
+        if obj.descripcion:
+            return obj.descripcion[:50] + '...' if len(obj.descripcion) > 50 else obj.descripcion
+        return '-'
+    descripcion_corta.short_description = 'Descripción'
+
+    def monto_formateado(self, obj):
+        return f"${obj.monto:,.0f}"
+    monto_formateado.short_description = 'Monto (COP)'
+    monto_formateado.admin_order_field = 'monto'
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    """Administración de registros de auditoría"""
+    list_display = ['timestamp', 'usuario_display', 'accion', 'modelo', 'objeto_id', 'ip_address', 'familia']
+    list_filter = ['accion', 'modelo', 'timestamp', 'familia']
+    search_fields = ['usuario__username', 'modelo', 'descripcion', 'ip_address']
+    readonly_fields = ['timestamp', 'usuario', 'accion', 'modelo', 'objeto_id',
+                      'ip_address', 'user_agent', 'datos_anteriores', 'datos_nuevos',
+                      'descripcion', 'familia']
+    ordering = ['-timestamp']
+    date_hierarchy = 'timestamp'
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('timestamp', 'usuario', 'accion', 'modelo', 'objeto_id')
+        }),
+        ('Contexto', {
+            'fields': ('familia', 'descripcion')
+        }),
+        ('Información Técnica', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+        ('Datos del Cambio', {
+            'fields': ('datos_anteriores', 'datos_nuevos'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def usuario_display(self, obj):
+        if obj.usuario:
+            return obj.usuario.username
+        return "Anónimo"
+    usuario_display.short_description = 'Usuario'
+    usuario_display.admin_order_field = 'usuario__username'
+
+    def has_add_permission(self, request):
+        # Los registros de auditoría se crean automáticamente
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Solo superusuarios pueden eliminar logs
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        # Los logs no deben modificarse
+        return False
 

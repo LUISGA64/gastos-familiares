@@ -9,6 +9,7 @@ from django.conf import settings
 from django.urls import reverse
 from datetime import timedelta
 from .models import Familia, PlanSuscripcion, CodigoInvitacion, InvitacionFamilia
+from .security_utils import registrar_auditoria, verificar_intentos_login, limpiar_intentos_login
 import random
 import string
 import logging
@@ -43,6 +44,23 @@ def login_view(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
+        # Obtener IP del cliente para rate limiting
+        from .security_utils import get_client_ip
+        ip_address = get_client_ip(request)
+
+        # Verificar intentos de login
+        bloqueado, intentos_restantes = verificar_intentos_login(username, ip_address)
+
+        if bloqueado:
+            messages.error(request, f'Demasiados intentos fallidos. Por favor, espera 15 minutos antes de intentar nuevamente.')
+            registrar_auditoria(
+                request,
+                accion='LOGIN_FAILED',
+                modelo='User',
+                descripcion=f'Cuenta bloqueada temporalmente por múltiples intentos - Username: {username}'
+            )
+            return render(request, 'gastos/auth/login.html')
+
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
@@ -61,16 +79,61 @@ def login_view(request):
                     login(request, user)
                     # Guardar familia actual en sesión
                     request.session['familia_id'] = familia_activa.id
+
+                    # Limpiar intentos fallidos de login
+                    limpiar_intentos_login(ip_address)
+
+                    # Registrar login exitoso
+                    registrar_auditoria(
+                        request,
+                        accion='LOGIN',
+                        modelo='User',
+                        objeto_id=user.id,
+                        descripcion=f'Login exitoso - Familia: {familia_activa.nombre}',
+                        familia=familia_activa
+                    )
+
+                    # Enviar notificación de seguridad por email (async)
+                    try:
+                        enviar_notificacion_login(user, request)
+                    except Exception as e:
+                        logger.warning(f"No se pudo enviar notificación de login: {e}")
+
                     messages.success(request, f'¡Bienvenido {user.first_name or user.username}!')
                     return redirect('dashboard')
                 else:
                     messages.error(request, 'Tu suscripción ha expirado. Por favor, renueva tu plan.')
+                    registrar_auditoria(
+                        request,
+                        accion='LOGIN_FAILED',
+                        modelo='User',
+                        objeto_id=user.id,
+                        descripcion='Login fallido - Suscripción expirada'
+                    )
             else:
                 login(request, user)
+                registrar_auditoria(
+                    request,
+                    accion='LOGIN',
+                    modelo='User',
+                    objeto_id=user.id,
+                    descripcion='Login exitoso - Sin familia'
+                )
                 messages.warning(request, 'No tienes una familia registrada. Crea una ahora.')
                 return redirect('crear_familia')
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
+            # Login fallido
+            registrar_auditoria(
+                request,
+                accion='LOGIN_FAILED',
+                modelo='User',
+                descripcion=f'Credenciales inválidas - Username: {username}'
+            )
+
+            if intentos_restantes > 1:
+                messages.error(request, f'Usuario o contraseña incorrectos. Te quedan {intentos_restantes - 1} intentos.')
+            else:
+                messages.error(request, 'Usuario o contraseña incorrectos.')
 
     return render(request, 'gastos/auth/login.html')
 
@@ -78,6 +141,15 @@ def login_view(request):
 @login_required
 def logout_view(request):
     """Vista de logout - sin mensaje para evitar duplicación"""
+    # Registrar logout antes de cerrar sesión
+    registrar_auditoria(
+        request,
+        accion='LOGOUT',
+        modelo='User',
+        objeto_id=request.user.id,
+        descripcion='Logout exitoso'
+    )
+
     logout(request)
     # No agregar mensaje aquí para evitar alertas duplicadas
     return redirect('login')
@@ -696,5 +768,189 @@ def password_reset_confirm(request, token):
     }
 
     return render(request, 'gastos/auth/password_reset_confirm.html', context)
+
+
+# ============================================================================
+# VISTAS DE LEGAL Y PRIVACIDAD
+# ============================================================================
+
+def politica_privacidad(request):
+    """Vista de política de privacidad"""
+    return render(request, 'gastos/politica_privacidad.html')
+
+
+def terminos(request):
+    """Vista de términos y condiciones"""
+    return render(request, 'gastos/terminos.html')
+
+
+@login_required
+def cambiar_password(request):
+    """Vista para cambiar contraseña del usuario logueado"""
+    if request.method == 'POST':
+        password_actual = request.POST.get('password_actual')
+        password_nueva = request.POST.get('password_nueva')
+        password_nueva2 = request.POST.get('password_nueva2')
+
+        # Verificar contraseña actual
+        if not request.user.check_password(password_actual):
+            messages.error(request, 'La contraseña actual es incorrecta.')
+            return redirect('cambiar_password')
+
+        # Verificar que las contraseñas nuevas coincidan
+        if password_nueva != password_nueva2:
+            messages.error(request, 'Las contraseñas nuevas no coinciden.')
+            return redirect('cambiar_password')
+
+        # Cambiar contraseña
+        try:
+            request.user.set_password(password_nueva)
+            request.user.save()
+
+            # Actualizar sesión para mantener al usuario logueado
+            update_session_auth_hash(request, request.user)
+
+            # Enviar notificación
+            try:
+                enviar_notificacion_cambio_password(request.user)
+            except Exception as e:
+                logger.warning(f"No se pudo enviar notificación de cambio de password: {e}")
+
+            # Registrar en audit log
+            registrar_auditoria(
+                request,
+                accion='PASSWORD_CHANGE',
+                modelo='User',
+                objeto_id=request.user.id,
+                descripcion='Cambio de contraseña exitoso'
+            )
+
+            messages.success(request, '✅ Contraseña cambiada exitosamente.')
+            return redirect('mis_datos')
+
+        except Exception as e:
+            messages.error(request, f'Error al cambiar contraseña: {str(e)}')
+            return redirect('cambiar_password')
+
+    return render(request, 'gastos/auth/cambiar_password.html')
+
+
+@login_required
+def mis_datos(request):
+    """Panel de gestión de datos personales (RGPD)"""
+    from .models import Gasto, AuditLog
+    from django.utils import timezone
+
+    # Obtener estadísticas
+    total_gastos = Gasto.objects.filter(
+        pagado_por__in=request.user.familias.values_list('aportantes', flat=True)
+    ).count()
+
+    total_familias = request.user.familias.filter(activo=True).count()
+    total_logs = AuditLog.objects.filter(usuario=request.user).count()
+
+    # Calcular días activo
+    dias_activo = (timezone.now().date() - request.user.date_joined.date()).days
+
+    # Obtener últimos accesos
+    ultimos_accesos = AuditLog.objects.filter(
+        usuario=request.user,
+        accion__in=['LOGIN', 'LOGOUT']
+    ).order_by('-timestamp')[:10]
+
+    context = {
+        'total_gastos': total_gastos,
+        'total_familias': total_familias,
+        'total_logs': total_logs,
+        'dias_activo': dias_activo,
+        'ultimos_accesos': ultimos_accesos,
+    }
+
+    return render(request, 'gastos/mis_datos.html', context)
+
+
+@login_required
+def exportar_datos_usuario(request):
+    """Exporta todos los datos del usuario (portabilidad RGPD)"""
+    if request.method == 'POST':
+        from .security_utils import exportar_datos_usuario as export_data
+        from .notifications import enviar_notificacion_exportacion
+        import json
+        from django.http import JsonResponse, HttpResponse
+
+        try:
+            # Exportar datos
+            datos = export_data(request.user)
+
+            # Registrar exportación
+            registrar_auditoria(
+                request,
+                accion='EXPORT',
+                modelo='User',
+                objeto_id=request.user.id,
+                descripcion='Exportación completa de datos (RGPD)'
+            )
+
+            # Enviar notificación
+            try:
+                enviar_notificacion_exportacion(request.user, 'Exportación completa de datos')
+            except Exception as e:
+                logger.warning(f"No se pudo enviar notificación de exportación: {e}")
+
+            # Crear respuesta JSON para descarga
+            response = HttpResponse(
+                json.dumps(datos, indent=2, ensure_ascii=False),
+                content_type='application/json'
+            )
+            response['Content-Disposition'] = f'attachment; filename="mis_datos_finanbot_{request.user.username}.json"'
+
+            messages.success(request, '✅ Tus datos han sido exportados. Se ha enviado una copia a tu email.')
+            return response
+
+        except Exception as e:
+            logger.error(f"Error al exportar datos: {e}")
+            messages.error(request, 'Error al exportar datos. Por favor, inténtalo de nuevo.')
+            return redirect('mis_datos')
+
+    return redirect('mis_datos')
+
+
+@login_required
+def eliminar_cuenta(request):
+    """Elimina la cuenta del usuario y todos sus datos (derecho al olvido RGPD)"""
+    if request.method == 'POST':
+        confirmacion = request.POST.get('confirmacion', '')
+
+        if confirmacion != 'ELIMINAR':
+            messages.error(request, 'Confirmación incorrecta.')
+            return redirect('mis_datos')
+
+        try:
+            from .security_utils import anonimizar_datos_usuario
+
+            # Registrar eliminación antes de anonimizar
+            registrar_auditoria(
+                request,
+                accion='DELETE',
+                modelo='User',
+                objeto_id=request.user.id,
+                descripcion='Solicitud de eliminación de cuenta (derecho al olvido)'
+            )
+
+            # Anonimizar datos
+            anonimo_id = anonimizar_datos_usuario(request.user)
+
+            # Cerrar sesión
+            logout(request)
+
+            messages.success(request, f'✅ Tu cuenta ha sido eliminada. Código de referencia: {anonimo_id}')
+            return redirect('login')
+
+        except Exception as e:
+            logger.error(f"Error al eliminar cuenta: {e}")
+            messages.error(request, 'Error al eliminar cuenta. Por favor, contacta a soporte.')
+            return redirect('mis_datos')
+
+    return redirect('mis_datos')
 
 

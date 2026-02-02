@@ -1,0 +1,135 @@
+{% extends 'gastos/base.html' %}
+
+{% block title %}{{ titulo }} - FinanBot{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h4 class="mb-0">
+                        <i class="bi bi-cash-stack"></i> {{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.aportante.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-person"></i> Aportante
+                                </label>
+                                {{ form.aportante }}
+                                {% if form.aportante.errors %}
+                                <div class="text-danger small">{{ form.aportante.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.tipo_ingreso.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-tag"></i> Tipo de Ingreso
+                                </label>
+                                {{ form.tipo_ingreso }}
+                                {% if form.tipo_ingreso.errors %}
+                                <div class="text-danger small">{{ form.tipo_ingreso.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">{{ form.tipo_ingreso.help_text }}</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-calendar"></i> Fecha del Ingreso
+                                </label>
+                                {{ form.fecha }}
+                                {% if form.fecha.errors %}
+                                <div class="text-danger small">{{ form.fecha.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.monto.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-currency-dollar"></i> Monto (COP)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.monto }}
+                                </div>
+                                {% if form.monto.errors %}
+                                <div class="text-danger small">{{ form.monto.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-file-text"></i> Descripción (Opcional)
+                                </label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}
+                                <div class="text-danger small">{{ form.descripcion.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    {{ form.recurrente }}
+                                    <label class="form-check-label" for="{{ form.recurrente.id_for_label }}">
+                                        <i class="bi bi-arrow-repeat"></i> {{ form.recurrente.label }}
+                                    </label>
+                                    {% if form.recurrente.help_text %}
+                                    <div class="form-text">{{ form.recurrente.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-bold">
+                                    <i class="bi bi-chat-left-text"></i> Observaciones (Opcional)
+                                </label>
+                                {{ form.observaciones }}
+                                {% if form.observaciones.errors %}
+                                <div class="text-danger small">{{ form.observaciones.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'lista_ingresos' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save"></i> {{ boton_texto }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ayuda contextual -->
+            <div class="card mt-3 border-info">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle text-info"></i> Consejos
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Ingresos recurrentes:</strong> Marca esta opción para salarios u otros ingresos mensuales fijos.</li>
+                        <li><strong>Tipos de ingreso:</strong> Clasifica correctamente cada ingreso para mejores estadísticas.</li>
+                        <li><strong>Historial completo:</strong> Registra todos tus ingresos para un control financiero preciso.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

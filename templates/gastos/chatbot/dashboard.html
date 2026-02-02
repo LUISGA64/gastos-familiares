@@ -1,0 +1,310 @@
+{% extends 'gastos/base.html' %}
+{% load humanize %}
+
+{% block page_title %}FinanBot IA - Asistente Financiero{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active">FinanBot IA</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header del Chatbot -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h2 class="mb-2">
+                                <i class="bi bi-robot"></i> FinanBot IA
+                            </h2>
+                            <p class="mb-0 opacity-75">
+                                Tu asistente financiero inteligente impulsado por IA
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge bg-white text-primary px-3 py-2 fs-6">
+                                <i class="bi bi-chat-dots"></i> {{ total_conversaciones }} Conversación{{ total_conversaciones|pluralize:"es" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm hover-lift">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-chat-left-text display-3 text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Nueva Conversación</h5>
+                    <p class="card-text text-muted">
+                        Inicia una nueva conversación con FinanBot
+                    </p>
+                    <a href="{% url 'chatbot_nueva_conversacion' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Iniciar Chat
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm hover-lift">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-graph-up display-3 text-success"></i>
+                    </div>
+                    <h5 class="card-title">Análisis Financiero</h5>
+                    <p class="card-text text-muted">
+                        Genera análisis de tus gastos e ingresos
+                    </p>
+                    <button class="btn btn-success" onclick="generarAnalisis()">
+                        <i class="bi bi-cpu"></i> Generar Análisis
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm hover-lift">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-lightning display-3 text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Predicción de Gastos</h5>
+                    <p class="card-text text-muted">
+                        Predice tus gastos del próximo mes
+                    </p>
+                    <button class="btn btn-warning" onclick="generarPrediccion()">
+                        <i class="bi bi-magic"></i> Predecir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversaciones Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Conversaciones Recientes
+                    </h5>
+                    <a href="{% url 'chatbot_historial' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list"></i> Ver Todas
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if conversaciones_recientes %}
+                        <div class="list-group list-group-flush">
+                            {% for conv in conversaciones_recientes %}
+                            <a href="{% url 'chatbot_conversacion' conv.id %}"
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">
+                                        <i class="bi bi-chat-dots text-primary"></i>
+                                        {{ conv.titulo }}
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> {{ conv.fecha_inicio|date:"d/m/Y H:i" }}
+                                        •
+                                        <i class="bi bi-chat"></i> {{ conv.mensajes.count }} mensaje{{ conv.mensajes.count|pluralize }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    {% if conv.activa %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cerrada</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-chat-square-text display-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-3">
+                                No hay conversaciones recientes.
+                            </p>
+                            <a href="{% url 'chatbot_nueva_conversacion' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Iniciar Primera Conversación
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    {% if total_conversaciones > 0 %}
+    <div class="row mt-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-chat-dots display-4 text-primary"></i>
+                    <h3 class="mt-2">{{ total_conversaciones }}</h3>
+                    <p class="text-muted mb-0">Conversaciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-chat-left-text display-4 text-success"></i>
+                    <h3 class="mt-2">{{ total_mensajes }}</h3>
+                    <p class="text-muted mb-0">Mensajes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 text-info"></i>
+                    <h3 class="mt-2">{{ conversaciones_activas }}</h3>
+                    <p class="text-muted mb-0">Activas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-cpu display-4 text-warning"></i>
+                    <h3 class="mt-2">{{ proveedor_ia|upper }}</h3>
+                    <p class="text-muted mb-0">Motor IA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información sobre FinanBot -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> ¿Qué puede hacer FinanBot?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success"></i> Análisis de Gastos</h6>
+                            <ul class="text-muted">
+                                <li>Analiza tus patrones de gasto</li>
+                                <li>Identifica gastos innecesarios</li>
+                                <li>Compara con meses anteriores</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success"></i> Consejos Personalizados</h6>
+                            <ul class="text-muted">
+                                <li>Recomendaciones de ahorro</li>
+                                <li>Estrategias de optimización</li>
+                                <li>Alertas de sobregasto</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success"></i> Predicciones</h6>
+                            <ul class="text-muted">
+                                <li>Proyección de gastos futuros</li>
+                                <li>Estimación de balance</li>
+                                <li>Planificación financiera</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success"></i> Respuestas Instantáneas</h6>
+                            <ul class="text-muted">
+                                <li>Consultas sobre tus finanzas</li>
+                                <li>Explicación de conceptos</li>
+                                <li>Ayuda con la app</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+</style>
+
+<script>
+function generarAnalisis() {
+    Swal.fire({
+        title: '🤖 Generando Análisis',
+        text: 'FinanBot está analizando tus datos financieros...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch("{% url 'chatbot_generar_analisis' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{% url 'chatbot_conversacion' 0 %}".replace('0', data.conversacion_id);
+        } else {
+            Swal.fire('Error', data.error || 'No se pudo generar el análisis', 'error');
+        }
+    })
+    .catch(error => {
+        Swal.fire('Error', 'Error al conectar con el servidor', 'error');
+    });
+}
+
+function generarPrediccion() {
+    Swal.fire({
+        title: '🔮 Generando Predicción',
+        text: 'FinanBot está calculando tus gastos futuros...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch("{% url 'chatbot_generar_prediccion' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{% url 'chatbot_conversacion' 0 %}".replace('0', data.conversacion_id);
+        } else {
+            Swal.fire('Error', data.error || 'No se pudo generar la predicción', 'error');
+        }
+    })
+    .catch(error => {
+        Swal.fire('Error', 'Error al conectar con el servidor', 'error');
+    });
+}
+</script>
+{% endblock %}

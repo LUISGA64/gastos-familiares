@@ -1,0 +1,1646 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Administra los gastos de tu familia de forma inteligente con análisis, gráficos y presupuestos">
+    <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gastos App">
+
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- Iconos para iOS -->
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192x192.png">
+
+    <title>{% block title %}Gestor de Gastos Familiares{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Chart.js para gráficos interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- SweetAlert2 para notificaciones elegantes -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- CountUp.js para animación de números -->
+    <script src="https://cdn.jsdelivr.net/npm/countup@1.8.2/dist/countUp.min.js"></script>
+
+    <style>
+        :root {
+            /* Paleta Principal Moderna - Tailwind CSS Inspired */
+            --primary-color: #1e293b;        /* Slate 800 - Profesional */
+            --secondary-color: #3b82f6;      /* Blue 500 - Confianza */
+            --accent-color: #8b5cf6;         /* Violet 500 - Sofisticación */
+
+            /* Estados */
+            --success-color: #10b981;        /* Emerald 500 - Prosperidad */
+            --danger-color: #ef4444;         /* Red 500 - Alertas */
+            --warning-color: #f59e0b;        /* Amber 500 - Atención */
+            --info-color: #06b6d4;           /* Cyan 500 - Información */
+
+            /* Colores Funcionales */
+            --fixed-expense: #6366f1;        /* Indigo 500 - Gastos fijos */
+            --variable-expense: #ec4899;     /* Pink 500 - Gastos variables */
+            --category-color: #8b5cf6;       /* Violet 500 - Categorías */
+
+            /* Backgrounds */
+            --light-bg: #f8fafc;             /* Slate 50 */
+            --card-bg: #ffffff;              /* Blanco puro */
+            --dark-bg: #0f172a;              /* Slate 900 */
+            --hover-bg: #f1f5f9;             /* Slate 100 */
+
+            /* Sombras Modernas */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+
+            /* Otros */
+            --transition-speed: 0.3s;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+
+            /* Textos */
+            --text-primary: #0f172a;         /* Slate 900 */
+            --text-secondary: #64748b;       /* Slate 500 */
+            --text-muted: #94a3b8;           /* Slate 400 */
+        }
+
+        /* Dark Mode Support */
+        [data-theme="dark"] {
+            --primary-color: #cbd5e1;
+            --light-bg: #0f172a;
+            --card-bg: #1e293b;
+            --hover-bg: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            transition: background-color var(--transition-speed) ease,
+                        color var(--transition-speed) ease,
+                        transform var(--transition-speed) ease,
+                        box-shadow var(--transition-speed) ease;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+        }
+
+        /* Navbar con Glassmorphism - Mejorado */
+        .navbar {
+            background: rgba(30, 41, 59, 0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand i {
+            font-size: 1.6rem;
+            color: #3b82f6;
+        }
+
+        .navbar-brand:hover {
+            transform: scale(1.05);
+            color: #60a5fa !important;
+        }
+
+        .navbar-toggler {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggler:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.5);
+        }
+
+        .navbar-nav {
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,.9) !important;
+            font-weight: 500;
+            padding: 10px 16px !important;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: rgba(59, 130, 246, 0.25);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Dropdown Menu Mejorado */
+        .dropdown-menu {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            margin-top: 10px;
+            min-width: 240px;
+            animation: dropdownSlide 0.3s ease;
+        }
+
+        @keyframes dropdownSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        [data-theme="dark"] .dropdown-menu {
+            background: rgba(22, 33, 62, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        [data-theme="dark"] .dropdown-item {
+            color: var(--text-primary);
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+            color: #3b82f6;
+            transform: translateX(5px);
+        }
+
+        .dropdown-item:active {
+            background: rgba(59, 130, 246, 0.25);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .dropdown-header {
+            color: #95a5a6;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: 8px 16px 4px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-divider {
+            margin: 10px 0;
+            border-color: rgba(0, 0, 0, 0.1);
+            opacity: 0.5;
+        }
+
+        [data-theme="dark"] .dropdown-divider {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .theme-toggle:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.5);
+        }
+
+        /* User Dropdown Badge */
+        .user-badge {
+            background: rgba(59, 130, 246, 0.15);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .user-badge:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .user-badge i {
+            font-size: 1.3rem;
+        }
+
+        /* Responsive mejorado para móviles */
+        @media (max-width: 991.98px) {
+            /* Navbar toggler más grande y visible */
+            .navbar-toggler {
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                padding: 12px 16px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .navbar-toggler-icon {
+                width: 28px;
+                height: 28px;
+            }
+
+            /* Menú colapsado mejorado */
+            .navbar-collapse {
+                background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%);
+                backdrop-filter: blur(20px);
+                border-radius: 16px;
+                margin-top: 20px;
+                padding: 20px 15px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .navbar-nav {
+                gap: 5px;
+                align-items: stretch;
+            }
+
+            /* Enlaces del menú más grandes y táctiles */
+            .nav-link {
+                padding: 14px 18px !important;
+                border-radius: 10px;
+                font-size: 1rem;
+                justify-content: flex-start;
+                width: 100%;
+            }
+
+            .nav-link i {
+                font-size: 1.3rem;
+                width: 30px;
+                text-align: center;
+            }
+
+            .nav-link span {
+                flex: 1;
+            }
+
+            /* Botón de tema más accesible */
+            .theme-toggle {
+                width: 100%;
+                justify-content: flex-start;
+                padding: 14px 18px !important;
+                border-radius: 10px;
+                margin: 5px 0;
+                font-size: 1rem;
+            }
+
+            .theme-toggle i {
+                font-size: 1.3rem;
+                width: 30px;
+                text-align: center;
+            }
+
+            /* Usuario dropdown mejorado */
+            .user-badge {
+                justify-content: flex-start;
+                width: 100%;
+                padding: 14px 18px !important;
+                border-radius: 10px;
+                margin: 5px 0;
+                font-size: 1rem;
+            }
+
+            .user-badge i {
+                font-size: 1.3rem;
+                width: 30px;
+                text-align: center;
+            }
+
+            /* Dropdown menus en móviles */
+            .dropdown-menu {
+                background: rgba(255, 255, 255, 0.98);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                margin-left: 15px;
+                margin-top: 8px;
+                border-radius: 10px;
+            }
+
+            .dropdown-item {
+                padding: 12px 18px;
+                font-size: 0.95rem;
+            }
+
+            /* Separador oculto en móviles */
+            .nav-item.d-none.d-lg-block {
+                display: none !important;
+            }
+
+            /* Badges más visibles */
+            .badge {
+                font-size: 0.75rem;
+                padding: 3px 8px;
+            }
+        }
+
+        /* Mejoras adicionales para móviles pequeños */
+        @media (max-width: 576px) {
+            .navbar-brand span {
+                font-size: 1.1rem;
+            }
+
+            .navbar-collapse {
+                padding: 15px 12px;
+                margin-top: 15px;
+            }
+
+            .nav-link,
+            .theme-toggle,
+            .user-badge {
+                padding: 12px 15px !important;
+                font-size: 0.95rem;
+            }
+
+            .nav-link i,
+            .theme-toggle i,
+            .user-badge i {
+                font-size: 1.2rem;
+                width: 28px;
+            }
+        }
+
+            [data-theme="dark"] .dropdown-menu {
+                background: rgba(30, 40, 60, 0.95);
+            }
+        }
+
+        /* Tarjetas Modernas */
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all var(--transition-speed) ease;
+        }
+
+        [data-theme="dark"] .card {
+            background: linear-gradient(135deg, #1e293b 0%, #1a2332 100%);
+            border: 1px solid #334155;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: var(--text-primary);
+            padding: 16px 20px;
+            font-size: 1.1rem;
+        }
+
+        [data-theme="dark"] .card-header {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(59, 130, 246, 0.05) 100%);
+            border-bottom: 1px solid #334155;
+            color: var(--text-primary);
+        }
+
+        /* Tarjetas de Estadísticas */
+        .stat-card {
+            padding: 24px;
+            text-align: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 12px 0;
+            color: var(--text-primary);
+        }
+
+        .stat-value.text-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-value.text-danger {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-value.text-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-value.text-info {
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.1;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 10px 24px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+            color: white;
+        }
+
+        /* Tablas Modernas */
+        .table {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+            transform: scale(1.005);
+        }
+
+        [data-theme="dark"] .table th {
+            background: rgba(59, 130, 246, 0.08);
+            border-bottom: 2px solid #334155;
+        }
+
+        [data-theme="dark"] .table tbody tr {
+            border-bottom: 1px solid #334155;
+        }
+
+        [data-theme="dark"] .table tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Evitar superposición de elementos */
+        .btn-group,
+        .btn-toolbar {
+            z-index: 1;
+            position: relative;
+        }
+
+        /* Asegurar que el contenido principal no se superponga */
+        main.container {
+            position: relative;
+            z-index: 1;
+            padding-top: 20px;
+        }
+
+        /* Mejorar botones de exportar */
+        .btn-outline-primary,
+        .btn-outline-success {
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-outline-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-outline-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        /* Badges Modernos */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .badge-fijo {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+            color: white;
+        }
+
+        .badge-variable {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+            box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
+            color: white;
+        }
+
+        /* Progress Bars */
+        .progress {
+            height: 24px;
+            border-radius: 12px;
+            background-color: rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            border-radius: 12px;
+            background: linear-gradient(90deg, var(--success-color), #229954);
+            box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+            font-weight: 600;
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        /* Loading Spinner */
+        .spinner-modern {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(52, 152, 219, 0.1);
+            border-top-color: var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .toast-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow-hover);
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--success-color);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            padding: 20px;
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-card {
+            height: 200px;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Ocultar footer en páginas de autenticación en móviles y tablets */
+        @media (max-width: 992px) {
+            body:has(.auth-container) footer,
+            body:has(.reset-container) footer {
+                display: none;
+            }
+        }
+
+        /* En desktop también ocultar si el formulario ocupa toda la pantalla */
+        body:has(.auth-card[style*="min-height: 100vh"]) footer,
+        body:has(.reset-card) footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            margin-top: 0;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            body:has(.auth-card) footer,
+            body:has(.reset-card) footer {
+                display: none !important;
+            }
+        }
+
+        /* ========== ALERTAS MEJORADAS CON AUTOCLOSE ========== */
+        #messages-container {
+            max-width: 100%;
+            padding: 0 15px;
+        }
+
+        /* En páginas de autenticación, las alertas deben estar posicionadas absolutamente */
+        body:has(.auth-container) #messages-container,
+        body:has(.reset-container) #messages-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            max-width: 90%;
+            width: auto;
+            min-width: 320px;
+            padding: 0;
+        }
+
+        @media (max-width: 576px) {
+            body:has(.auth-container) #messages-container,
+            body:has(.reset-container) #messages-container {
+                top: 10px;
+                max-width: 95%;
+                min-width: 280px;
+            }
+        }
+
+        .message-animated {
+            animation: slideInDown 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: none;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        .alert-danger, .alert-error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        /* Barra de progreso de autoclose */
+        .progress-autoclose {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(0,0,0,0.2);
+            width: 100%;
+            transform-origin: left;
+            animation: autoclose-progress 5s linear forwards;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes autoclose-progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        /* Efecto de salida */
+        .alert-fadeout {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar (solo visible para usuarios autenticados) -->
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="bi bi-piggy-bank-fill"></i>
+                <span>Gastos Familiares</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Inicio -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                           href="{% url 'dashboard' %}">
+                            <i class="bi bi-house-door-fill"></i>
+                            <span>Inicio</span>
+                        </a>
+                    </li>
+
+                    <!-- Gastos -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'gastos' in request.path %}active{% endif %}"
+                           href="{% url 'lista_gastos' %}">
+                            <i class="bi bi-receipt"></i>
+                            <span>Gastos</span>
+                        </a>
+                    </li>
+
+                    <!-- Ingresos -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'ingresos' in request.path %}active{% endif %}"
+                           href="{% url 'lista_ingresos' %}">
+                            <i class="bi bi-cash-stack"></i>
+                            <span>Ingresos</span>
+                        </a>
+                    </li>
+
+                    <!-- Gastos Personales -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'personales' in request.path %}active{% endif %}"
+                           href="{% url 'lista_gastos_personales' %}">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Gastos Personales</span>
+                        </a>
+                    </li>
+
+                    <!-- Aportantes -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'aportantes' in request.path %}active{% endif %}"
+                           href="{% url 'lista_aportantes' %}">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Aportantes</span>
+                        </a>
+                    </li>
+
+                    <!-- Invitaciones -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'invita' in request.path or 'unirse' in request.path %}active{% endif %}"
+                           href="#" id="invitacionesDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span>Invitar</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="invitacionesDropdown">
+                            <li><h6 class="dropdown-header">Invitaciones</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'generar_invitacion_familia' %}">
+                                    <i class="bi bi-gift"></i>
+                                    <span>Generar Invitación</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'gestionar_invitaciones' %}">
+                                    <i class="bi bi-list-ul"></i>
+                                    <span>Gestionar Invitaciones</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'unirse_familia' %}">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    <span>Unirse a Familia</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Categorías Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if 'categoria' in request.path or 'subcategoria' in request.path %}active{% endif %}"
+                           href="#" id="categoriasDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tags-fill"></i>
+                            <span>Categorías</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="categoriasDropdown">
+                            <li><h6 class="dropdown-header">Gestión</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_categorias' %}">
+                                    <i class="bi bi-folder"></i>
+                                    <span>Categorías</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_subcategorias' %}">
+                                    <i class="bi bi-diagram-3"></i>
+                                    <span>Subcategorías</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Reportes -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'reportes' in request.path %}active{% endif %}"
+                           href="{% url 'reportes' %}">
+                            <i class="bi bi-bar-chart-fill"></i>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+
+                    <!-- Conciliación -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'conciliacion' in request.path %}active{% endif %}"
+                           href="{% url 'conciliacion' %}">
+                            <i class="bi bi-calculator-fill"></i>
+                            <span>Conciliación</span>
+                        </a>
+                    </li>
+
+                    <!-- Metas -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'metas' in request.path %}active{% endif %}"
+                           href="{% url 'lista_metas' %}">
+                            <i class="bi bi-piggy-bank"></i>
+                            <span>Metas</span>
+                        </a>
+                    </li>
+
+                    <!-- Gamificación -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'gamificacion' in request.path %}active{% endif %}"
+                           href="{% url 'gamificacion_dashboard' %}">
+                            <i class="bi bi-trophy-fill"></i>
+                            <span>Logros</span>
+                            {% if tiene_notificaciones_logros %}
+                            <span class="badge bg-danger rounded-pill ms-1">
+                                {{ notificaciones_logros_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+
+                    <!-- Chatbot IA -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'chatbot' in request.path %}active{% endif %}"
+                           href="{% url 'chatbot_nueva_conversacion' %}">
+                            <i class="bi bi-robot"></i>
+                            <span>Asistente IA</span>
+                            <span class="badge bg-success rounded-pill ms-1">Nuevo</span>
+                        </a>
+                    </li>
+
+                    <!-- Separador -->
+                    <li class="nav-item d-none d-lg-block">
+                        <div style="width: 1px; height: 30px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
+                    </li>
+
+                    <!-- Theme Toggle -->
+                    <li class="nav-item">
+                        <button class="theme-toggle nav-link" onclick="toggleTheme()"
+                                title="Cambiar tema" aria-label="Cambiar tema">
+                            <i class="bi bi-moon-fill" id="theme-icon"></i>
+                        </button>
+                    </li>
+
+                    <!-- Usuario Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle user-badge" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                            <span>{{ user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">Mi Cuenta</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-person-gear"></i>
+                                    <span>Perfil</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'estado_suscripcion' %}">
+                                    <i class="bi bi-star-fill"></i>
+                                    <span>Mi Suscripción</span>
+                                </a>
+                            </li>
+                            {% if user.is_staff %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Administración</h6></li>
+                            <li>
+                                <a class="dropdown-item" href="/admin/">
+                                    <i class="bi bi-gear-fill"></i>
+                                    <span>Panel Admin</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Cerrar Sesión</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Messages con Autoclose Mejorado -->
+    {% if messages %}
+    <div class="container mt-3" id="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{% if 'safe' in message.tags %}{{ message.tags|cut:'safe' }}{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show message-animated" role="alert" data-autoclose="true" data-timeout="{% if 'success' in message.tags %}5000{% elif 'error' in message.tags or 'danger' in message.tags %}8000{% else %}6000{% endif %}">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if 'success' in message.tags %}
+                        <i class="bi bi-check-circle-fill" style="font-size: 1.5rem;"></i>
+                    {% elif 'error' in message.tags or 'danger' in message.tags %}
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.5rem;"></i>
+                    {% elif 'warning' in message.tags %}
+                        <i class="bi bi-exclamation-circle-fill" style="font-size: 1.5rem;"></i>
+                    {% elif 'info' in message.tags %}
+                        <i class="bi bi-info-circle-fill" style="font-size: 1.5rem;"></i>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    {{ message|safe }}
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="progress-autoclose"></div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Onboarding Tutorial -->
+    {% if user.is_authenticated %}
+        {% include 'gastos/includes/onboarding.html' %}
+    {% endif %}
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="mb-0">&copy; 2026 Gestor de Gastos Familiares - Hecho en Colombia 🇨🇴</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ========== AUTOCLOSE DE ALERTAS CON TIEMPOS CONFIGURABLES ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert[data-autoclose="true"]');
+
+            alerts.forEach(function(alert) {
+                // Obtener timeout configurado o usar 5000ms por defecto
+                const timeout = parseInt(alert.getAttribute('data-timeout')) || 5000;
+
+                // Autoclose después del tiempo configurado
+                const timer = setTimeout(function() {
+                    // Agregar clase de fadeout
+                    alert.classList.add('alert-fadeout');
+
+                    // Remover del DOM después de la animación
+                    setTimeout(function() {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }, 500);
+                }, timeout);
+
+                // Pausar autoclose al hover
+                alert.addEventListener('mouseenter', function() {
+                    const progressBar = alert.querySelector('.progress-autoclose');
+                    if (progressBar) {
+                        progressBar.style.animationPlayState = 'paused';
+                    }
+                });
+
+                alert.addEventListener('mouseleave', function() {
+                    const progressBar = alert.querySelector('.progress-autoclose');
+                    if (progressBar) {
+                        progressBar.style.animationPlayState = 'running';
+                    }
+                });
+            });
+        });
+
+        // ========== TEMA OSCURO ==========
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const icon = document.getElementById('theme-icon');
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            // Cambiar icono
+            if (newTheme === 'dark') {
+                icon.classList.remove('bi-moon-fill');
+                icon.classList.add('bi-sun-fill');
+            } else {
+                icon.classList.remove('bi-sun-fill');
+                icon.classList.add('bi-moon-fill');
+            }
+
+            // Animación
+            document.body.style.transition = 'background 0.3s ease';
+        }
+
+        // Cargar tema guardado
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const icon = document.getElementById('theme-icon');
+
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (icon) {
+                    icon.classList.remove('bi-moon-fill');
+                    icon.classList.add('bi-sun-fill');
+                }
+            }
+        });
+
+        // ========== ANIMACIONES ==========
+        // Animar elementos al hacer scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Observar tarjetas
+            document.querySelectorAll('.card').forEach(card => {
+                observer.observe(card);
+            });
+
+            // Animar números en stat-cards
+            animateNumbers();
+        });
+
+        // ========== ANIMAR NÚMEROS ==========
+        function animateNumbers() {
+            const statValues = document.querySelectorAll('.stat-value');
+
+            statValues.forEach(element => {
+                const text = element.textContent.trim();
+                const numberMatch = text.match(/[\d,]+/);
+
+                if (numberMatch) {
+                    const number = parseFloat(numberMatch[0].replace(/,/g, ''));
+                    const prefix = text.split(numberMatch[0])[0];
+                    const suffix = text.split(numberMatch[0])[1] || '';
+
+                    if (!isNaN(number)) {
+                        animateValue(element, 0, number, 1500, prefix, suffix);
+                    }
+                }
+            });
+        }
+
+        function animateValue(element, start, end, duration, prefix = '', suffix = '') {
+            const range = end - start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            let current = start;
+
+            const timer = setInterval(function() {
+                current += increment * Math.ceil(range / 100);
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                element.textContent = prefix + formatNumber(current) + suffix;
+            }, stepTime);
+        }
+
+        function formatNumber(num) {
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // ========== NOTIFICACIONES ==========
+        function showToast(message, type = 'success') {
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+
+                Toast.fire({
+                    icon: type,
+                    title: message
+                });
+            }
+        }
+
+        // ========== CONFIRMACIONES ==========
+        function confirmDelete(event, message = '¿Estás seguro de eliminar este elemento?') {
+            event.preventDefault();
+            const form = event.target.closest('form');
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#95a5a6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            } else {
+                if (confirm(message)) {
+                    form.submit();
+                }
+            }
+
+            return false;
+        }
+
+        // ========== UTILIDADES ==========
+        // Formatear moneda colombiana
+        function formatCOP(amount) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Copiar al portapapeles
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copiado al portapapeles', 'success');
+            });
+        }
+
+        // ========== PWA - SERVICE WORKER ==========
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registrado:', registration.scope);
+
+                        // Verificar actualizaciones cada 5 minutos
+                        setInterval(() => {
+                            registration.update();
+                        }, 5 * 60 * 1000);
+
+                        // Detectar nueva versión disponible
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Nueva versión disponible
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: '¡Nueva versión disponible!',
+                                            text: 'Hay una actualización de la aplicación lista',
+                                            icon: 'info',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Actualizar ahora',
+                                            cancelButtonText: 'Después'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                newWorker.postMessage({ action: 'skipWaiting' });
+                                                window.location.reload();
+                                            }
+                                        });
+                                    } else {
+                                        if (confirm('Nueva versión disponible. ¿Actualizar ahora?')) {
+                                            newWorker.postMessage({ action: 'skipWaiting' });
+                                            window.location.reload();
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('❌ Error al registrar Service Worker:', error);
+                    });
+
+                // Detectar cuando el SW toma control
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('🔄 Service Worker actualizado');
+                });
+            });
+        }
+
+        // ========== PWA - DETECCIÓN DE INSTALACIÓN ==========
+        let deferredPrompt;
+        let installButton;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevenir el prompt automático
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Mostrar botón de instalación personalizado
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            // Crear botón de instalación si no existe
+            if (!document.getElementById('pwa-install-btn')) {
+                const installBanner = document.createElement('div');
+                installBanner.id = 'pwa-install-banner';
+                installBanner.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    animation: slideIn 0.5s ease;
+                `;
+
+                installBanner.innerHTML = `
+                    <div>
+                        <strong style="display: block; margin-bottom: 5px;">📱 Instalar App</strong>
+                        <small style="opacity: 0.9;">Acceso rápido desde tu pantalla de inicio</small>
+                    </div>
+                    <button id="pwa-install-btn" style="
+                        background: white;
+                        color: #667eea;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        cursor: pointer;
+                    ">Instalar</button>
+                    <button id="pwa-close-btn" style="
+                        background: transparent;
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 20px;
+                        padding: 0 8px;
+                    ">×</button>
+                `;
+
+                document.body.appendChild(installBanner);
+
+                // Evento de instalación
+                document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+
+                        if (outcome === 'accepted') {
+                            console.log('✅ Usuario aceptó instalar la PWA');
+                            showToast('¡App instalada correctamente!', 'success');
+                        } else {
+                            console.log('❌ Usuario rechazó instalar la PWA');
+                        }
+
+                        deferredPrompt = null;
+                        installBanner.remove();
+                    }
+                });
+
+                // Cerrar banner
+                document.getElementById('pwa-close-btn').addEventListener('click', () => {
+                    installBanner.remove();
+                });
+            }
+        }
+
+        // Detectar cuando la app ya está instalada
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA instalada correctamente');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¡Instalación exitosa!',
+                    text: 'Ahora puedes acceder a la app desde tu pantalla de inicio',
+                    icon: 'success',
+                    timer: 3000
+                });
+            }
+            deferredPrompt = null;
+        });
+
+        // ========== PWA - DETECCIÓN DE CONEXIÓN ==========
+        window.addEventListener('online', () => {
+            console.log('🟢 Conexión restaurada');
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Conectado a internet'
+                });
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('🔴 Sin conexión');
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+                Toast.fire({
+                    icon: 'warning',
+                    title: 'Sin conexión a internet',
+                    text: 'La app funcionará en modo offline'
+                });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

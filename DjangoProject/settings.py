@@ -24,6 +24,20 @@ AI_PROVIDER = config('AI_PROVIDER', default='demo')  # demo, groq, openai
 GROQ_API_KEY = config('GROQ_API_KEY', default=None)
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='tu-api-key-aqui')
 
+# ============================================================================
+# CONFIGURACIÓN DE ENCRIPTACIÓN DE DATOS
+# ============================================================================
+
+# Clave para encriptar datos sensibles en la base de datos
+FIELD_ENCRYPTION_KEY = config('ENCRYPTION_KEY', default=None)
+
+if not FIELD_ENCRYPTION_KEY:
+    # En desarrollo, generar una clave temporal (NO USAR EN PRODUCCIÓN)
+    from cryptography.fernet import Fernet
+    FIELD_ENCRYPTION_KEY = Fernet.generate_key().decode()
+    logger.warning("⚠️  Usando clave de encriptación temporal. Define ENCRYPTION_KEY en .env para producción.")
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -75,6 +89,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',  # Para formatear números y fechas
     'gastos.apps.GastosConfig',
 ]
 
@@ -142,13 +157,34 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'gastos.password_validators.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,  # Mínimo 12 caracteres (más seguro que 8)
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'gastos.password_validators.PasswordStrengthValidator',
+        # Requiere mayúscula, minúscula, número y carácter especial
+    },
+    {
+        'NAME': 'gastos.password_validators.NoPersonalInfoValidator',
+        # Evita que contenga nombre, apellido, usuario o email
+    },
+    {
+        'NAME': 'gastos.password_validators.NoCommonPatternsValidator',
+        # Evita patrones comunes como '123456', 'qwerty', etc.
+    },
+    {
+        'NAME': 'gastos.password_validators.NoRepeatingCharactersValidator',
+        'OPTIONS': {
+            'max_repeating': 3,  # No permite más de 3 caracteres iguales consecutivos
+        }
     },
 ]
 
@@ -194,6 +230,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD DE SESIONES
+# ============================================================================
+
+# Expiración de sesión por inactividad (1 hora)
+SESSION_COOKIE_AGE = 3600  # 1 hora en segundos
+SESSION_SAVE_EVERY_REQUEST = True  # Renovar sesión en cada request activo
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Cerrar sesión al cerrar navegador
+
+# Configuración adicional de cookies de sesión
+SESSION_COOKIE_HTTPONLY = True  # No accesible desde JavaScript
+SESSION_COOKIE_NAME = 'finanbot_sessionid'  # Nombre personalizado para ocultar que es Django
 
 # ============================================================================
 # CONFIGURACIÓN DE EMAIL

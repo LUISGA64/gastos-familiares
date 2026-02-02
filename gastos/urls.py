@@ -11,6 +11,14 @@ urlpatterns = [
     # Restablecer contraseña
     path('password-reset/', views_auth.password_reset_request, name='password_reset'),
     path('password-reset/<str:token>/', views_auth.password_reset_confirm, name='password_reset_confirm'),
+    path('cambiar-password/', views_auth.cambiar_password, name='cambiar_password'),
+
+    # Legal y Privacidad
+    path('politica-privacidad/', views_auth.politica_privacidad, name='politica_privacidad'),
+    path('terminos/', views_auth.terminos, name='terminos'),
+    path('mis-datos/', views_auth.mis_datos, name='mis_datos'),
+    path('exportar-datos/', views_auth.exportar_datos_usuario, name='exportar_datos_usuario'),
+    path('eliminar-cuenta/', views_auth.eliminar_cuenta, name='eliminar_cuenta'),
 
     # Planes y comercialización (público)
     path('planes/', views_auth.planes_precios, name='planes_precios'),
@@ -85,6 +93,13 @@ urlpatterns = [
     path('gastos/nuevo/', views.crear_gasto, name='crear_gasto'),
     path('gastos/<int:pk>/', views.detalle_gasto, name='detalle_gasto'),
     path('gastos/<int:pk>/editar/', views.editar_gasto, name='editar_gasto'),
+    path('gastos/personales/', views.lista_gastos_personales, name='lista_gastos_personales'),
+
+    # Ingresos
+    path('ingresos/', views.lista_ingresos, name='lista_ingresos'),
+    path('ingresos/nuevo/', views.crear_ingreso, name='crear_ingreso'),
+    path('ingresos/<int:pk>/editar/', views.editar_ingreso, name='editar_ingreso'),
+    path('ingresos/<int:pk>/eliminar/', views.eliminar_ingreso, name='eliminar_ingreso'),
 
     # Reportes
     path('reportes/', views.reportes, name='reportes'),

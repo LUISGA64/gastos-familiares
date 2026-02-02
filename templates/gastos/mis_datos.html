@@ -1,0 +1,300 @@
+{% extends 'gastos/base.html' %}
+{% load humanize %}
+
+{% block title %}Mis Datos - FinanBot{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <h2 class="mb-2">
+                        <i class="bi bi-person-circle"></i> Mis Datos Personales
+                    </h2>
+                    <p class="mb-0 opacity-75">Panel de privacidad y gestión de datos (RGPD/GDPR)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del usuario -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold" width="40%">Nombre de usuario:</td>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Nombre completo:</td>
+                            <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Email:</td>
+                            <td>{{ user.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Fecha de registro:</td>
+                            <td>{{ user.date_joined|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Último acceso:</td>
+                            <td>{{ user.last_login|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+                    <a href="{% url 'cambiar_password' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-key"></i> Cambiar Contraseña
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-shield-check"></i> Estado de Privacidad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-lock text-success"></i> Datos encriptados</span>
+                            <span class="badge bg-success">Activo</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-shield text-success"></i> Autenticación segura</span>
+                            <span class="badge bg-success">Activo</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-bell text-primary"></i> Notificaciones de seguridad</span>
+                            <span class="badge bg-primary">Configurar</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-journal-text text-info"></i> Registro de auditoría</span>
+                            <span class="badge bg-info">Ver historial</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones de datos -->
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-download display-4 text-primary"></i>
+                    </div>
+                    <h5>Exportar Mis Datos</h5>
+                    <p class="text-muted small">Descarga todos tus datos en formato JSON (portabilidad de datos RGPD)</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalExportar">
+                        <i class="bi bi-download"></i> Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-clock-history display-4 text-info"></i>
+                    </div>
+                    <h5>Historial de Accesos</h5>
+                    <p class="text-muted small">Ver los últimos accesos a tu cuenta con detalles de IP y dispositivo</p>
+                    <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalHistorial">
+                        <i class="bi bi-list"></i> Ver Historial
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="card shadow-sm border-0 border-danger h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-trash display-4 text-danger"></i>
+                    </div>
+                    <h5>Eliminar Mi Cuenta</h5>
+                    <p class="text-muted small">Solicitar eliminación permanente de todos tus datos (derecho al olvido)</p>
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminar">
+                        <i class="bi bi-exclamation-triangle"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de datos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Resumen de Datos Almacenados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="text-primary mb-0">{{ total_gastos|intcomma }}</h3>
+                                <small class="text-muted">Gastos registrados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="text-success mb-0">{{ total_familias|intcomma }}</h3>
+                                <small class="text-muted">Familias</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="text-info mb-0">{{ total_logs|intcomma }}</h3>
+                                <small class="text-muted">Registros de auditoría</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3 class="text-warning mb-0">{{ dias_activo|intcomma }}</h3>
+                                <small class="text-muted">Días activo</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Exportar -->
+<div class="modal fade" id="modalExportar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-download"></i> Exportar Mis Datos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Se generará un archivo JSON con todos tus datos:</p>
+                <ul>
+                    <li>Información personal</li>
+                    <li>Gastos registrados</li>
+                    <li>Familias y aportantes</li>
+                    <li>Historial de auditoría (últimos 100 registros)</li>
+                </ul>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Se enviará una copia a tu email y se iniciará la descarga.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'exportar_datos_usuario' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Exportar Ahora
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Historial -->
+<div class="modal fade" id="modalHistorial" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Historial de Accesos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Acción</th>
+                                <th>Dirección IP</th>
+                                <th>Dispositivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in ultimos_accesos %}
+                            <tr>
+                                <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if log.accion == 'LOGIN' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ log.get_accion_display }}
+                                    </span>
+                                </td>
+                                <td><small>{{ log.ip_address }}</small></td>
+                                <td><small>{{ log.user_agent|truncatewords:5 }}</small></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay registros disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> ⚠️ Eliminar Cuenta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>¡ATENCIÓN! Esta acción es IRREVERSIBLE.</strong>
+                </div>
+                <p>Al eliminar tu cuenta:</p>
+                <ul class="text-danger">
+                    <li>❌ Se eliminarán permanentemente todos tus datos</li>
+                    <li>❌ Perderás acceso a todas tus familias y gastos</li>
+                    <li>❌ No podrás recuperar esta información</li>
+                    <li>❌ Tu suscripción se cancelará inmediatamente</li>
+                </ul>
+                <p class="mt-3">Para confirmar, escribe <strong>"ELIMINAR"</strong> en el campo:</p>
+                <form method="post" action="{% url 'eliminar_cuenta' %}" id="formEliminar">
+                    {% csrf_token %}
+                    <input type="text" class="form-control" id="confirmacion" name="confirmacion"
+                           placeholder="Escribe ELIMINAR" required>
+                    <small class="text-muted">Se te pedirá tu contraseña antes de confirmar</small>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formEliminar" class="btn btn-danger" id="btnEliminar" disabled>
+                    <i class="bi bi-trash"></i> Sí, Eliminar Cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Habilitar botón solo si escribe ELIMINAR correctamente
+document.getElementById('confirmacion').addEventListener('input', function(e) {
+    const btnEliminar = document.getElementById('btnEliminar');
+    if (e.target.value === 'ELIMINAR') {
+        btnEliminar.disabled = false;
+    } else {
+        btnEliminar.disabled = true;
+    }
+});
+</script>
+{% endblock %}

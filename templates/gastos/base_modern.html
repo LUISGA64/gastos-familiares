@@ -364,37 +364,22 @@
         .submenu-link {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 15px 8px 50px;
+            gap: 10px;
+            padding: 10px 20px 10px 60px;
             color: rgba(255,255,255,0.7);
             text-decoration: none;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .submenu-link i {
             font-size: 0.9rem;
-            min-width: 16px;
-            flex-shrink: 0;
+            transition: all 0.3s;
         }
 
         .submenu-link:hover {
             color: white;
-            background: rgba(255,255,255,0.08);
-            padding-left: 55px;
+            background: rgba(255,255,255,0.05);
         }
 
         .submenu-link.active {
             color: var(--secondary-color);
-            background: rgba(59,130,246,0.15);
-            font-weight: 600;
-        }
-
-        .sidebar.collapsed .submenu {
-            display: none;
+            background: rgba(59,130,246,0.1);
         }
 
         /* Usuario en sidebar */
@@ -589,7 +574,6 @@
         @media (max-width: 991.98px) {
             .sidebar {
                 transform: translateX(-100%);
-                width: 280px;
             }
 
             .sidebar.show {
@@ -602,22 +586,6 @@
 
             .main-content {
                 margin-left: 0;
-            }
-
-            /* Submenus en móvil más compactos */
-            .submenu-link {
-                padding: 10px 15px 10px 45px;
-                font-size: 0.85rem;
-            }
-
-            .menu-link {
-                font-size: 0.95rem;
-                padding: 12px 15px;
-            }
-
-            .menu-section-title {
-                padding: 0 15px 8px;
-                font-size: 0.7rem;
             }
 
             .mobile-overlay {
@@ -739,12 +707,12 @@
                         <ul class="submenu">
                             <li class="submenu-item">
                                 <a href="{% url 'lista_gastos' %}" class="submenu-link {% if 'lista_gastos' in request.path %}active{% endif %}">
-                                    <i class="bi bi-receipt"></i> Compartidos
+                                    <i class="bi bi-receipt"></i> Gastos Compartidos
                                 </a>
                             </li>
                             <li class="submenu-item">
                                 <a href="{% url 'lista_gastos_personales' %}" class="submenu-link {% if 'personales' in request.path %}active{% endif %}">
-                                    <i class="bi bi-person-badge"></i> Personales
+                                    <i class="bi bi-person-badge"></i> Gastos Personales
                                 </a>
                             </li>
                             <li class="submenu-item">
@@ -833,7 +801,7 @@
                         <ul class="submenu">
                             <li class="submenu-item">
                                 <a href="{% url 'generar_invitacion_familia' %}" class="submenu-link">
-                                    <i class="bi bi-gift"></i> Crear
+                                    <i class="bi bi-gift"></i> Generar Invitación
                                 </a>
                             </li>
                             <li class="submenu-item">
@@ -930,12 +898,27 @@
         </div>
     </header>
 
-    {% endif %}
-    {# Fin del if user.is_authenticated para sidebar y topbar #}
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+        <main class="main-content">
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" data-autoclose="true" data-timeout="5000">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="main-content{% if not user.is_authenticated %}" style="margin-left: 0; margin-top: 0;{% endif %}">
-        <!-- Mensajes -->
+            <!-- Contenido -->
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% else %}
+    <!-- Vista sin autenticación (login/registro) -->
+    <div class="main-content" style="margin-left: 0; margin-top: 0;">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" data-autoclose="true" data-timeout="5000">
@@ -945,9 +928,9 @@
             {% endfor %}
         {% endif %}
 
-        <!-- Contenido de la página -->
         {% block content %}{% endblock %}
-    </main>
+    </div>
+    {% endif %}
 
     <!-- Footer -->
     <footer class="text-center py-4 mt-5" style="{% if user.is_authenticated %}margin-left: var(--sidebar-width);{% endif %}">
