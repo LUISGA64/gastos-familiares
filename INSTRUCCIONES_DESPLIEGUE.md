@@ -3,6 +3,8 @@
 ## ✅ Estado Actual
 Todas las mejoras de responsividad y UX han sido implementadas y probadas exitosamente.
 
+**Última actualización:** Footer compacto integrado en login y registro para optimizar el espacio en pantalla.
+
 ---
 
 ## 📋 Checklist de Verificación

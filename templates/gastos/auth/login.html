@@ -16,6 +16,7 @@
         width: 100%;
         max-width: 1100px;
         margin: 0 auto;
+        padding: 0 15px;
     }
 
     .auth-card {
@@ -25,6 +26,35 @@
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         display: flex;
         min-height: 600px;
+    }
+
+    /* Footer compacto y profesional */
+    .auth-footer {
+        margin-top: 30px;
+        padding: 20px 0;
+        text-align: center;
+        border-top: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .auth-footer a {
+        color: rgba(255,255,255,0.9);
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .auth-footer a:hover {
+        color: white;
+        text-decoration: underline !important;
+    }
+
+    .auth-footer small {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.85);
+        letter-spacing: 0.3px;
+    }
+
+    .auth-footer .text-muted {
+        color: rgba(255,255,255,0.6) !important;
     }
 
     /* Columna Izquierda - Ilustración */
@@ -303,6 +333,7 @@
 
         .auth-container {
             padding: 0 10px;
+            max-width: 100%;
         }
 
         .auth-card {
@@ -386,6 +417,30 @@
             margin-top: 20px;
             font-size: 0.8rem;
             padding: 15px;
+        }
+
+        /* Footer compacto en móvil */
+        .auth-footer {
+            margin-top: 20px;
+            padding: 15px 0;
+            border-top: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .auth-footer small {
+            font-size: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            line-height: 1.6;
+        }
+
+        .auth-footer a {
+            display: inline-block;
+        }
+
+        .auth-footer .text-muted {
+            margin: 0 2px;
         }
 
         /* Ajustar mensajes de alerta en móviles */
@@ -521,6 +576,19 @@
                     <a href="{% url 'planes_precios' %}" class="text-decoration-none fw-bold">Compra tu plan aquí</a>
                 </small>
             </div>
+        </div>
+    </div>
+
+    <!-- Footer compacto para login -->
+    <div class="auth-footer">
+        <div class="text-center">
+            <small class="text-muted">
+                <a href="{% url 'politica_privacidad' %}" class="text-decoration-none me-2">Privacidad</a>
+                <span class="text-muted">•</span>
+                <a href="{% url 'terminos' %}" class="text-decoration-none mx-2">Términos</a>
+                <span class="text-muted">•</span>
+                <span class="ms-2">© 2026 FinanBot</span>
+            </small>
         </div>
     </div>
 </div>

@@ -10,6 +10,10 @@
         <p class="text-muted">Gestión de aportantes y sus ingresos</p>
     </div>
     <div class="col-auto d-flex gap-2">
+        <button id="togglePrivacidad" class="btn btn-outline-secondary" title="Ocultar/Mostrar salarios">
+            <i class="bi {% if ocultar_valores %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %}" id="iconoPrivacidad"></i>
+            <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Salarios{% else %}Ocultar Salarios{% endif %}</span>
+        </button>
         <a href="{% url 'generar_invitacion_familia' %}" class="btn btn-success">
             <i class="bi bi-person-plus-fill"></i> Invitar Miembros
         </a>
@@ -22,7 +26,9 @@
 <div class="card">
     <div class="card-header">
         <i class="bi bi-list"></i> Lista de Aportantes
-        <span class="badge bg-primary float-end">Total Ingresos: {{ total_ingresos|formato_moneda }}</span>
+        <span class="badge bg-primary float-end valor-monetario">
+            Total Ingresos: {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
+        </span>
     </div>
     <div class="card-body">
         {% if aportantes %}
@@ -72,7 +78,9 @@
                             <br><small class="text-muted">Necesario para confirmación de conciliaciones</small>
                             {% endif %}
                         </td>
-                        <td>{{ aportante.ingreso_mensual|formato_moneda }}</td>
+                        <td class="valor-monetario">
+                            {% if ocultar_valores %}****{% else %}{{ aportante.ingreso_mensual|formato_moneda }}{% endif %}
+                        </td>
                         <td>
                             <div class="progress" style="height: 20px;">
                                 <div class="progress-bar bg-success" role="progressbar"
@@ -168,6 +176,62 @@
     .d-flex.gap-3 {
         gap: 1rem !important;
     }
+
+    #togglePrivacidad {
+        transition: all 0.3s ease;
+    }
+
+    #togglePrivacidad:hover {
+        transform: scale(1.05);
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('togglePrivacidad');
+    const iconoPrivacidad = document.getElementById('iconoPrivacidad');
+    const textoPrivacidad = document.getElementById('textoPrivacidad');
+    let ocultarValores = {{ ocultar_valores|default:"false"|lower }};
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            // Hacer petición AJAX
+            fetch('{% url "toggle_privacidad_valores" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    ocultarValores = data.ocultar;
+
+                    // Actualizar icono y texto
+                    if (ocultarValores) {
+                        iconoPrivacidad.className = 'bi bi-eye-fill';
+                        textoPrivacidad.textContent = 'Mostrar Salarios';
+                    } else {
+                        iconoPrivacidad.className = 'bi bi-eye-slash-fill';
+                        textoPrivacidad.textContent = 'Ocultar Salarios';
+                    }
+
+                    // Recargar la página para actualizar todos los valores
+                    setTimeout(() => {
+                        location.reload();
+                    }, 300);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar la configuración de privacidad');
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
 

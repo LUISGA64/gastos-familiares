@@ -16,6 +16,7 @@
         width: 100%;
         max-width: 1100px;
         margin: 0 auto;
+        padding: 0 15px;
     }
 
     .auth-card {
@@ -25,6 +26,35 @@
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         display: flex;
         min-height: 580px;
+    }
+
+    /* Footer compacto y profesional */
+    .auth-footer {
+        margin-top: 30px;
+        padding: 20px 0;
+        text-align: center;
+        border-top: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .auth-footer a {
+        color: rgba(255,255,255,0.9);
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .auth-footer a:hover {
+        color: white;
+        text-decoration: underline !important;
+    }
+
+    .auth-footer small {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.85);
+        letter-spacing: 0.3px;
+    }
+
+    .auth-footer .text-muted {
+        color: rgba(255,255,255,0.6) !important;
     }
 
     /* Columna Izquierda - Ilustración */
@@ -246,32 +276,34 @@
 
     @media (max-width: 576px) {
         body {
-            padding: 0;
+            padding: 10px 0;
             min-height: 100vh;
-            display: block; /* Cambiar de flex a block */
+            display: flex;
+            align-items: flex-start;
         }
 
         .auth-container {
-            padding: 0;
-            margin: 0;
+            padding: 0 10px;
+            margin: 0 auto;
             width: 100%;
             max-width: 100%;
         }
 
         .auth-card {
-            border-radius: 0;
-            min-height: 100vh;
-            box-shadow: none;
-            display: block; /* Cambiar de flex a block */
+            border-radius: 15px;
+            min-height: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
         }
 
         .auth-illustration {
-            padding: 15px;
+            padding: 20px 15px;
             min-height: auto;
         }
 
         .welcome-icon {
-            font-size: 40px;
+            font-size: 50px;
             margin-bottom: 10px;
         }
 
@@ -285,13 +317,13 @@
         }
 
         .auth-form {
-            padding: 25px 20px 30px; /* Más padding horizontal */
+            padding: 25px 20px 30px;
             width: 100%;
             max-width: 100%;
         }
 
         .auth-form-header h3 {
-            font-size: 1.4rem; /* Más grande */
+            font-size: 1.4rem;
         }
 
         .auth-form-header p {
@@ -319,6 +351,22 @@
         .btn-login-link {
             height: 48px;
             font-size: 0.95rem;
+        }
+
+        /* Footer compacto en móvil */
+        .auth-footer {
+            margin-top: 15px;
+            padding: 10px 0;
+        }
+
+        .auth-footer small {
+            font-size: 0.75rem;
+            display: block;
+        }
+
+        .auth-footer a {
+            display: inline-block;
+            margin: 0 5px;
         }
 
         /* Alertas */
@@ -370,14 +418,6 @@
 
         #password-match-message {
             font-weight: 600 !important;
-        }
-    }
-
-        /* Ajustar mensajes de alerta en móviles */
-        .alert {
-            font-size: 0.85rem;
-            padding: 10px;
-            margin-bottom: 15px;
         }
 
         /* Texto informativo más pequeño */
@@ -502,6 +542,19 @@
                     <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
                 </a>
             </div>
+        </div>
+    </div>
+
+    <!-- Footer compacto para registro -->
+    <div class="auth-footer">
+        <div class="text-center">
+            <small class="text-muted">
+                <a href="{% url 'politica_privacidad' %}" class="text-decoration-none me-2">Privacidad</a>
+                <span class="text-muted">•</span>
+                <a href="{% url 'terminos' %}" class="text-decoration-none mx-2">Términos</a>
+                <span class="text-muted">•</span>
+                <span class="ms-2">© 2026 FinanBot</span>
+            </small>
         </div>
     </div>
 </div>

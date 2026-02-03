@@ -5,18 +5,30 @@
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col">
-        <div class="d-flex justify-content-between align-items-center">
+    <div class="col-md-6">
+        <div class="d-flex flex-column">
             <div>
                 <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
                 <p class="text-muted">Resumen de {{ mes_actual }}</p>
             </div>
-            <div>
-                <button id="togglePrivacidad" class="btn btn-outline-secondary" title="Ocultar/Mostrar valores">
-                    <i class="bi bi-eye-slash-fill" id="iconoPrivacidad"></i>
-                    <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
-                </button>
-            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label mb-1"><small>Seleccionar período</small></label>
+        <select id="selectorMes" class="form-select" onchange="cambiarMes()">
+            {% for mes in meses_disponibles %}
+            <option value="{{ mes.mes }}" data-anio="{{ mes.anio }}" {% if mes.seleccionado %}selected{% endif %}>
+                {{ mes.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <div class="d-flex justify-content-end align-items-end h-100">
+            <button id="togglePrivacidad" class="btn btn-outline-secondary" title="Ocultar/Mostrar valores">
+                <i class="bi bi-eye-slash-fill" id="iconoPrivacidad"></i>
+                <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
+            </button>
         </div>
     </div>
 </div>
@@ -26,7 +38,7 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Ingresos Totales</div>
-            <div class="stat-value text-success" id="valorIngresos">
+            <div class="stat-value text-success valor-monetario" id="valorIngresos">
                 {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">{{ aportantes|length }} aportante{{ aportantes|length|pluralize }}</small>
@@ -35,7 +47,7 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Gastos del Mes</div>
-            <div class="stat-value text-danger" id="valorGastos">
+            <div class="stat-value text-danger valor-monetario" id="valorGastos">
                 {% if ocultar_valores %}****{% else %}{{ total_gastos_mes|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Total gastado</small>
@@ -44,7 +56,7 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Gastos Fijos</div>
-            <div class="stat-value text-warning" id="valorGastosFijos">
+            <div class="stat-value text-warning valor-monetario" id="valorGastosFijos">
                 {% if ocultar_valores %}****{% else %}{{ gastos_fijos_mes|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Obligatorios</small>
@@ -53,7 +65,7 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="stat-label">Balance</div>
-            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}" id="valorBalance">
+            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %} valor-monetario" id="valorBalance">
                 {% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Disponible</small>
@@ -259,24 +271,181 @@
 
 {% block extra_css %}
 <style>
+    /* ========== TEMA DARK - DASHBOARD ========== */
+
+    /* Textos principales */
+    [data-theme="dark"] h1,
+    [data-theme="dark"] h2,
+    [data-theme="dark"] h3,
+    [data-theme="dark"] h4,
+    [data-theme="dark"] h5 {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] p {
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] small {
+        color: #94a3b8;
+    }
+
+    /* Cards principales */
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        padding: 20px;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+    [data-theme="dark"] .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 1px solid #475569;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    [data-theme="dark"] .stat-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        border-color: #64748b;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    [data-theme="dark"] .stat-label {
+        color: #cbd5e1;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    /* Colores de estado en tema dark */
+    [data-theme="dark"] .text-success {
+        color: #86efac !important;
+    }
+
+    [data-theme="dark"] .text-danger {
+        color: #fca5a5 !important;
+    }
+
+    [data-theme="dark"] .text-warning {
+        color: #fcd34d !important;
+    }
+
+    [data-theme="dark"] .text-info {
+        color: #7dd3fc !important;
+    }
+
+    /* Badges */
+    [data-theme="dark"] .badge.bg-success {
+        background-color: #166534 !important;
+        color: #bbf7d0;
+    }
+
+    [data-theme="dark"] .badge.bg-warning {
+        background-color: #854d0e !important;
+        color: #fef08a;
+    }
+
+    [data-theme="dark"] .badge.bg-danger {
+        background-color: #991b1b !important;
+        color: #fecaca;
+    }
+
+    [data-theme="dark"] .badge.bg-info {
+        background-color: #0c4a6e !important;
+        color: #bfdbfe;
+    }
+
+    /* Progress bars */
+    [data-theme="dark"] .progress {
+        background-color: #334155;
+    }
+
+    [data-theme="dark"] .progress-bar.bg-success {
+        background-color: #22c55e;
+    }
+
+    /* Cards hover */
     .hover-card {
         transition: transform 0.3s, box-shadow 0.3s;
     }
+
+    [data-theme="dark"] .hover-card {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+    }
+
     .hover-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 4px 12px rgba(0,0,0,.15);
     }
+
+    [data-theme="dark"] .hover-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,.4);
+        border-color: #64748b;
+    }
+
+    [data-theme="dark"] .hover-card h5 {
+        color: #e2e8f0;
+    }
+
+    /* Botón privacidad */
     #togglePrivacidad {
         transition: all 0.3s ease;
     }
+
     #togglePrivacidad:hover {
         transform: scale(1.05);
+    }
+
+    [data-theme="dark"] #togglePrivacidad {
+        background-color: transparent;
+        border-color: #475569;
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] #togglePrivacidad:hover {
+        background-color: #334155;
+        border-color: #64748b;
+        color: #e2e8f0;
     }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Función para cambiar de mes
+function cambiarMes() {
+    const selector = document.getElementById('selectorMes');
+    const mesSeleccionado = selector.value;
+    const anioSeleccionado = selector.options[selector.selectedIndex].getAttribute('data-anio');
+
+    // Redirigir con parámetros
+    window.location.href = `?mes=${mesSeleccionado}&anio=${anioSeleccionado}`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('togglePrivacidad');
     const iconoPrivacidad = document.getElementById('iconoPrivacidad');
@@ -307,10 +476,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         textoPrivacidad.textContent = 'Ocultar Valores';
                     }
 
-                    // Recargar la página para actualizar todos los valores
-                    setTimeout(() => {
-                        location.reload();
-                    }, 300);
+                    // Actualizar valores en la página inmediatamente (SIN RECARGA)
+                    const valores = document.querySelectorAll('.valor-monetario');
+                    valores.forEach(valor => {
+                        if (ocultarValores) {
+                            if (!valor.dataset.valorReal) {
+                                valor.dataset.valorReal = valor.textContent;
+                            }
+                            valor.textContent = '****';
+                        } else {
+                            if (valor.dataset.valorReal) {
+                                valor.textContent = valor.dataset.valorReal;
+                            }
+                        }
+                    });
                 }
             })
             .catch(error => {

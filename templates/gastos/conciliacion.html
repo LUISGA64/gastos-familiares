@@ -607,6 +607,12 @@
                 <i class="bi bi-search me-2"></i>Consultar
             </button>
         </div>
+        <div class="col-md-12 mt-3 text-end">
+            <button id="togglePrivacidad" class="btn btn-outline-secondary btn-sm">
+                <i class="bi {% if ocultar_valores %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %}" id="iconoPrivacidad"></i>
+                <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
+            </button>
+        </div>
     </form>
 </div>
 
@@ -618,7 +624,7 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="stat-card-label">Total Ingresos</div>
-            <div class="stat-card-value">{{ total_ingresos|formato_moneda }}</div>
+            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}</div>
             <div class="stat-card-subtitle">{{ conciliacion_aportantes|length }} aportante{{ conciliacion_aportantes|length|pluralize }}</div>
         </div>
     </div>
@@ -628,7 +634,7 @@
                 <i class="bi bi-receipt"></i>
             </div>
             <div class="stat-card-label">Total Gastos</div>
-            <div class="stat-card-value">{{ total_gastos_mes|formato_moneda }}</div>
+            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ total_gastos_mes|formato_moneda }}{% endif %}</div>
             <div class="stat-card-subtitle">Del mes seleccionado</div>
         </div>
     </div>
@@ -638,7 +644,7 @@
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
             <div class="stat-card-label">Balance</div>
-            <div class="stat-card-value">{{ balance|formato_moneda }}</div>
+            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}</div>
             <div class="stat-card-subtitle">{% if balance >= 0 %}Superávit{% else %}Déficit{% endif %}</div>
         </div>
     </div>
@@ -673,15 +679,15 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 600;">{{ item.aportante.nombre }}</div>
-                                    <small class="text-muted">{{ item.aportante.ingreso_mensual|formato_moneda }}/mes</small>
+                                    <small class="text-muted">{% if ocultar_valores %}****{% else %}{{ item.aportante.ingreso_mensual|formato_moneda }}/mes{% endif %}</small>
                                 </div>
                             </div>
                         </td>
                         <td class="text-center">
                             <span class="badge bg-light text-dark" style="font-size: 0.875rem;">{{ item.porcentaje_esperado|floatformat:1 }}%</span>
                         </td>
-                        <td class="text-end" style="font-weight: 500;">{{ item.gastos_asignados|formato_moneda }}</td>
-                        <td class="text-end" style="font-weight: 600;">{{ item.pagos_realizados|formato_moneda }}</td>
+                        <td class="text-end" style="font-weight: 500;">{% if ocultar_valores %}****{% else %}{{ item.gastos_asignados|formato_moneda }}{% endif %}</td>
+                        <td class="text-end" style="font-weight: 600;">{% if ocultar_valores %}****{% else %}{{ item.pagos_realizados|formato_moneda }}{% endif %}</td>
                         <td style="min-width: 200px;">
                             <div class="progress-modern">
                                 <div class="progress-bar"
@@ -692,7 +698,9 @@
                             </div>
                         </td>
                         <td class="text-end" style="font-weight: 700; color: {% if item.balance > 0 %}var(--success-soft){% elif item.balance < 0 %}var(--danger-soft){% else %}var(--text-muted){% endif %};">
-                            {% if item.balance > 0 %}
+                            {% if ocultar_valores %}
+                            ****
+                            {% elif item.balance > 0 %}
                             +{{ item.balance|formato_moneda }}
                             {% elif item.balance < 0 %}
                             {{ item.balance|formato_moneda }}
@@ -765,7 +773,7 @@
                 </div>
                 <div class="col-md-4 text-md-end">
                     <div class="reintegro-amount">
-                        {{ reintegro.monto|formato_moneda }}
+                        {% if ocultar_valores %}****{% else %}{{ reintegro.monto|formato_moneda }}{% endif %}
                     </div>
                 </div>
             </div>
@@ -801,7 +809,7 @@
                     </h6>
                 </div>
                 <div class="badge bg-light text-dark" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
-                    Total: {{ item.pagos_realizados|formato_moneda }}
+                    Total: {% if ocultar_valores %}****{% else %}{{ item.pagos_realizados|formato_moneda }}{% endif %}
                 </div>
             </div>
 
@@ -825,7 +833,7 @@
                                 <small class="text-muted">{{ gasto.descripcion }}</small>
                                 {% endif %}
                             </td>
-                            <td class="text-end" style="font-weight: 600;">{{ gasto.monto|formato_moneda }}</td>
+                            <td class="text-end" style="font-weight: 600;">{% if ocultar_valores %}****{% else %}{{ gasto.monto|formato_moneda }}{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -891,7 +899,7 @@
                 <div class="col-md-3">
                     <small class="text-muted">Balance:</small><br>
                     <strong style="color: {% if detalle.balance > 0 %}var(--success-soft){% elif detalle.balance < 0 %}var(--danger-soft){% else %}var(--text-muted){% endif %}; font-size: 1.1rem;">
-                        {{ detalle.balance|formato_moneda }}
+                        {% if ocultar_valores %}****{% else %}{{ detalle.balance|formato_moneda }}{% endif %}
                     </strong>
                 </div>
                 <div class="col-md-6">
@@ -1018,5 +1026,53 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Toggle de privacidad
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('togglePrivacidad');
+        const iconoPrivacidad = document.getElementById('iconoPrivacidad');
+        const textoPrivacidad = document.getElementById('textoPrivacidad');
+        let ocultarValores = {{ ocultar_valores|lower }};
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                // Hacer petición AJAX
+                fetch('{% url "toggle_privacidad_valores" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        ocultarValores = data.ocultar;
+
+                        // Actualizar icono y texto
+                        if (ocultarValores) {
+                            iconoPrivacidad.className = 'bi bi-eye-fill';
+                            textoPrivacidad.textContent = 'Mostrar Valores';
+                        } else {
+                            iconoPrivacidad.className = 'bi bi-eye-slash-fill';
+                            textoPrivacidad.textContent = 'Ocultar Valores';
+                        }
+
+                        // Recargar la página para actualizar todos los valores
+                        setTimeout(() => {
+                            location.reload();
+                        }, 300);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}
 

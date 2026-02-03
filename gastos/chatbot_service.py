@@ -16,6 +16,13 @@ from .models import (
     MensajeChatbot, AnalisisIA, MetaAhorro
 )
 
+# Diccionario de meses en español
+MESES_ES = {
+    1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+    5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+    9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+}
+
 
 class ChatbotIAService:
     """Servicio principal del chatbot con IA multi-proveedor"""
@@ -109,14 +116,14 @@ class ChatbotIAService:
                 fecha__month=fecha.month,
                 fecha__year=fecha.year
             ).aggregate(total=Sum('monto'))['total'] or 0
-            meses_anteriores.append(f"{fecha.strftime('%B')}: ${gastos_mes_ant:,.0f}")
+            meses_anteriores.append(f"{MESES_ES[fecha.month]}: ${gastos_mes_ant:,.0f}")
 
         historico_texto = "\n".join(meses_anteriores)
 
         contexto = f"""
 INFORMACIÓN FINANCIERA DEL USUARIO:
 
-📊 RESUMEN ACTUAL ({timezone.now().strftime('%B %Y')}):
+📊 RESUMEN ACTUAL ({MESES_ES[timezone.now().month]} {timezone.now().year}):
 - Ingresos mensuales: ${ingresos:,.0f}
 - Gastos totales: ${total_gastos:,.0f}
 - Ahorro/Balance: ${ahorro_mes:,.0f}
@@ -681,7 +688,7 @@ Formato: Texto directo, usa emojis, sé específico con montos."""
                     fecha__year=fecha.year
                 ).aggregate(total=Sum('monto'))['total'] or 0
                 meses_data.append({
-                    'mes': fecha.strftime('%B'),
+                    'mes': MESES_ES[fecha.month],
                     'total': float(gastos)
                 })
 

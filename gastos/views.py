@@ -8,8 +8,39 @@ from django.utils import timezone
 from datetime import timedelta, date
 from decimal import Decimal
 import json
+import locale
 from .models import Aportante, CategoriaGasto, SubcategoriaGasto, Gasto, DistribucionGasto, MetaAhorro, Familia
 from .forms import AportanteForm, CategoriaGastoForm, SubcategoriaGastoForm, GastoForm, MetaAhorroForm, AgregarAhorroForm
+
+# Configurar locale a español
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except:
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_CO.UTF-8')
+    except:
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish_Colombia.1252')
+        except:
+            pass  # Si no se puede configurar, continuar
+
+# Diccionario de nombres de meses en español
+MESES_ES = {
+    1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+    5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+    9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+}
+
+MESES_ES_CORTO = {
+    1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr',
+    5: 'May', 6: 'Jun', 7: 'Jul', 8: 'Ago',
+    9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'
+}
+
+def obtener_nombre_mes(fecha, corto=False):
+    """Retorna el nombre del mes en español"""
+    meses = MESES_ES_CORTO if corto else MESES_ES
+    return meses.get(fecha.month, fecha.strftime('%B'))
 
 
 @login_required
@@ -28,9 +59,23 @@ def dashboard(request):
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
     total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
-    # Calcular gastos del mes actual
-    mes_actual = timezone.now().month
-    anio_actual = timezone.now().year
+    # Obtener mes y año seleccionado por el usuario (o usar actual)
+    mes_seleccionado = request.GET.get('mes', None)
+    anio_seleccionado = request.GET.get('anio', None)
+
+    fecha_actual = timezone.now()
+
+    if mes_seleccionado and anio_seleccionado:
+        try:
+            mes_actual = int(mes_seleccionado)
+            anio_actual = int(anio_seleccionado)
+        except (ValueError, TypeError):
+            mes_actual = fecha_actual.month
+            anio_actual = fecha_actual.year
+    else:
+        # Por defecto, siempre mostrar el mes actual
+        mes_actual = fecha_actual.month
+        anio_actual = fecha_actual.year
 
     gastos_mes = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
@@ -70,8 +115,8 @@ def dashboard(request):
         mes = fecha.month
         anio = fecha.year
 
-        # Etiqueta del mes
-        meses_labels.append(fecha.strftime('%b %Y'))
+        # Etiqueta del mes en español
+        meses_labels.append(f"{MESES_ES_CORTO[mes]} {anio}")
 
         # Ingresos (asumimos constantes, pero se puede mejorar)
         ingresos_historico.append(float(total_ingresos) if total_ingresos else 0)
@@ -130,6 +175,18 @@ def dashboard(request):
     # Meta de ahorro (20% de ingresos)
     meta_ahorro = total_ingresos * Decimal('0.20') if total_ingresos else 0
 
+    # Generar lista de meses disponibles (últimos 12 meses)
+    from datetime import date
+    meses_disponibles = []
+    for i in range(12):
+        fecha_mes = date(fecha_actual.year, fecha_actual.month, 1) - timedelta(days=30*i)
+        meses_disponibles.append({
+            'mes': fecha_mes.month,
+            'anio': fecha_mes.year,
+            'nombre': f"{MESES_ES[fecha_mes.month]} {fecha_mes.year}",
+            'seleccionado': (fecha_mes.month == mes_actual and fecha_mes.year == anio_actual)
+        })
+
     context = {
         'familia': familia,
         'aportantes': aportantes,
@@ -141,7 +198,10 @@ def dashboard(request):
         'gastos_por_categoria': gastos_por_categoria,
         'ultimos_gastos': ultimos_gastos,
         'gastos_recientes': ultimos_gastos,
-        'mes_actual': timezone.now().strftime('%B %Y'),
+        'mes_actual': f"{MESES_ES[mes_actual]} {anio_actual}",
+        'mes_seleccionado': mes_actual,
+        'anio_seleccionado': anio_actual,
+        'meses_disponibles': meses_disponibles,
 
         # Datos para gráficos (convertir a JSON)
         'meses_labels': json.dumps(meses_labels),
@@ -171,14 +231,7 @@ def dashboard(request):
     except Exception as e:
         print(f"Error en gamificación: {e}")
 
-    # PREFERENCIAS DE PRIVACIDAD
-    try:
-        from .models import PreferenciasUsuario
-        preferencias, created = PreferenciasUsuario.objects.get_or_create(usuario=request.user)
-        context['ocultar_valores'] = preferencias.ocultar_valores_monetarios
-    except Exception as e:
-        print(f"Error al obtener preferencias: {e}")
-        context['ocultar_valores'] = False
+    # ocultar_valores está disponible automáticamente desde context_processors.py
 
     return render(request, 'gastos/dashboard_premium.html', context)
 
@@ -197,6 +250,8 @@ def lista_aportantes(request):
 
     # Verificar si hay aportantes sin email
     hay_aportantes_sin_email = aportantes.filter(email__isnull=True).exists() or aportantes.filter(email='').exists()
+
+    # ocultar_valores está disponible automáticamente desde context_processors.py
 
     context = {
         'aportantes': aportantes,
@@ -496,30 +551,25 @@ def lista_gastos(request):
 
 @login_required
 def crear_gasto(request):
-    """Crear un nuevo gasto"""
+    """Crear un nuevo gasto (compartido o personal)"""
     # Obtener familia del usuario
     familia_id = request.session.get('familia_id')
     if not familia_id:
         messages.warning(request, 'Debes seleccionar una familia primero.')
         return redirect('seleccionar_familia')
 
-    # Determinar si es gasto personal (parámetro en la URL)
-    es_personal = request.GET.get('personal', 'false').lower() == 'true'
+    # Determinar tipo por defecto según parámetro URL
+    tipo_por_defecto = 'PERSONAL' if request.GET.get('personal', 'false').lower() == 'true' else 'COMPARTIDO'
 
     if request.method == 'POST':
-        # Usar el formulario adecuado según el tipo
-        if es_personal or request.POST.get('tipo_gasto') == 'PERSONAL':
-            from .forms import GastoPersonalForm
-            form = GastoPersonalForm(request.POST, familia_id=familia_id)
-        else:
-            form = GastoForm(request.POST, familia_id=familia_id)
+        form = GastoForm(request.POST, familia_id=familia_id)
 
         if form.is_valid():
             gasto = form.save()
-            # La familia se determina automáticamente por la subcategoría seleccionada
+            tipo_gasto = gasto.tipo_gasto
 
-            # Si NO es personal y se marcó distribuir automáticamente
-            if not es_personal and hasattr(form, 'cleaned_data') and form.cleaned_data.get('distribuir_automaticamente'):
+            # Si es compartido y se marcó distribuir automáticamente
+            if tipo_gasto == 'COMPARTIDO' and form.cleaned_data.get('distribuir_automaticamente'):
                 aportantes_activos = Aportante.objects.filter(familia_id=familia_id, activo=True)
 
                 for aportante in aportantes_activos:
@@ -532,18 +582,18 @@ def crear_gasto(request):
 
                 messages.success(request, f'Gasto "{gasto.subcategoria.nombre}" creado y distribuido automáticamente.')
             else:
-                messages.success(request, f'Gasto "{gasto.subcategoria.nombre}" creado exitosamente.')
+                tipo_texto = "personal" if tipo_gasto == 'PERSONAL' else "compartido"
+                messages.success(request, f'Gasto {tipo_texto} "{gasto.subcategoria.nombre}" creado exitosamente.')
 
             # GAMIFICACIÓN: Registrar gasto creado
             try:
                 from .gamificacion_service import GamificacionService
                 GamificacionService.registrar_gasto_creado(request.user)
             except Exception as e:
-                # No detener el flujo si falla la gamificación
                 print(f"Error en gamificación: {e}")
 
             # Redirigir según el tipo
-            if es_personal or gasto.tipo_gasto == 'PERSONAL':
+            if tipo_gasto == 'PERSONAL':
                 return redirect('lista_gastos_personales')
             else:
                 return redirect('lista_gastos')
@@ -553,17 +603,16 @@ def crear_gasto(request):
                 for error in errors:
                     messages.error(request, f'Error en {field}: {error}')
     else:
-        # Usar el formulario adecuado según el parámetro
-        if es_personal:
-            from .forms import GastoPersonalForm
-            form = GastoPersonalForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
-        else:
-            form = GastoForm(initial={'fecha': timezone.now().date()}, familia_id=familia_id)
+        # Inicializar formulario con tipo por defecto
+        initial_data = {
+            'fecha': timezone.now().date(),
+            'tipo_gasto': tipo_por_defecto
+        }
+        form = GastoForm(initial=initial_data, familia_id=familia_id)
 
     context = {
         'form': form,
-        'titulo': 'Nuevo Gasto Personal' if es_personal else 'Nuevo Gasto',
-        'es_personal': es_personal
+        'titulo': 'Nuevo Gasto',
     }
 
     return render(request, 'gastos/gasto_form.html', context)
@@ -1378,7 +1427,7 @@ def lista_ingresos(request):
         'total_ingresos_mes': total_ingresos_mes,
         'ingresos_por_tipo': ingresos_por_tipo,
         'ingresos_por_aportante': ingresos_por_aportante,
-        'mes_actual': timezone.now().strftime('%B %Y'),
+        'mes_actual': f"{MESES_ES[timezone.now().month]} {timezone.now().year}",
     }
 
     return render(request, 'gastos/ingresos/lista_ingresos.html', context)
@@ -1536,7 +1585,7 @@ def lista_gastos_personales(request):
         'total_gastos_mes': total_gastos_mes,
         'gastos_por_aportante': gastos_por_aportante,
         'gastos_por_categoria': gastos_por_categoria,
-        'mes_actual': timezone.now().strftime('%B %Y'),
+        'mes_actual': f"{MESES_ES[timezone.now().month]} {timezone.now().year}",
     }
 
     return render(request, 'gastos/gastos_personales/lista_gastos_personales.html', context)

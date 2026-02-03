@@ -2,19 +2,363 @@
 
 {% block title %}Reportes - Gastos Familiares{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ========================================
+       REPORTES - DISEÑO MEJORADO Y RESPONSIVE
+    ======================================== */
+
+    /* Stat Cards Mejoradas */
+    .stat-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 16px;
+        padding: 28px 24px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 140px;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin: 0;
+    }
+
+    /* Tema Dark - Stat Cards */
+    [data-theme="dark"] .stat-card {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-color: #475569;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .stat-card:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        border-color: #64748b;
+    }
+
+    [data-theme="dark"] .stat-label {
+        color: #cbd5e1;
+    }
+
+    /* Cards de Contenido */
+    .card {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        margin-bottom: 24px;
+    }
+
+    .card-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 20px 24px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .card-header i {
+        margin-right: 8px;
+        color: var(--secondary-color);
+    }
+
+    .card-body {
+        padding: 28px 24px;
+    }
+
+    /* Tablas en Cards */
+    .card-body .table-responsive {
+        margin: -12px -24px -12px -24px;
+    }
+
+    .card-body .table {
+        margin-bottom: 0;
+    }
+
+    .card-body .table th {
+        padding: 16px 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        background-color: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .card-body .table td {
+        padding: 16px 20px;
+        vertical-align: middle;
+    }
+
+    /* Progress Bars Mejoradas */
+    .progress {
+        height: 30px;
+        border-radius: 10px;
+        background-color: #e2e8f0;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar {
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        line-height: 30px;
+        padding: 0 12px;
+        transition: width 0.6s ease;
+    }
+
+    [data-theme="dark"] .progress {
+        background-color: #334155;
+    }
+
+    /* Badges Mejorados en Tablas */
+    .badge {
+        padding: 6px 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    .badge i {
+        margin-right: 4px;
+    }
+
+    /* Sección de Gastos por Tipo */
+    .card-body .row.text-center h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        margin-top: 8px;
+    }
+
+    .card-body .row.text-center h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 20px;
+    }
+
+    /* Alertas en Reportes */
+    .alert {
+        border-radius: 12px;
+        padding: 20px 24px;
+        border: none;
+        margin-top: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        line-height: 1.6;
+    }
+
+    .alert i {
+        font-size: 1.2em;
+        margin-right: 10px;
+    }
+
+    .alert strong {
+        font-weight: 700;
+    }
+
+    /* Selector de Período */
+    .card-body form .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #475569;
+    }
+
+    .card-body form .form-select,
+    .card-body form .form-control {
+        border-radius: 8px;
+        padding: 12px 16px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.95rem;
+    }
+
+    .card-body form .btn {
+        padding: 12px 24px;
+        font-weight: 700;
+    }
+
+    /* Responsive - Tablet */
+    @media (max-width: 1024px) {
+        .stat-card {
+            padding: 24px 20px;
+            min-height: 130px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+        }
+
+        .card-body {
+            padding: 24px 20px;
+        }
+    }
+
+    /* Responsive - Mobile */
+    @media (max-width: 768px) {
+        .stat-card {
+            padding: 20px 16px;
+            min-height: 120px;
+            margin-bottom: 16px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            font-size: 1rem;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-body .table-responsive {
+            margin: -8px -20px -8px -20px;
+        }
+
+        .card-body .table th,
+        .card-body .table td {
+            padding: 12px 16px;
+            font-size: 0.9rem;
+        }
+
+        .card-body .row.text-center h5 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .card-body .row.text-center h2 {
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+        }
+
+        .progress {
+            height: 26px;
+        }
+
+        .progress-bar {
+            font-size: 0.85rem;
+            line-height: 26px;
+            padding: 0 8px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            font-size: 0.95rem;
+        }
+
+        /* Formulario más compacto */
+        .card-body form .form-select,
+        .card-body form .form-control {
+            padding: 10px 14px;
+            font-size: 16px; /* Evita zoom en iOS */
+        }
+
+        .card-body form .btn {
+            padding: 10px 20px;
+        }
+    }
+
+    /* Mejora visual para números grandes */
+    .stat-value,
+    .card-body h2 {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Hover en filas de tabla */
+    .table-hover tbody tr {
+        transition: background-color 0.3s ease;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8fafc;
+        cursor: pointer;
+    }
+
+    [data-theme="dark"] .table-hover tbody tr:hover {
+        background-color: #334155;
+    }
+
+    /* Mejora de contraste en badges */
+    .badge.bg-success {
+        background-color: #059669 !important;
+    }
+
+    .badge.bg-danger {
+        background-color: #dc2626 !important;
+    }
+
+    .badge.bg-warning {
+        background-color: #d97706 !important;
+        color: white !important;
+    }
+
+    /* Empty states */
+    .card-body p.text-muted.text-center {
+        padding: 40px 20px;
+        font-size: 1rem;
+        color: #94a3b8;
+    }
+
+    [data-theme="dark"] .card-body p.text-muted.text-center {
+        color: #64748b;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col">
         <h1><i class="bi bi-graph-up"></i> Reportes y Estadísticas</h1>
         <p class="text-muted">Análisis detallado de ingresos y gastos</p>
     </div>
+    <div class="col-auto">
+        <button id="togglePrivacidad" class="btn btn-outline-secondary">
+            <i class="bi {% if ocultar_valores %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %}" id="iconoPrivacidad"></i>
+            <span id="textoPrivacidad">{% if ocultar_valores %}Mostrar Valores{% else %}Ocultar Valores{% endif %}</span>
+        </button>
+    </div>
 </div>
 
 <!-- Selector de Período -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm">
+    <div class="card-header">
+        <i class="bi bi-calendar-range"></i> Seleccionar Período
+    </div>
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4 col-sm-6">
                 <label class="form-label">Mes</label>
                 <select name="mes" class="form-select">
                     <option value="1" {% if mes == "1" %}selected{% endif %}>Enero</option>
@@ -31,14 +375,13 @@
                     <option value="12" {% if mes == "12" %}selected{% endif %}>Diciembre</option>
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 col-sm-6">
                 <label class="form-label">Año</label>
                 <input type="number" name="anio" class="form-control" value="{{ anio }}" min="2020" max="2030">
             </div>
-            <div class="col-md-4">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-primary d-block w-100">
-                    <i class="bi bi-search"></i> Consultar
+            <div class="col-md-4 col-12">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Consultar Reporte
                 </button>
             </div>
         </form>
@@ -46,33 +389,32 @@
 </div>
 
 <!-- Resumen General -->
-<div class="row mb-4">
-    <div class="col-md-3">
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card stat-card">
             <div class="stat-label">Ingresos Totales</div>
-            <div class="stat-value text-success">${{ total_ingresos|floatformat:0 }}</div>
+            <div class="stat-value text-success">{% if ocultar_valores %}****{% else %}${{ total_ingresos|floatformat:0 }}{% endif %}</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card stat-card">
             <div class="stat-label">Gastos Totales</div>
-            <div class="stat-value text-danger">${{ total_gastos|floatformat:0 }}</div>
+            <div class="stat-value text-danger">{% if ocultar_valores %}****{% else %}${{ total_gastos|floatformat:0 }}{% endif %}</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card stat-card">
             <div class="stat-label">Balance</div>
             <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                ${{ balance|floatformat:0 }}
+                {% if ocultar_valores %}****{% else %}${{ balance|floatformat:0 }}{% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card">
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="stat-card">
             <div class="stat-label">% Gastado</div>
             <div class="stat-value text-info">
                 {% if total_ingresos > 0 %}
-                {{ total_gastos|floatformat:0|add:"0"|floatformat:0|add:total_ingresos|floatformat:0 }}
                 {% widthratio total_gastos total_ingresos 100 %}%
                 {% else %}
                 0%
@@ -83,19 +425,19 @@
 </div>
 
 <!-- Distribución Fijos vs Variables -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
             <div class="card-header">
                 <i class="bi bi-bar-chart"></i> Gastos por Tipo
             </div>
             <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6">
-                        <h5 class="text-danger">Gastos Fijos</h5>
-                        <h2>${{ gastos_fijos|floatformat:0 }}</h2>
+                <div class="row text-center g-3">
+                    <div class="col-sm-6">
+                        <h5 class="text-danger mb-3">Gastos Fijos</h5>
+                        <h2 class="mb-3">${{ gastos_fijos|floatformat:0 }}</h2>
                         {% if total_gastos > 0 %}
-                        <div class="progress" style="height: 30px;">
+                        <div class="progress">
                             <div class="progress-bar bg-danger" role="progressbar"
                                  style="width: {% widthratio gastos_fijos total_gastos 100 %}%">
                                 {% widthratio gastos_fijos total_gastos 100 %}%
@@ -103,11 +445,11 @@
                         </div>
                         {% endif %}
                     </div>
-                    <div class="col-6">
-                        <h5 class="text-warning">Gastos Variables</h5>
-                        <h2>${{ gastos_variables|floatformat:0 }}</h2>
+                    <div class="col-sm-6">
+                        <h5 class="text-warning mb-3">Gastos Variables</h5>
+                        <h2 class="mb-3">${{ gastos_variables|floatformat:0 }}</h2>
                         {% if total_gastos > 0 %}
-                        <div class="progress" style="height: 30px;">
+                        <div class="progress">
                             <div class="progress-bar bg-warning" role="progressbar"
                                  style="width: {% widthratio gastos_variables total_gastos 100 %}%">
                                 {% widthratio gastos_variables total_gastos 100 %}%
@@ -120,21 +462,21 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
             <div class="card-header">
                 <i class="bi bi-pie-chart"></i> Gastos por Categoría
             </div>
             <div class="card-body">
                 {% if gastos_por_categoria %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
                                 <th>Categoría</th>
-                                <th>Cantidad</th>
-                                <th>Total</th>
-                                <th>%</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">%</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -146,14 +488,16 @@
                                     </span>
                                     {{ categoria.nombre }}
                                 </td>
-                                <td>{{ categoria.cantidad }}</td>
-                                <td>${{ categoria.total|floatformat:0 }}</td>
-                                <td>
-                                    {% if total_gastos > 0 %}
-                                    {% widthratio categoria.total total_gastos 100 %}%
-                                    {% else %}
-                                    0%
-                                    {% endif %}
+                                <td class="text-center fw-bold">{{ categoria.cantidad }}</td>
+                                <td class="text-end fw-bold">${{ categoria.total|floatformat:0 }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">
+                                        {% if total_gastos > 0 %}
+                                        {% widthratio categoria.total total_gastos 100 %}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </span>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -161,7 +505,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted text-center">No hay gastos en este período</p>
+                <p class="text-muted text-center mb-0">No hay gastos en este período</p>
                 {% endif %}
             </div>
         </div>
@@ -171,7 +515,7 @@
 <!-- Balance por Aportante -->
 <div class="row">
     <div class="col-12">
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-header">
                 <i class="bi bi-people"></i> Balance por Aportante
             </div>
@@ -182,24 +526,26 @@
                         <thead>
                             <tr>
                                 <th>Aportante</th>
-                                <th>Ingreso</th>
-                                <th>Gastos Asignados</th>
-                                <th>Balance</th>
-                                <th>% Gastado</th>
-                                <th>Estado</th>
+                                <th class="text-end">Ingreso</th>
+                                <th class="text-end">Gastos Asignados</th>
+                                <th class="text-end">Balance</th>
+                                <th style="min-width: 180px;">% Gastado</th>
+                                <th class="text-center">Estado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in aportantes_con_gastos %}
                             <tr>
-                                <td class="fw-bold">{{ item.aportante.nombre }}</td>
-                                <td>${{ item.ingreso|floatformat:0 }}</td>
-                                <td class="text-danger">${{ item.total_asignado|floatformat:0 }}</td>
-                                <td class="{% if item.balance >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                <td class="fw-bold">
+                                    <i class="bi bi-person-circle me-2"></i>{{ item.aportante.nombre }}
+                                </td>
+                                <td class="text-end text-success fw-bold">${{ item.ingreso|floatformat:0 }}</td>
+                                <td class="text-end text-danger fw-bold">${{ item.total_asignado|floatformat:0 }}</td>
+                                <td class="text-end {% if item.balance >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
                                     ${{ item.balance|floatformat:0 }}
                                 </td>
                                 <td>
-                                    <div class="progress" style="height: 25px;">
+                                    <div class="progress">
                                         {% if item.ingreso > 0 %}
                                         {% widthratio item.total_asignado item.ingreso 100 as porcentaje_gastado %}
                                         <div class="progress-bar {% if porcentaje_gastado > 90 %}bg-danger{% elif porcentaje_gastado > 70 %}bg-warning{% else %}bg-success{% endif %}"
@@ -210,11 +556,15 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-center">
                                     {% if item.balance >= 0 %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Positivo</span>
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Positivo
+                                    </span>
                                     {% else %}
-                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Negativo</span>
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-triangle"></i> Negativo
+                                    </span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -223,7 +573,8 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="alert alert-info">
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i>
                     No hay aportantes activos o no hay gastos registrados en este período.
                 </div>
                 {% endif %}
@@ -253,3 +604,35 @@
 {% endif %}
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    // Toggle de privacidad
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('togglePrivacidad');
+        const iconoPrivacidad = document.getElementById('iconoPrivacidad');
+        const textoPrivacidad = document.getElementById('textoPrivacidad');
+        let ocultarValores = {{ ocultar_valores|lower }};
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                fetch('{% url "toggle_privacidad_valores" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

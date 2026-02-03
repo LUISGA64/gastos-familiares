@@ -18,7 +18,7 @@
 
 <!-- Filtros -->
 <div class="card mb-4 shadow-sm">
-    <div class="card-header text-white" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border: none;">
+    <div class="card-header card-header-empresarial">
         <h5 class="mb-0">
             <i class="bi bi-funnel-fill"></i> Filtros de Búsqueda
         </h5>
@@ -114,33 +114,33 @@
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                                {{ gasto.categoria.nombre }}
+                            <span class="badge badge-categoria">
+                                {{ gasto.subcategoria.categoria.nombre }}
                             </span>
                         </td>
                         <td>
-                            {% if gasto.categoria.tipo == 'FIJO' %}
-                            <span class="badge" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 6px 12px;">
+                            {% if gasto.subcategoria.tipo == 'FIJO' %}
+                            <span class="badge badge-tipo-fijo">
                                 <i class="bi bi-arrow-down-circle"></i> Fijo
                             </span>
                             {% else %}
-                            <span class="badge" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white; padding: 6px 12px;">
+                            <span class="badge badge-tipo-variable">
                                 <i class="bi bi-activity"></i> Variable
                             </span>
                             {% endif %}
                         </td>
                         <td data-order="{{ gasto.monto }}">
-                            <strong style="color: #10b981; font-size: 1.1rem;">
+                            <strong class="text-monto" style="font-size: 1.05rem;">
                                 {{ gasto.monto|formato_moneda }}
                             </strong>
                         </td>
                         <td>
                             {% if gasto.pagado %}
-                            <span class="badge bg-success px-3 py-2">
+                            <span class="badge badge-estado-pagado px-3 py-2">
                                 <i class="bi bi-check-circle-fill"></i> Pagado
                             </span>
                             {% else %}
-                            <span class="badge px-3 py-2" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                            <span class="badge badge-estado-pendiente px-3 py-2">
                                 <i class="bi bi-clock-fill"></i> Pendiente
                             </span>
                             {% endif %}

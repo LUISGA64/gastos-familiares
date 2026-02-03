@@ -5,6 +5,31 @@
 
 {% block extra_css %}
 <style>
+    /* ========== TEMA DARK - DASHBOARD ========== */
+    /* Colores empresariales y profesionales */
+
+    /* Textos principales en tema dark */
+    [data-theme="dark"] h1,
+    [data-theme="dark"] h2,
+    [data-theme="dark"] h3,
+    [data-theme="dark"] h4,
+    [data-theme="dark"] h5,
+    [data-theme="dark"] h6 {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] p {
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] small {
+        color: #94a3b8;
+    }
+
     /* Cards del Dashboard - Mismo tamaño y alineadas */
     .stat-card {
         border: none;
@@ -25,6 +50,7 @@
     [data-theme="dark"] .stat-card {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        border: 1px solid #475569;
     }
 
     .stat-card::before {
@@ -42,6 +68,11 @@
     .stat-card:hover {
         transform: translateY(-8px);
         box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+
+    [data-theme="dark"] .stat-card:hover {
+        box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+        border-color: #64748b;
     }
 
     .stat-card:hover::before {
@@ -64,7 +95,7 @@
     }
 
     [data-theme="dark"] .stat-label {
-        color: #94a3b8;
+        color: #cbd5e1;
     }
 
     .stat-value {
@@ -72,6 +103,161 @@
         font-weight: 700;
         line-height: 1.2;
         margin-bottom: 8px;
+    }
+
+    /* Colores de estado en tema dark - más suaves y profesionales */
+    [data-theme="dark"] .text-success {
+        color: #86efac !important;
+    }
+
+    [data-theme="dark"] .text-danger {
+        color: #fca5a5 !important;
+    }
+
+    [data-theme="dark"] .text-warning {
+        color: #fcd34d !important;
+    }
+
+    [data-theme="dark"] .text-info {
+        color: #7dd3fc !important;
+    }
+
+    [data-theme="dark"] .text-primary {
+        color: #93c5fd !important;
+    }
+
+    /* Badges en tema dark */
+    [data-theme="dark"] .badge {
+        background-color: #334155;
+        color: #e2e8f0;
+        border: 1px solid #475569;
+    }
+
+    [data-theme="dark"] .badge.bg-success {
+        background-color: #166534 !important;
+        color: #bbf7d0;
+        border-color: #22c55e;
+    }
+
+    [data-theme="dark"] .badge.bg-danger {
+        background-color: #991b1b !important;
+        color: #fecaca;
+        border-color: #ef4444;
+    }
+
+    [data-theme="dark"] .badge.bg-warning {
+        background-color: #854d0e !important;
+        color: #fef08a;
+        border-color: #f59e0b;
+    }
+
+    [data-theme="dark"] .badge.bg-info {
+        background-color: #0c4a6e !important;
+        color: #bfdbfe;
+        border-color: #3b82f6;
+    }
+
+    /* Cards adicionales en tema dark */
+    [data-theme="dark"] .card {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .card-header {
+        background-color: #334155;
+        border-bottom-color: #475569;
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .card-body {
+        color: #cbd5e1;
+    }
+
+    /* Tablas en tema dark */
+    [data-theme="dark"] .table {
+        color: #e2e8f0;
+        border-color: #334155;
+    }
+
+    [data-theme="dark"] .table thead th {
+        background-color: #334155;
+        color: #e2e8f0;
+        border-color: #475569;
+    }
+
+    [data-theme="dark"] .table tbody tr {
+        border-color: #334155;
+    }
+
+    [data-theme="dark"] .table tbody tr:hover {
+        background-color: #334155;
+    }
+
+    [data-theme="dark"] .table-hover tbody tr:hover {
+        background-color: #334155;
+    }
+
+    /* Progress bars en tema dark */
+    [data-theme="dark"] .progress {
+        background-color: #334155;
+    }
+
+    [data-theme="dark"] .progress-bar {
+        background-color: #22c55e;
+    }
+
+    [data-theme="dark"] .progress-bar.bg-warning {
+        background-color: #f59e0b;
+    }
+
+    [data-theme="dark"] .progress-bar.bg-danger {
+        background-color: #ef4444;
+    }
+
+    /* Alerts en tema dark */
+    [data-theme="dark"] .alert {
+        background-color: #1e293b;
+        border-color: #475569;
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .alert-info {
+        background-color: #1e3a5f;
+        border-color: #3b82f6;
+        color: #bfdbfe;
+    }
+
+    [data-theme="dark"] .alert-success {
+        background-color: #14532d;
+        border-color: #22c55e;
+        color: #bbf7d0;
+    }
+
+    [data-theme="dark"] .alert-warning {
+        background-color: #78350f;
+        border-color: #f59e0b;
+        color: #fef08a;
+    }
+
+    [data-theme="dark"] .alert-danger {
+        background-color: #7f1d1d;
+        border-color: #ef4444;
+        color: #fecaca;
+    }
+
+    /* Links en tema dark */
+    [data-theme="dark"] a {
+        color: #93c5fd;
+    }
+
+    [data-theme="dark"] a:hover {
+        color: #bfdbfe;
+    }
+
+    [data-theme="dark"] .alert-link {
+        color: #bfdbfe;
+        font-weight: 600;
     }
 
     /* Asegurar que todas las cards de una fila tengan la misma altura */
@@ -109,9 +295,54 @@
         height: 100%;
     }
 
+    [data-theme="dark"] .dashboard-card {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
     .dashboard-card:hover {
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         transform: translateY(-4px);
+    }
+
+    [data-theme="dark"] .dashboard-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        border-color: #64748b;
+    }
+
+    /* Botones en tema dark */
+    [data-theme="dark"] .btn-outline-secondary {
+        color: #cbd5e1;
+        border-color: #475569;
+    }
+
+    [data-theme="dark"] .btn-outline-secondary:hover {
+        background-color: #334155;
+        border-color: #64748b;
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .btn-outline-primary {
+        color: #93c5fd;
+        border-color: #3b82f6;
+    }
+
+    [data-theme="dark"] .btn-outline-primary:hover {
+        background-color: #1e40af;
+        border-color: #3b82f6;
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .btn-outline-success {
+        color: #86efac;
+        border-color: #22c55e;
+    }
+
+    [data-theme="dark"] .btn-outline-success:hover {
+        background-color: #166534;
+        border-color: #22c55e;
+        color: #e2e8f0;
     }
 
     /* Responsividad mejorada */
@@ -133,11 +364,21 @@
 
 {% block content %}
 <div class="row mb-4 fade-in align-items-center">
-    <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
+    <div class="col-lg-4 col-md-12 mb-3 mb-lg-0">
         <h1 class="display-5 fw-bold mb-2">
             <i class="bi bi-speedometer2"></i> Dashboard
         </h1>
         <p class="text-muted fs-5 mb-0">Resumen financiero de {{ mes_actual }}</p>
+    </div>
+    <div class="col-lg-2 col-md-12 mb-3 mb-lg-0">
+        <label class="form-label mb-1"><small>Seleccionar período</small></label>
+        <select id="selectorMes" class="form-select" onchange="cambiarMes()">
+            {% for mes in meses_disponibles %}
+            <option value="{{ mes.mes }}" data-anio="{{ mes.anio }}" {% if mes.seleccionado %}selected{% endif %}>
+                {{ mes.nombre }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
     <div class="col-lg-6 col-md-12">
         <div class="d-flex justify-content-lg-end justify-content-start gap-2 flex-wrap">
@@ -165,7 +406,7 @@
         <div class="card stat-card">
             <i class="bi bi-wallet2 stat-icon text-success"></i>
             <div class="stat-label">Ingresos Totales</div>
-            <div class="stat-value text-success">
+            <div class="stat-value text-success valor-monetario">
                 {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">
@@ -185,7 +426,7 @@
         <div class="card stat-card">
             <i class="bi bi-credit-card stat-icon text-danger"></i>
             <div class="stat-label">Gastos del Mes</div>
-            <div class="stat-value text-danger">
+            <div class="stat-value text-danger valor-monetario">
                 {% if ocultar_valores %}****{% else %}{{ total_gastos_mes|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Total gastado</small>
@@ -204,7 +445,7 @@
         <div class="card stat-card">
             <i class="bi bi-pin-angle stat-icon text-warning"></i>
             <div class="stat-label">Gastos Fijos</div>
-            <div class="stat-value text-warning">
+            <div class="stat-value text-warning valor-monetario">
                 {% if ocultar_valores %}****{% else %}{{ gastos_fijos_mes|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">Obligatorios</small>
@@ -222,7 +463,7 @@
         <div class="card stat-card">
             <i class="bi bi-piggy-bank stat-icon {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
             <div class="stat-label">Balance</div>
-            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+            <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %} valor-monetario">
                 {% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}
             </div>
             <small class="text-muted">
@@ -306,7 +547,7 @@
                                 <td>
                                     <strong>{{ aportante.nombre }}</strong>
                                 </td>
-                                <td>
+                                <td class="valor-monetario">
                                     {% if ocultar_valores %}****{% else %}{{ aportante.ingreso_mensual|formato_moneda }}{% endif %}
                                 </td>
                                 <td>
@@ -363,7 +604,7 @@
                             </small>
                         </div>
                         <div class="text-end">
-                            <strong class="text-danger">
+                            <strong class="text-danger valor-monetario">
                                 {% if ocultar_valores %}****{% else %}{{ gasto.monto|formato_moneda }}{% endif %}
                             </strong>
                             <br>
@@ -413,9 +654,9 @@
                             <h6><i class="bi bi-piggy-bank"></i> Estado Financiero</h6>
                             <p class="mb-0">
                                 {% if balance >= 0 %}
-                                    ¡Excelente! Estás ahorrando <strong>{% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}</strong> este mes
+                                    ¡Excelente! Estás ahorrando <strong class="valor-monetario">{% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}</strong> este mes
                                 {% else %}
-                                    Atención: Tienes un déficit de <strong>{% if ocultar_valores %}****{% else %}{{ balance|abs_value|formato_moneda }}{% endif %}</strong>
+                                    Atención: Tienes un déficit de <strong class="valor-monetario">{% if ocultar_valores %}****{% else %}{{ balance|abs_value|formato_moneda }}{% endif %}</strong>
                                 {% endif %}
                             </p>
                         </div>
@@ -436,6 +677,16 @@
 
 {% block extra_js %}
 <script>
+    // Función para cambiar de mes
+    function cambiarMes() {
+        const selector = document.getElementById('selectorMes');
+        const mesSeleccionado = selector.value;
+        const anioSeleccionado = selector.options[selector.selectedIndex].getAttribute('data-anio');
+
+        // Redirigir con parámetros
+        window.location.href = `?mes=${mesSeleccionado}&anio=${anioSeleccionado}`;
+    }
+
     // Datos para los gráficos
     const trendData = {
         labels: {{ meses_labels|safe }},
@@ -665,12 +916,34 @@
         // Aquí se implementaría la actualización real del gráfico
     }
 
-    // Toggle de privacidad
+    // Toggle de privacidad con actualización dinámica (SIN RECARGA)
     document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('togglePrivacidad');
         const iconoPrivacidad = document.getElementById('iconoPrivacidad');
         const textoPrivacidad = document.getElementById('textoPrivacidad');
         let ocultarValores = {{ ocultar_valores|lower }};
+
+        // Función para ocultar/mostrar valores en el DOM
+        function toggleValoresEnPagina(ocultar) {
+            // Seleccionar todos los elementos con clase 'valor-monetario'
+            const valores = document.querySelectorAll('.valor-monetario');
+
+            valores.forEach(valor => {
+                if (ocultar) {
+                    // Guardar el valor real en data attribute si no existe
+                    if (!valor.dataset.valorReal) {
+                        valor.dataset.valorReal = valor.textContent;
+                    }
+                    // Mostrar ****
+                    valor.textContent = '****';
+                } else {
+                    // Restaurar el valor real
+                    if (valor.dataset.valorReal) {
+                        valor.textContent = valor.dataset.valorReal;
+                    }
+                }
+            });
+        }
 
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function() {
@@ -696,12 +969,10 @@
                             textoPrivacidad.textContent = 'Ocultar Valores';
                         }
 
-                        showToast(data.mensaje, 'success');
+                        // Actualizar valores en la página inmediatamente
+                        toggleValoresEnPagina(ocultarValores);
 
-                        // Recargar la página para actualizar todos los valores
-                        setTimeout(() => {
-                            location.reload();
-                        }, 500);
+                        showToast(data.mensaje, 'success');
                     }
                 })
                 .catch(error => {
