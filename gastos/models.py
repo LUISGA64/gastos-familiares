@@ -661,20 +661,22 @@ class Aportante(models.Model):
         return self.ingreso_mensual
 
     def calcular_pagos_realizados(self, mes, anio):
-        """Calcula el total de pagos que realizó este aportante en un mes"""
+        """Calcula el total de pagos que realizó este aportante en un mes (solo gastos compartidos)"""
         from django.db.models import Sum
         total_pagado = self.gastos_pagados.filter(
             fecha__month=mes,
-            fecha__year=anio
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).aggregate(total=Sum('monto'))['total'] or 0
         return total_pagado
 
     def calcular_gastos_asignados(self, mes, anio):
-        """Calcula el total de gastos que le corresponden según su porcentaje en un mes"""
+        """Calcula el total de gastos que le corresponden según su porcentaje en un mes (solo gastos compartidos)"""
         from django.db.models import Sum
         total_asignado = self.distribuciones.filter(
             gasto__fecha__month=mes,
-            gasto__fecha__year=anio
+            gasto__fecha__year=anio,
+            gasto__tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).aggregate(total=Sum('monto_asignado'))['total'] or 0
         return total_asignado
 

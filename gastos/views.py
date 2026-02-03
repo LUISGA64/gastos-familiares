@@ -749,11 +749,12 @@ def conciliacion(request):
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
     total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
-    # Calcular total de gastos del mes de la familia
+    # Calcular total de gastos del mes de la familia (solo gastos compartidos)
     total_gastos_mes = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes,
-        fecha__year=anio
+        fecha__year=anio,
+        tipo_gasto='COMPARTIDO'  # Solo gastos compartidos en conciliación
     ).aggregate(total=Sum('monto'))['total'] or 0
 
     # Calcular conciliación por aportante
@@ -805,14 +806,15 @@ def conciliacion(request):
                     paga['balance'] += monto_transferencia
                     recibe['balance'] -= monto_transferencia
 
-    # Detalles de pagos por aportante
+    # Detalles de pagos por aportante (solo gastos compartidos)
     detalles_pagos = {}
     for aportante in aportantes:
         gastos_pagados = Gasto.objects.filter(
             subcategoria__categoria__familia_id=familia_id,
             pagado_por=aportante,
             fecha__month=mes,
-            fecha__year=anio
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).select_related('subcategoria__categoria')
 
         detalles_pagos[aportante.id] = gastos_pagados
@@ -915,7 +917,8 @@ def cerrar_conciliacion(request):
         total_gastos_mes = Gasto.objects.filter(
             subcategoria__categoria__familia=familia,
             fecha__month=mes,
-            fecha__year=anio
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos en conciliación
         ).aggregate(total=Sum('monto'))['total'] or 0
 
         conciliacion.total_gastos = total_gastos_mes
