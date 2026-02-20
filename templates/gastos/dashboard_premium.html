@@ -402,10 +402,25 @@
 
 <!-- KPIs Principales con Animación -->
 <div class="row mb-4">
-    <div class="col-md-3 mb-3">
+    {% if saldo_anterior > 0 or saldo_anterior < 0 %}
+    <div class="col-md-2 mb-3">
+        <div class="card stat-card">
+            <i class="bi bi-arrow-down-circle stat-icon text-info"></i>
+            <div class="stat-label">Saldo Anterior</div>
+            <div class="stat-value text-info valor-monetario">
+                {% if ocultar_valores %}****{% else %}{{ saldo_anterior|formato_moneda }}{% endif %}
+            </div>
+            <small class="text-muted">
+                <i class="bi bi-calendar-check"></i> Mes pasado
+            </small>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-2{% else %}col-md-3{% endif %} mb-3">
         <div class="card stat-card">
             <i class="bi bi-wallet2 stat-icon text-success"></i>
-            <div class="stat-label">Ingresos Totales</div>
+            <div class="stat-label">Ingresos del Mes</div>
             <div class="stat-value text-success valor-monetario">
                 {% if ocultar_valores %}****{% else %}{{ total_ingresos|formato_moneda }}{% endif %}
             </div>
@@ -422,7 +437,7 @@
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-3{% else %}col-md-3{% endif %} mb-3">
         <div class="card stat-card">
             <i class="bi bi-credit-card stat-icon text-danger"></i>
             <div class="stat-label">Gastos del Mes</div>
@@ -441,7 +456,7 @@
         </div>
     </div>
 
-    <div class="col-md-3 mb-3">
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-2{% else %}col-md-3{% endif %} mb-3">
         <div class="card stat-card">
             <i class="bi bi-pin-angle stat-icon text-warning"></i>
             <div class="stat-label">Gastos Fijos</div>

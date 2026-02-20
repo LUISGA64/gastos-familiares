@@ -108,6 +108,7 @@ urlpatterns = [
     path('conciliacion/', views.conciliacion, name='conciliacion'),
     path('conciliacion/cerrar/', views.cerrar_conciliacion, name='cerrar_conciliacion'),
     path('conciliacion/confirmar/', views.confirmar_conciliacion, name='confirmar_conciliacion'),
+    path('conciliacion/asignar-destino-saldo/', views.asignar_destino_saldo, name='asignar_destino_saldo'),
     path('conciliacion/historial/', views.historial_conciliaciones, name='historial_conciliaciones'),
 
     # Metas de Ahorro
