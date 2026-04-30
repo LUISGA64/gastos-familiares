@@ -618,7 +618,20 @@
 
 <!-- Resumen General -->
 <div class="row mb-4">
-    <div class="col-md-4 mb-3">
+    {% if saldo_anterior > 0 or saldo_anterior < 0 %}
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="stat-card-label">Saldo Mes Anterior</div>
+            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ saldo_anterior|formato_moneda }}{% endif %}</div>
+            <div class="stat-card-subtitle">Transferido del mes anterior</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-3{% else %}col-md-4{% endif %} mb-3">
         <div class="stat-card stat-success">
             <div class="stat-icon">
                 <i class="bi bi-cash-stack"></i>
@@ -628,7 +641,7 @@
             <div class="stat-card-subtitle">{{ conciliacion_aportantes|length }} aportante{{ conciliacion_aportantes|length|pluralize }}</div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-3{% else %}col-md-4{% endif %} mb-3">
         <div class="stat-card stat-pay">
             <div class="stat-icon">
                 <i class="bi bi-receipt"></i>
@@ -638,14 +651,14 @@
             <div class="stat-card-subtitle">Del mes seleccionado</div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="stat-card {% if total_ingresos >= total_gastos_mes %}stat-success{% else %}stat-warning{% endif %}">
+    <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-3{% else %}col-md-4{% endif %} mb-3">
+        <div class="stat-card {% if saldo_disponible >= 0 %}stat-success{% else %}stat-warning{% endif %}">
             <div class="stat-icon">
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
-            <div class="stat-card-label">Balance</div>
-            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ balance|formato_moneda }}{% endif %}</div>
-            <div class="stat-card-subtitle">{% if balance >= 0 %}Superávit{% else %}Déficit{% endif %}</div>
+            <div class="stat-card-label">Saldo Disponible</div>
+            <div class="stat-card-value">{% if ocultar_valores %}****{% else %}{{ saldo_disponible|formato_moneda }}{% endif %}</div>
+            <div class="stat-card-subtitle">{% if saldo_disponible >= 0 %}Superávit{% else %}Déficit{% endif %}</div>
         </div>
     </div>
 </div>
@@ -1074,5 +1087,104 @@
         }
     });
 </script>
+
+<!-- Modal para Asignar Destino del Saldo -->
+<div class="modal fade" id="modalDestinoSaldo" tabindex="-1" aria-labelledby="modalDestinoSaldoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--border-radius); border: none; box-shadow: var(--shadow-hover);">
+            <div class="modal-header" style="background: var(--gradient-success); color: white; border-radius: var(--border-radius) var(--border-radius) 0 0;">
+                <h5 class="modal-title" id="modalDestinoSaldoLabel">
+                    <i class="bi bi-cash-coin me-2"></i>¿Qué hacer con el saldo sobrante?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'asignar_destino_saldo' %}">
+                {% csrf_token %}
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <input type="hidden" name="anio" value="{{ anio }}">
+
+                <div class="modal-body" style="padding: 2rem;">
+                    <div class="alert alert-success" role="alert" style="border-radius: var(--border-radius-sm);">
+                        <h6 class="alert-heading mb-2"><i class="bi bi-check-circle-fill me-2"></i>¡Excelente gestión!</h6>
+                        <p class="mb-0">Hay un saldo positivo de <strong>{% if ocultar_valores %}****{% else %}{{ saldo_disponible|formato_moneda }}{% endif %}</strong>. Selecciona qué hacer con este dinero:</p>
+                    </div>
+
+                    <div class="list-group" style="gap: 0.75rem;">
+                        <label class="list-group-item list-group-item-action" style="cursor: pointer; border-radius: var(--border-radius-sm); border: 2px solid #dee2e6; transition: all 0.3s;">
+                            <input class="form-check-input me-3" type="radio" name="destino_saldo" value="SIGUIENTE_MES" id="destino1" checked>
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-calendar-plus text-primary me-2"></i>Reserva para Próximo Mes</h6>
+                                    <small class="text-muted">El saldo se suma a los ingresos del próximo mes</small>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="list-group-item list-group-item-action" style="cursor: pointer; border-radius: var(--border-radius-sm); border: 2px solid #dee2e6; transition: all 0.3s;">
+                            <input class="form-check-input me-3" type="radio" name="destino_saldo" value="AHORRO" id="destino2">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-piggy-bank text-success me-2"></i>Ahorro Familiar</h6>
+                                    <small class="text-muted">Se agrega a la meta de ahorro general</small>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="list-group-item list-group-item-action" style="cursor: pointer; border-radius: var(--border-radius-sm); border: 2px solid #dee2e6; transition: all 0.3s;">
+                            <input class="form-check-input me-3" type="radio" name="destino_saldo" value="EMERGENCIA" id="destino3">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-shield-check text-warning me-2"></i>Fondo de Emergencia</h6>
+                                    <small class="text-muted">Se guarda para imprevistos</small>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="list-group-item list-group-item-action" style="cursor: pointer; border-radius: var(--border-radius-sm); border: 2px solid #dee2e6; transition: all 0.3s;">
+                            <input class="form-check-input me-3" type="radio" name="destino_saldo" value="DISTRIBUIR_PROPORCION" id="destino4">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-diagram-3 text-info me-2"></i>Distribuir Proporcionalmente</h6>
+                                    <small class="text-muted">Cada aportante recibe según su % de aporte</small>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="list-group-item list-group-item-action" style="cursor: pointer; border-radius: var(--border-radius-sm); border: 2px solid #dee2e6; transition: all 0.3s;">
+                            <input class="form-check-input me-3" type="radio" name="destino_saldo" value="DISTRIBUIR_IGUAL" id="destino5">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-people text-secondary me-2"></i>Distribuir en Partes Iguales</h6>
+                                    <small class="text-muted">Todos reciben la misma cantidad</small>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="border-top: none; padding: 1.5rem 2rem;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: var(--border-radius-sm);">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-modern-success" style="border-radius: var(--border-radius-sm);">
+                        <i class="bi bi-check-circle-fill me-2"></i>Confirmar y Cerrar Conciliación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item:has(input:checked) {
+        border-color: var(--color-success) !important;
+        background-color: rgba(17, 153, 142, 0.05) !important;
+    }
+
+    .list-group-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
 {% endblock %}
 

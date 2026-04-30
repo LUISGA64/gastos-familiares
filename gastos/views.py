@@ -46,6 +46,9 @@ def obtener_nombre_mes(fecha, corto=False):
 @login_required
 def dashboard(request):
     """Vista principal con resumen de gastos e ingresos - Versión Premium"""
+    from .models import IngresoAportante, ConciliacionMensual
+    from decimal import Decimal
+
     # Obtener familia del usuario
     familia_id = request.session.get('familia_id')
     if not familia_id:
@@ -57,7 +60,6 @@ def dashboard(request):
 
     # Obtener aportantes activos de la familia
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
-    total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
     # Obtener mes y año seleccionado por el usuario (o usar actual)
     mes_seleccionado = request.GET.get('mes', None)
@@ -77,6 +79,38 @@ def dashboard(request):
         mes_actual = fecha_actual.month
         anio_actual = fecha_actual.year
 
+    # ========== CÁLCULO HÍBRIDO DE INGRESOS ==========
+    # 1. Intentar obtener ingresos reales registrados en IngresoAportante
+    ingresos_reales = IngresoAportante.objects.filter(
+        aportante__familia_id=familia_id,
+        fecha__month=mes_actual,
+        fecha__year=anio_actual
+    ).aggregate(total=Sum('monto'))['total']
+
+    # 2. Si hay ingresos reales, usarlos; si no, usar ingreso_mensual de aportantes
+    if ingresos_reales:
+        total_ingresos = Decimal(str(ingresos_reales))
+    else:
+        # Fallback: usar ingreso_mensual fijo de los aportantes
+        total_ingresos_fijo = aportantes.aggregate(total=Sum('ingreso_mensual'))['total']
+        total_ingresos = Decimal(str(total_ingresos_fijo)) if total_ingresos_fijo else Decimal('0')
+
+    # 3. Obtener saldo del mes anterior (de conciliación cerrada)
+    mes_anterior = mes_actual - 1 if mes_actual > 1 else 12
+    anio_anterior = anio_actual if mes_actual > 1 else anio_actual - 1
+
+    try:
+        conciliacion_anterior = ConciliacionMensual.objects.get(
+            familia_id=familia_id,
+            mes=mes_anterior,
+            anio=anio_anterior,
+            estado='CERRADA'
+        )
+        saldo_anterior = conciliacion_anterior.saldo_transferido_siguiente
+    except ConciliacionMensual.DoesNotExist:
+        saldo_anterior = Decimal('0')
+
+    # ========== CÁLCULO DE GASTOS ==========
     gastos_mes = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes_actual,
@@ -87,8 +121,8 @@ def dashboard(request):
     gastos_fijos_mes = gastos_mes.filter(subcategoria__tipo='FIJO').aggregate(total=Sum('monto'))['total'] or 0
     gastos_variables_mes = gastos_mes.filter(subcategoria__tipo='VARIABLE').aggregate(total=Sum('monto'))['total'] or 0
 
-    # Calcular balance
-    balance = total_ingresos - total_gastos_mes
+    # ========== CÁLCULO DE BALANCE CON SALDO ANTERIOR ==========
+    balance = total_ingresos + saldo_anterior - total_gastos_mes
 
     # Gastos por categoría principal (solo de la familia actual)
     gastos_por_categoria = CategoriaGasto.objects.filter(
@@ -191,6 +225,7 @@ def dashboard(request):
         'familia': familia,
         'aportantes': aportantes,
         'total_ingresos': total_ingresos,
+        'saldo_anterior': saldo_anterior,
         'total_gastos_mes': total_gastos_mes,
         'gastos_fijos_mes': gastos_fijos_mes,
         'gastos_variables_mes': gastos_variables_mes,
@@ -513,25 +548,40 @@ def lista_gastos(request):
         messages.warning(request, 'Debes seleccionar una familia primero.')
         return redirect('seleccionar_familia')
 
-    gastos = Gasto.objects.filter(subcategoria__categoria__familia_id=familia_id).select_related('subcategoria__categoria')
+    # Obtener mes y año actual
+    fecha_actual = timezone.now()
+    mes_actual = fecha_actual.month
+    anio_actual = fecha_actual.year
 
     # Filtros
     tipo = request.GET.get('tipo')
     categoria_id = request.GET.get('categoria')
     subcategoria_id = request.GET.get('subcategoria')
-    mes = request.GET.get('mes')
-    anio = request.GET.get('anio')
+    mes = request.GET.get('mes', str(mes_actual))  # Por defecto: mes actual
+    anio = request.GET.get('anio', str(anio_actual))  # Por defecto: año actual
 
+    # Query base - solo gastos compartidos (no personales)
+    gastos = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
+        tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
+    ).select_related('subcategoria__categoria', 'pagado_por')
+
+    # Aplicar filtros
     if tipo:
         gastos = gastos.filter(subcategoria__tipo=tipo)
     if categoria_id:
         gastos = gastos.filter(subcategoria__categoria_id=categoria_id)
     if subcategoria_id:
         gastos = gastos.filter(subcategoria_id=subcategoria_id)
+
+    # Filtrar por mes y año (siempre aplicar)
     if mes and anio:
-        gastos = gastos.filter(fecha__month=mes, fecha__year=anio)
+        gastos = gastos.filter(fecha__month=int(mes), fecha__year=int(anio))
     elif anio:
-        gastos = gastos.filter(fecha__year=anio)
+        gastos = gastos.filter(fecha__year=int(anio))
+
+    # Ordenar por fecha descendente
+    gastos = gastos.order_by('-fecha', '-fecha_registro')
 
     # Totales
     total = gastos.aggregate(total=Sum('monto'))['total'] or 0
@@ -539,11 +589,18 @@ def lista_gastos(request):
     categorias = CategoriaGasto.objects.filter(familia_id=familia_id, activo=True)
     subcategorias = SubcategoriaGasto.objects.filter(categoria__familia_id=familia_id, activo=True).select_related('categoria')
 
+    # Nombre del mes seleccionado
+    mes_nombre = MESES_ES.get(int(mes), '') if mes else ''
+
     context = {
         'gastos': gastos,
         'total': total,
         'categorias': categorias,
         'subcategorias': subcategorias,
+        'mes_seleccionado': int(mes) if mes else None,
+        'anio_seleccionado': int(anio) if anio else None,
+        'mes_nombre': mes_nombre,
+        'anio': anio,
     }
 
     return render(request, 'gastos/gastos_lista.html', context)
@@ -795,6 +852,9 @@ def reportes(request):
 @login_required
 def conciliacion(request):
     """Vista de conciliación de gastos mensuales"""
+    from .models import IngresoAportante, ConciliacionMensual
+    from decimal import Decimal
+
     # Obtener familia del usuario
     familia_id = request.session.get('familia_id')
     if not familia_id:
@@ -807,14 +867,48 @@ def conciliacion(request):
 
     # Obtener aportantes activos de la familia
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
-    total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
 
-    # Calcular total de gastos del mes de la familia
+    # ========== CÁLCULO HÍBRIDO DE INGRESOS ==========
+    # 1. Intentar obtener ingresos reales registrados en IngresoAportante
+    ingresos_reales = IngresoAportante.objects.filter(
+        aportante__familia_id=familia_id,
+        fecha__month=mes,
+        fecha__year=anio
+    ).aggregate(total=Sum('monto'))['total']
+
+    # 2. Si hay ingresos reales, usarlos; si no, usar ingreso_mensual de aportantes
+    if ingresos_reales:
+        total_ingresos = Decimal(str(ingresos_reales))
+    else:
+        # Fallback: usar ingreso_mensual fijo de los aportantes
+        total_ingresos_fijo = aportantes.aggregate(total=Sum('ingreso_mensual'))['total']
+        total_ingresos = Decimal(str(total_ingresos_fijo)) if total_ingresos_fijo else Decimal('0')
+
+    # 3. Obtener saldo del mes anterior (de conciliación cerrada)
+    mes_anterior = mes - 1 if mes > 1 else 12
+    anio_anterior = anio if mes > 1 else anio - 1
+
+    try:
+        conciliacion_anterior = ConciliacionMensual.objects.get(
+            familia_id=familia_id,
+            mes=mes_anterior,
+            anio=anio_anterior,
+            estado='CERRADA'
+        )
+        saldo_anterior = conciliacion_anterior.saldo_transferido_siguiente
+    except ConciliacionMensual.DoesNotExist:
+        saldo_anterior = Decimal('0')
+
+    # Calcular total de gastos del mes de la familia (solo gastos compartidos)
     total_gastos_mes = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes,
-        fecha__year=anio
-    ).aggregate(total=Sum('monto'))['total'] or 0
+        fecha__year=anio,
+        tipo_gasto='COMPARTIDO'  # Solo gastos compartidos en conciliación
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+    # ========== CÁLCULO DE SALDO DISPONIBLE ==========
+    saldo_disponible = total_ingresos + saldo_anterior - total_gastos_mes
 
     # Calcular conciliación por aportante
     conciliacion_aportantes = []
@@ -865,14 +959,15 @@ def conciliacion(request):
                     paga['balance'] += monto_transferencia
                     recibe['balance'] -= monto_transferencia
 
-    # Detalles de pagos por aportante
+    # Detalles de pagos por aportante (solo gastos compartidos)
     detalles_pagos = {}
     for aportante in aportantes:
         gastos_pagados = Gasto.objects.filter(
             subcategoria__categoria__familia_id=familia_id,
             pagado_por=aportante,
             fecha__month=mes,
-            fecha__year=anio
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).select_related('subcategoria__categoria')
 
         detalles_pagos[aportante.id] = gastos_pagados
@@ -895,13 +990,15 @@ def conciliacion(request):
     # Verificar si hay aportantes sin email
     hay_aportantes_sin_email = any(not a.email for a in aportantes)
 
-    # Calcular balance
-    balance = total_ingresos - total_gastos_mes
+    # Calcular balance (ahora incluye saldo anterior)
+    balance = total_ingresos + saldo_anterior - total_gastos_mes
 
     context = {
         'mes': mes,
         'anio': anio,
         'total_ingresos': total_ingresos,
+        'saldo_anterior': saldo_anterior,
+        'saldo_disponible': saldo_disponible,
         'total_gastos_mes': total_gastos_mes,
         'balance': balance,
         'conciliacion_aportantes': conciliacion_aportantes,
@@ -973,14 +1070,51 @@ def cerrar_conciliacion(request):
             url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
             return redirect(url)
 
-        total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
+        # ========== CÁLCULO HÍBRIDO DE INGRESOS ==========
+        from .models import IngresoAportante
+        from decimal import Decimal
+
+        # 1. Intentar obtener ingresos reales registrados
+        ingresos_reales = IngresoAportante.objects.filter(
+            aportante__familia=familia,
+            fecha__month=mes,
+            fecha__year=anio
+        ).aggregate(total=Sum('monto'))['total']
+
+        # 2. Si hay ingresos reales, usarlos; si no, usar ingreso_mensual
+        if ingresos_reales:
+            total_ingresos = Decimal(str(ingresos_reales))
+        else:
+            total_ingresos_fijo = aportantes.aggregate(total=Sum('ingreso_mensual'))['total']
+            total_ingresos = Decimal(str(total_ingresos_fijo)) if total_ingresos_fijo else Decimal('0')
+
+        # 3. Obtener saldo del mes anterior
+        mes_anterior = mes - 1 if mes > 1 else 12
+        anio_anterior = anio if mes > 1 else anio - 1
+
+        try:
+            conciliacion_anterior = ConciliacionMensual.objects.get(
+                familia=familia,
+                mes=mes_anterior,
+                anio=anio_anterior,
+                estado='CERRADA'
+            )
+            saldo_anterior = conciliacion_anterior.saldo_transferido_siguiente
+        except ConciliacionMensual.DoesNotExist:
+            saldo_anterior = Decimal('0')
+
         total_gastos_mes = Gasto.objects.filter(
             subcategoria__categoria__familia=familia,
             fecha__month=mes,
-            fecha__year=anio
-        ).aggregate(total=Sum('monto'))['total'] or 0
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos en conciliación
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
 
+        # Actualizar conciliación con los valores calculados
+        conciliacion.total_ingresos = total_ingresos
         conciliacion.total_gastos = total_gastos_mes
+        conciliacion.saldo_anterior = saldo_anterior
+        conciliacion.saldo_disponible = total_ingresos + saldo_anterior - total_gastos_mes
         conciliacion.observaciones = observaciones
         conciliacion.save()
 
@@ -1124,20 +1258,31 @@ def confirmar_conciliacion(request):
         confirmados = conciliacion.detalles.filter(confirmado=True).count()
 
         if confirmados == total_detalles and total_detalles > 0:
-            # Todos confirmaron, cerrar automáticamente
-            conciliacion.cerrar_conciliacion(request.user if request.user.is_authenticated else None)
+            # Todos confirmaron, pero si hay saldo positivo, pedir destino antes de cerrar
+            if conciliacion.saldo_disponible > 0 and not conciliacion.destino_saldo:
+                messages.warning(
+                    request,
+                    f'✅ Todos han confirmado, pero hay un saldo positivo de ${conciliacion.saldo_disponible:,.0f}.<br>'
+                    f'Por favor, selecciona el destino del saldo sobrante para completar el cierre.',
+                    extra_tags='safe'
+                )
+            else:
+                # Cerrar la conciliación con el destino seleccionado (o con déficit)
+                destino = conciliacion.destino_saldo if conciliacion.destino_saldo else 'SIGUIENTE_MES'
+                conciliacion.cerrar_conciliacion(request.user if request.user.is_authenticated else None, destino)
 
-            # Enviar notificación de cierre
-            enviar_notificacion_conciliacion_cerrada(conciliacion)
+                # Enviar notificación de cierre
+                enviar_notificacion_conciliacion_cerrada(conciliacion)
 
-            messages.success(
-                request,
-                f'🎉 <strong>¡Conciliación Cerrada!</strong><br>'
-                f'Todos los aportantes ({confirmados}/{total_detalles}) han confirmado.<br>'
-                f'La conciliación de {conciliacion} ha sido cerrada exitosamente.<br>'
-                f'Se han enviado notificaciones a todos los aportantes.',
-                extra_tags='safe'
-            )
+                messages.success(
+                    request,
+                    f'🎉 <strong>¡Conciliación Cerrada!</strong><br>'
+                    f'Todos los aportantes ({confirmados}/{total_detalles}) han confirmado.<br>'
+                    f'La conciliación de {conciliacion} ha sido cerrada exitosamente.<br>'
+                    f'Saldo transferido al siguiente mes: ${conciliacion.saldo_transferido_siguiente:,.0f}<br>'
+                    f'Se han enviado notificaciones a todos los aportantes.',
+                    extra_tags='safe'
+                )
         else:
             messages.info(
                 request,
@@ -1157,6 +1302,115 @@ def confirmar_conciliacion(request):
     from django.urls import reverse
     url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
     return redirect(url)
+
+
+@login_required
+def asignar_destino_saldo(request):
+    """Asignar destino del saldo sobrante de una conciliación"""
+    if request.method != 'POST':
+        return redirect('conciliacion')
+
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        messages.error(request, 'Debes seleccionar una familia primero.')
+        return redirect('seleccionar_familia')
+
+    mes = int(request.POST.get('mes'))
+    anio = int(request.POST.get('anio'))
+    destino_saldo = request.POST.get('destino_saldo')
+
+    from .models import ConciliacionMensual, MetaAhorro
+    from .email_utils import enviar_notificacion_conciliacion_cerrada
+    from decimal import Decimal
+
+    try:
+        # Buscar la conciliación
+        conciliacion = ConciliacionMensual.objects.get(
+            familia_id=familia_id,
+            mes=mes,
+            anio=anio
+        )
+
+        # Verificar que todos hayan confirmado
+        total_detalles = conciliacion.detalles.count()
+        confirmados = conciliacion.detalles.filter(confirmado=True).count()
+
+        if confirmados != total_detalles:
+            messages.error(request, 'No se puede asignar destino. Aún faltan confirmaciones de aportantes.')
+            return redirect('conciliacion')
+
+        # Verificar que haya saldo positivo
+        if conciliacion.saldo_disponible <= 0:
+            messages.warning(request, 'No hay saldo positivo para asignar.')
+            return redirect('conciliacion')
+
+        # Asignar el destino y cerrar la conciliación
+        saldo_transferido = conciliacion.cerrar_conciliacion(request.user, destino_saldo)
+
+        # Procesar según el destino seleccionado
+        mensaje_destino = ""
+
+        if destino_saldo == 'AHORRO':
+            # Crear o actualizar meta de ahorro familiar
+            meta_ahorro_familiar, created = MetaAhorro.objects.get_or_create(
+                familia_id=familia_id,
+                nombre='Ahorro Familiar General',
+                defaults={
+                    'monto_objetivo': Decimal('0'),
+                    'monto_actual': Decimal('0'),
+                    'estado': 'ACTIVA',
+                    'prioridad': 'MEDIA'
+                }
+            )
+            meta_ahorro_familiar.monto_actual += conciliacion.saldo_disponible
+            meta_ahorro_familiar.save()
+            mensaje_destino = f'💰 ${conciliacion.saldo_disponible:,.0f} agregados a Ahorro Familiar'
+
+        elif destino_saldo == 'EMERGENCIA':
+            # Crear o actualizar fondo de emergencia
+            fondo_emergencia, created = MetaAhorro.objects.get_or_create(
+                familia_id=familia_id,
+                nombre='Fondo de Emergencia',
+                defaults={
+                    'monto_objetivo': Decimal('0'),
+                    'monto_actual': Decimal('0'),
+                    'estado': 'ACTIVA',
+                    'prioridad': 'ALTA'
+                }
+            )
+            fondo_emergencia.monto_actual += conciliacion.saldo_disponible
+            fondo_emergencia.save()
+            mensaje_destino = f'🚨 ${conciliacion.saldo_disponible:,.0f} agregados a Fondo de Emergencia'
+
+        elif destino_saldo == 'SIGUIENTE_MES':
+            mensaje_destino = f'📅 ${saldo_transferido:,.0f} transferidos al próximo mes'
+
+        elif destino_saldo == 'DISTRIBUIR_PROPORCION':
+            # Distribuir proporcionalmente según ingreso de cada aportante
+            mensaje_destino = f'🎁 ${conciliacion.saldo_disponible:,.0f} distribuidos proporcionalmente entre aportantes'
+
+        elif destino_saldo == 'DISTRIBUIR_IGUAL':
+            # Distribuir en partes iguales
+            mensaje_destino = f'🎁 ${conciliacion.saldo_disponible:,.0f} distribuidos en partes iguales entre aportantes'
+
+        # Enviar notificación de cierre
+        enviar_notificacion_conciliacion_cerrada(conciliacion)
+
+        messages.success(
+            request,
+            f'🎉 <strong>¡Conciliación Cerrada Exitosamente!</strong><br>'
+            f'📅 Período: {conciliacion}<br>'
+            f'{mensaje_destino}<br>'
+            f'Se han enviado notificaciones a todos los aportantes.',
+            extra_tags='safe'
+        )
+
+    except ConciliacionMensual.DoesNotExist:
+        messages.error(request, 'No se encontró la conciliación para este período.')
+    except Exception as e:
+        messages.error(request, f'Error al asignar destino: {str(e)}')
+
+    return redirect('conciliacion')
 
 
 @login_required
@@ -1629,10 +1883,16 @@ def lista_gastos_personales(request):
         mes_filtro = fecha_actual.month
         anio_filtro = fecha_actual.year
 
-    # Obtener solo gastos personales
+    # Obtener mes y año actual
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+
+    # Obtener solo gastos personales del mes actual
     gastos = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
-        tipo_gasto='PERSONAL'
+        tipo_gasto='PERSONAL',
+        fecha__month=mes_actual,
+        fecha__year=anio_actual
     ).select_related('subcategoria__categoria', 'pagado_por')
 
     # Filtrar por aportante si se especifica

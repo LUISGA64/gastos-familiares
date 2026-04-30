@@ -661,20 +661,22 @@ class Aportante(models.Model):
         return self.ingreso_mensual
 
     def calcular_pagos_realizados(self, mes, anio):
-        """Calcula el total de pagos que realizó este aportante en un mes"""
+        """Calcula el total de pagos que realizó este aportante en un mes (solo gastos compartidos)"""
         from django.db.models import Sum
         total_pagado = self.gastos_pagados.filter(
             fecha__month=mes,
-            fecha__year=anio
+            fecha__year=anio,
+            tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).aggregate(total=Sum('monto'))['total'] or 0
         return total_pagado
 
     def calcular_gastos_asignados(self, mes, anio):
-        """Calcula el total de gastos que le corresponden según su porcentaje en un mes"""
+        """Calcula el total de gastos que le corresponden según su porcentaje en un mes (solo gastos compartidos)"""
         from django.db.models import Sum
         total_asignado = self.distribuciones.filter(
             gasto__fecha__month=mes,
-            gasto__fecha__year=anio
+            gasto__fecha__year=anio,
+            gasto__tipo_gasto='COMPARTIDO'  # Solo gastos compartidos
         ).aggregate(total=Sum('monto_asignado'))['total'] or 0
         return total_asignado
 
@@ -1012,6 +1014,14 @@ class ConciliacionMensual(models.Model):
         ('CANCELADA', 'Cancelada'),
     ]
 
+    DESTINO_SALDO_CHOICES = [
+        ('AHORRO', 'Ahorro Familiar'),
+        ('EMERGENCIA', 'Fondo de Emergencia'),
+        ('SIGUIENTE_MES', 'Reserva para Próximo Mes'),
+        ('DISTRIBUIR_PROPORCION', 'Distribuir Proporcionalmente'),
+        ('DISTRIBUIR_IGUAL', 'Distribuir en Partes Iguales'),
+    ]
+
     familia = models.ForeignKey(
         Familia,
         on_delete=models.CASCADE,
@@ -1026,11 +1036,46 @@ class ConciliacionMensual(models.Model):
         validators=[MinValueValidator(2020)],
         verbose_name="Año"
     )
+    total_ingresos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+        verbose_name="Total de Ingresos del Mes"
+    )
     total_gastos = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(0)],
         verbose_name="Total de Gastos del Mes"
+    )
+    saldo_anterior = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo del Mes Anterior",
+        help_text="Saldo disponible transferido del mes anterior"
+    )
+    saldo_disponible = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo Disponible",
+        help_text="Ingresos + Saldo Anterior - Gastos"
+    )
+    destino_saldo = models.CharField(
+        max_length=30,
+        choices=DESTINO_SALDO_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Destino del Saldo Sobrante",
+        help_text="¿Qué hacer con el saldo positivo?"
+    )
+    saldo_transferido_siguiente = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo Transferido al Siguiente Mes"
     )
     estado = models.CharField(
         max_length=20,
@@ -1061,12 +1106,66 @@ class ConciliacionMensual(models.Model):
                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
         return f"{self.familia.nombre} - {meses[self.mes]} {self.anio} ({self.estado})"
 
-    def cerrar_conciliacion(self, user):
-        """Cierra la conciliación"""
+    def cerrar_conciliacion(self, user, destino_saldo=None):
+        """Cierra la conciliación y gestiona el saldo sobrante"""
+        from decimal import Decimal
+
         self.estado = 'CERRADA'
         self.fecha_cierre = timezone.now()
         self.cerrada_por = user
+
+        # Calcular saldo disponible
+        self.saldo_disponible = self.total_ingresos + self.saldo_anterior - self.total_gastos
+
+        # Asignar destino del saldo si se proporcionó
+        if destino_saldo:
+            self.destino_saldo = destino_saldo
+
+        # Determinar qué saldo se transfiere al siguiente mes
+        if self.saldo_disponible > 0:
+            if self.destino_saldo == 'SIGUIENTE_MES':
+                # Todo el saldo va al siguiente mes
+                self.saldo_transferido_siguiente = self.saldo_disponible
+            elif self.destino_saldo == 'AHORRO':
+                # El saldo va a ahorro, no se transfiere
+                self.saldo_transferido_siguiente = Decimal('0')
+                # Aquí se podría crear un registro de meta de ahorro automáticamente
+            elif self.destino_saldo == 'EMERGENCIA':
+                # El saldo va a fondo de emergencia
+                self.saldo_transferido_siguiente = Decimal('0')
+            elif self.destino_saldo in ['DISTRIBUIR_PROPORCION', 'DISTRIBUIR_IGUAL']:
+                # El saldo se distribuye, no se transfiere
+                self.saldo_transferido_siguiente = Decimal('0')
+                # La distribución se maneja en la vista
+            else:
+                # Por defecto, transferir al siguiente mes
+                self.saldo_transferido_siguiente = self.saldo_disponible
+        else:
+            # Si hay déficit, se arrastra al siguiente mes
+            self.saldo_transferido_siguiente = self.saldo_disponible
+
         self.save()
+
+        return self.saldo_transferido_siguiente
+
+    def obtener_saldo_anterior(self):
+        """Obtiene el saldo del mes anterior cerrado"""
+        from decimal import Decimal
+
+        # Buscar la conciliación del mes anterior
+        mes_anterior = self.mes - 1 if self.mes > 1 else 12
+        anio_anterior = self.anio if self.mes > 1 else self.anio - 1
+
+        try:
+            conciliacion_anterior = ConciliacionMensual.objects.get(
+                familia=self.familia,
+                mes=mes_anterior,
+                anio=anio_anterior,
+                estado='CERRADA'
+            )
+            return conciliacion_anterior.saldo_transferido_siguiente
+        except ConciliacionMensual.DoesNotExist:
+            return Decimal('0')
 
 
 class DetalleConciliacion(models.Model):
