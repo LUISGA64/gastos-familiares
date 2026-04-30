@@ -729,6 +729,13 @@ def reportes(request):
         messages.warning(request, 'Debes seleccionar una familia primero.')
         return redirect('seleccionar_familia')
 
+    # Obtener objeto familia
+    try:
+        familia = Familia.objects.get(id=familia_id)
+    except Familia.DoesNotExist:
+        messages.error(request, 'Familia no encontrada.')
+        return redirect('seleccionar_familia')
+
     # Parámetros de fecha
     mes_param = request.GET.get('mes', str(timezone.now().month))
     anio_param = request.GET.get('anio', str(timezone.now().year))
@@ -761,7 +768,8 @@ def reportes(request):
         if not distribuciones_gasto.exists():
             num_aportantes = aportantes.count()
             if num_aportantes > 0:
-                monto_por_aportante = gasto.monto / num_aportantes
+                # Convertir a Decimal para evitar errores de tipo
+                monto_por_aportante = gasto.monto / Decimal(str(num_aportantes))
                 for aportante in aportantes:
                     distribuciones[aportante.id] = monto_por_aportante
         else:
