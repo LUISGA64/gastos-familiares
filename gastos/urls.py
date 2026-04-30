@@ -103,6 +103,7 @@ urlpatterns = [
 
     # Reportes
     path('reportes/', views.reportes, name='reportes'),
+    path('reportes/exportar-excel/', views_export.exportar_reportes_excel, name='exportar_reportes_excel'),
 
     # Conciliación
     path('conciliacion/', views.conciliacion, name='conciliacion'),

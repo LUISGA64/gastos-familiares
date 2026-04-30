@@ -1,4 +1,5 @@
 {% extends 'gastos/base.html' %}
+{% load gastos_extras %}
 
 {% block title %}Reportes - Gastos Familiares{% endblock %}
 
@@ -353,31 +354,33 @@
 
 <!-- Selector de Período -->
 <div class="card mb-4 shadow-sm">
-    <div class="card-header">
-        <i class="bi bi-calendar-range"></i> Seleccionar Período
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-calendar-range"></i> Seleccionar Período
+        </div>
+        <div>
+            <button type="button" class="btn btn-success btn-sm" onclick="window.location.href='{% url 'exportar_reportes_excel' %}?mes={{ mes }}&anio={{ anio }}'">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </button>
+        </div>
     </div>
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4 col-sm-6">
-                <label class="form-label">Mes</label>
-                <select name="mes" class="form-select">
-                    <option value="1" {% if mes == "1" %}selected{% endif %}>Enero</option>
-                    <option value="2" {% if mes == "2" %}selected{% endif %}>Febrero</option>
-                    <option value="3" {% if mes == "3" %}selected{% endif %}>Marzo</option>
-                    <option value="4" {% if mes == "4" %}selected{% endif %}>Abril</option>
-                    <option value="5" {% if mes == "5" %}selected{% endif %}>Mayo</option>
-                    <option value="6" {% if mes == "6" %}selected{% endif %}>Junio</option>
-                    <option value="7" {% if mes == "7" %}selected{% endif %}>Julio</option>
-                    <option value="8" {% if mes == "8" %}selected{% endif %}>Agosto</option>
-                    <option value="9" {% if mes == "9" %}selected{% endif %}>Septiembre</option>
-                    <option value="10" {% if mes == "10" %}selected{% endif %}>Octubre</option>
-                    <option value="11" {% if mes == "11" %}selected{% endif %}>Noviembre</option>
-                    <option value="12" {% if mes == "12" %}selected{% endif %}>Diciembre</option>
+        <form method="get" class="row g-3 align-items-end" id="formPeriodo">
+            <!-- Hidden inputs para mes y año -->
+            <input type="hidden" name="mes" id="mes_hidden" value="{{ mes }}">
+            <input type ="hidden" name="anio" id="anio_hidden" value="{{ anio }}">
+
+            <div class="col-md-8 col-sm-6">
+                <label class="form-label" for="mes_periodo">
+                    <i class="bi bi-calendar-month"></i> Período
+                </label>
+                <select name="mes_periodo" id="mes_periodo" class="form-select">
+                    {% for mes_item in meses_disponibles %}
+                    <option value="{{ mes_item.mes }}-{{ mes_item.anio }}" {% if mes_item.seleccionado %}selected{% endif %}>
+                        {{ mes_item.nombre }}
+                    </option>
+                    {% endfor %}
                 </select>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <label class="form-label">Año</label>
-                <input type="number" name="anio" class="form-control" value="{{ anio }}" min="2020" max="2030">
             </div>
             <div class="col-md-4 col-12">
                 <button type="submit" class="btn btn-primary w-100">
@@ -583,6 +586,95 @@
     </div>
 </div>
 
+<!-- Detalle de Gastos con Distribución por Aportante -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <i class="bi bi-table"></i> Detalle de Gastos Compartidos con Distribución
+            </div>
+            <div class="card-body">
+                {% if gastos_detallados %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm" id="tablaGastosDetallados">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="min-width: 100px;">Fecha</th>
+                                <th style="min-width: 150px;">Categoría</th>
+                                <th style="min-width: 120px;">Tipo</th>
+                                <th style="min-width: 200px;">Descripción</th>
+                                <th style="min-width: 120px;">Pagado por</th>
+                                {% for aportante in aportantes %}
+                                <th class="text-end" style="min-width: 100px;">{{ aportante.nombre }}</th>
+                                {% endfor %}
+                                <th class="text-end fw-bold" style="min-width: 100px;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in gastos_detallados %}
+                            <tr>
+                                <td>{{ item.gasto.fecha|date:"d/m/Y" }}</td>
+                                <td>{{ item.gasto.subcategoria.categoria.nombre }}</td>
+                                <td>
+                                    <span class="badge bg-{% if item.gasto.subcategoria.tipo == 'FIJO' %}info{% else %}warning{% endif %}">
+                                        {{ item.gasto.subcategoria.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>{{ item.gasto.descripcion|default:"Sin descripción" }}</td>
+                                <td>{{ item.gasto.pagado_por.nombre|default:"N/A" }}</td>
+                                {% for aportante in aportantes %}
+                                <td class="text-end">
+                                    {% if ocultar_valores %}
+                                        ****
+                                    {% else %}
+                                        ${{ item.distribuciones|default_if_none:0|get_item:aportante.id|default:0|floatformat:0 }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td class="text-end fw-bold">
+                                    {% if ocultar_valores %}
+                                        ****
+                                    {% else %}
+                                        ${{ item.gasto.monto|floatformat:0 }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="5" class="text-end">TOTALES:</td>
+                                {% for aportante in aportantes %}
+                                <td class="text-end">
+                                    {% if ocultar_valores %}
+                                        ****
+                                    {% else %}
+                                        ${{ totales_por_aportante|get_item:aportante.id|default:0|floatformat:0 }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                                <td class="text-end" style="background-color: #D5DBDB;">
+                                    {% if ocultar_valores %}
+                                        ****
+                                    {% else %}
+                                        ${{ total_gastos|floatformat:0 }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    No hay gastos compartidos registrados en este período.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Notas y Recomendaciones -->
 {% if balance < 0 %}
 <div class="alert alert-danger mt-4">
@@ -606,12 +698,32 @@
 
 {% block extra_js %}
 <script>
+    // Modificar el selector de período para actualizar campos ocultos
+    document.addEventListener('DOMContentLoaded', function() {
+        const mesPeriodoSelect = document.getElementById('mes_periodo');
+        const mesHidden = document.getElementById('mes_hidden');
+        const anioHidden = document.getElementById('anio_hidden');
+        const form = document.getElementById('formPeriodo');
+
+        if (mesPeriodoSelect && form) {
+            mesPeriodoSelect.addEventListener('change', function() {
+                const periodo = this.value.split('-');
+
+                if (periodo.length === 2) {
+                    // Actualizar campos ocultos
+                    mesHidden.value = periodo[0];
+                    anioHidden.value = periodo[1];
+
+                    // Enviar formulario automáticamente
+                    form.submit();
+                }
+            });
+        }
+    });
+
     // Toggle de privacidad
     document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('togglePrivacidad');
-        const iconoPrivacidad = document.getElementById('iconoPrivacidad');
-        const textoPrivacidad = document.getElementById('textoPrivacidad');
-        let ocultarValores = {{ ocultar_valores|lower }};
 
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function() {
@@ -634,5 +746,22 @@
             });
         }
     });
+
+    // Inicializar DataTables para la tabla detallada
+    {% if gastos_detallados %}
+    $(document).ready(function() {
+        $('#tablaGastosDetallados').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true,
+            scrollX: true,
+            dom: 'Bfrtip',
+            buttons: []
+        });
+    });
+    {% endif %}
 </script>
 {% endblock %}

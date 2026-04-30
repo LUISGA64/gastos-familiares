@@ -673,32 +673,73 @@ def reportes(request):
         return redirect('seleccionar_familia')
 
     # Parámetros de fecha
-    mes = request.GET.get('mes', timezone.now().month)
-    anio = request.GET.get('anio', timezone.now().year)
+    mes_param = request.GET.get('mes', str(timezone.now().month))
+    anio_param = request.GET.get('anio', str(timezone.now().year))
+    
+    try:
+        mes = int(mes_param)
+        anio = int(anio_param)
+    except (ValueError, TypeError):
+        mes = timezone.now().month
+        anio = timezone.now().year
 
-    # Gastos del período de la familia
+    # Obtener aportantes activos
+    aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True).order_by('nombre')
+
+    # Gastos del período de la familia (solo compartidos)
     gastos_periodo = Gasto.objects.filter(
         subcategoria__categoria__familia_id=familia_id,
         fecha__month=mes,
-        fecha__year=anio
-    )
+        fecha__year=anio,
+        tipo_gasto='COMPARTIDO'
+    ).select_related('subcategoria__categoria', 'pagado_por').prefetch_related('distribuciones__aportante').order_by('fecha', 'id')
+
+    # Calcular distribuciones por gasto y aportante
+    gastos_detallados = []
+    for gasto in gastos_periodo:
+        distribuciones = {}
+        distribuciones_gasto = gasto.distribuciones.all()
+        
+        # Si no hay distribuciones, distribuir equitativamente
+        if not distribuciones_gasto.exists():
+            num_aportantes = aportantes.count()
+            if num_aportantes > 0:
+                monto_por_aportante = gasto.monto / num_aportantes
+                for aportante in aportantes:
+                    distribuciones[aportante.id] = monto_por_aportante
+        else:
+            for dist in distribuciones_gasto:
+                distribuciones[dist.aportante.id] = dist.monto_asignado
+
+        gastos_detallados.append({
+            'gasto': gasto,
+            'distribuciones': distribuciones
+        })
 
     # Totales
-    total_gastos = gastos_periodo.aggregate(total=Sum('monto'))['total'] or 0
-    gastos_fijos = gastos_periodo.filter(subcategoria__tipo='FIJO').aggregate(total=Sum('monto'))['total'] or 0
-    gastos_variables = gastos_periodo.filter(subcategoria__tipo='VARIABLE').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos_periodo.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    gastos_fijos = gastos_periodo.filter(subcategoria__tipo='FIJO').aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    gastos_variables = gastos_periodo.filter(subcategoria__tipo='VARIABLE').aggregate(total=Sum('monto'))['total'] or Decimal('0')
 
     # Ingresos totales de la familia
-    total_ingresos = Aportante.objects.filter(familia_id=familia_id, activo=True).aggregate(total=Sum('ingreso_mensual'))['total'] or 0
+    total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or Decimal('0')
 
-    # Distribución por aportante
-    aportantes_con_gastos = []
-    for aportante in Aportante.objects.filter(familia_id=familia_id, activo=True):
+    # Calcular totales por aportante
+    totales_por_aportante = {}
+    for aportante in aportantes:
         total_asignado = DistribucionGasto.objects.filter(
             aportante=aportante,
             gasto__fecha__month=mes,
-            gasto__fecha__year=anio
-        ).aggregate(total=Sum('monto_asignado'))['total'] or 0
+            gasto__fecha__year=anio,
+            gasto__tipo_gasto='COMPARTIDO'
+        ).aggregate(total=Sum('monto_asignado'))['total'] or Decimal('0')
+        
+        totales_por_aportante[aportante.id] = total_asignado
+
+    # Distribución por aportante
+    aportantes_con_gastos = []
+    for aportante in aportantes:
+        total_asignado = totales_por_aportante.get(aportante.id, Decimal('0'))
 
         aportantes_con_gastos.append({
             'aportante': aportante,
@@ -711,22 +752,41 @@ def reportes(request):
     gastos_por_categoria = CategoriaGasto.objects.filter(
         familia_id=familia_id,
         subcategorias__gastos__fecha__month=mes,
-        subcategorias__gastos__fecha__year=anio
+        subcategorias__gastos__fecha__year=anio,
+        subcategorias__gastos__tipo_gasto='COMPARTIDO'
     ).annotate(
         total=Sum('subcategorias__gastos__monto'),
         cantidad=Count('subcategorias__gastos', distinct=True)
     ).order_by('-total')
 
+    # Generar lista de meses disponibles (últimos 12 meses)
+    fecha_actual = timezone.now()
+    meses_disponibles = []
+    for i in range(12):
+        fecha_mes = date(fecha_actual.year, fecha_actual.month, 1) - timedelta(days=30*i)
+        meses_disponibles.append({
+            'mes': fecha_mes.month,
+            'anio': fecha_mes.year,
+            'nombre': f"{MESES_ES[fecha_mes.month]} {fecha_mes.year}",
+            'seleccionado': (fecha_mes.month == mes and fecha_mes.year == anio)
+        })
+
     context = {
+        'familia': familia,
         'mes': mes,
         'anio': anio,
+        'mes_nombre': MESES_ES[mes],
         'total_gastos': total_gastos,
         'gastos_fijos': gastos_fijos,
         'gastos_variables': gastos_variables,
         'total_ingresos': total_ingresos,
         'balance': total_ingresos - total_gastos,
+        'aportantes': aportantes,
         'aportantes_con_gastos': aportantes_con_gastos,
         'gastos_por_categoria': gastos_por_categoria,
+        'gastos_detallados': gastos_detallados,
+        'totales_por_aportante': totales_por_aportante,
+        'meses_disponibles': meses_disponibles,
     }
 
     return render(request, 'gastos/reportes.html', context)
@@ -909,7 +969,9 @@ def cerrar_conciliacion(request):
                 f'<i class="bi bi-pencil"></i> Ir a editar aportantes</a>',
                 extra_tags='safe'
             )
-            return redirect('conciliacion')
+            from django.urls import reverse
+            url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+            return redirect(url)
 
         total_ingresos = aportantes.aggregate(total=Sum('ingreso_mensual'))['total'] or 0
         total_gastos_mes = Gasto.objects.filter(
@@ -1001,7 +1063,10 @@ def cerrar_conciliacion(request):
     except Exception as e:
         messages.error(request, f'Error al procesar conciliación: {str(e)}')
 
-    return redirect('conciliacion')
+    # Redirigir manteniendo los parámetros de mes y año
+    from django.urls import reverse
+    url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+    return redirect(url)
 
 
 @login_required
@@ -1040,7 +1105,9 @@ def confirmar_conciliacion(request):
         # Verificar el código
         if detalle.codigo_confirmacion != codigo:
             messages.error(request, f'❌ Código incorrecto para {detalle.aportante.nombre}. Por favor verifica el código enviado a tu email.')
-            return redirect('conciliacion')
+            from django.urls import reverse
+            url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+            return redirect(url)
 
         # Confirmar
         if not detalle.confirmado:
@@ -1086,7 +1153,10 @@ def confirmar_conciliacion(request):
     except Exception as e:
         messages.error(request, f'Error al confirmar: {str(e)}')
 
-    return redirect('conciliacion')
+    # Redirigir manteniendo los parámetros de mes y año
+    from django.urls import reverse
+    url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+    return redirect(url)
 
 
 @login_required
@@ -1541,8 +1611,23 @@ def lista_gastos_personales(request):
     # Obtener aportantes de la familia
     aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True)
 
-    # Filtro de aportante (opcional)
+    # Filtros
     aportante_id = request.GET.get('aportante')
+    mes_seleccionado = request.GET.get('mes')
+    anio_seleccionado = request.GET.get('anio')
+
+    # Determinar mes y año para filtros
+    fecha_actual = timezone.now()
+    if mes_seleccionado and anio_seleccionado:
+        try:
+            mes_filtro = int(mes_seleccionado)
+            anio_filtro = int(anio_seleccionado)
+        except (ValueError, TypeError):
+            mes_filtro = fecha_actual.month
+            anio_filtro = fecha_actual.year
+    else:
+        mes_filtro = fecha_actual.month
+        anio_filtro = fecha_actual.year
 
     # Obtener solo gastos personales
     gastos = Gasto.objects.filter(
@@ -1554,14 +1639,11 @@ def lista_gastos_personales(request):
     if aportante_id:
         gastos = gastos.filter(pagado_por_id=aportante_id)
 
+    # Filtrar por mes y año
+    gastos_mes = gastos.filter(fecha__month=mes_filtro, fecha__year=anio_filtro)
+
     # Ordenar
-    gastos = gastos.order_by('-fecha', '-fecha_registro')
-
-    # Estadísticas del mes actual
-    mes_actual = timezone.now().month
-    anio_actual = timezone.now().year
-
-    gastos_mes = gastos.filter(fecha__month=mes_actual, fecha__year=anio_actual)
+    gastos_mostrar = gastos_mes.order_by('-fecha', '-fecha_registro')
 
     # Asegurar que total_gastos_mes sea un número, no None
     total_result = gastos_mes.aggregate(total=Sum('monto'))['total']
@@ -1577,15 +1659,29 @@ def lista_gastos_personales(request):
         total=Sum('monto')
     ).order_by('-total')
 
+    # Generar lista de meses disponibles (últimos 12 meses)
+    meses_disponibles = []
+    for i in range(12):
+        fecha_mes = date(fecha_actual.year, fecha_actual.month, 1) - timedelta(days=30*i)
+        meses_disponibles.append({
+            'mes': fecha_mes.month,
+            'anio': fecha_mes.year,
+            'nombre': f"{MESES_ES[fecha_mes.month]} {fecha_mes.year}",
+            'seleccionado': (fecha_mes.month == mes_filtro and fecha_mes.year == anio_filtro)
+        })
+
     context = {
         'familia': familia,
-        'gastos': gastos,
+        'gastos': gastos_mostrar,
         'aportantes': aportantes,
         'aportante_seleccionado': aportante_id,
         'total_gastos_mes': total_gastos_mes,
         'gastos_por_aportante': gastos_por_aportante,
         'gastos_por_categoria': gastos_por_categoria,
-        'mes_actual': f"{MESES_ES[timezone.now().month]} {timezone.now().year}",
+        'mes_actual': f"{MESES_ES[mes_filtro]} {anio_filtro}",
+        'mes_seleccionado': mes_filtro,
+        'anio_seleccionado': anio_filtro,
+        'meses_disponibles': meses_disponibles,
     }
 
     return render(request, 'gastos/gastos_personales/lista_gastos_personales.html', context)

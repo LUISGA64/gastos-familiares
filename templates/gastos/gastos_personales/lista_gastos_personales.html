@@ -35,8 +35,23 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <form method="get" class="row g-3">
-                        <div class="col-md-6">
-                            <label for="aportante" class="form-label">Filtrar por Aportante</label>
+                        <div class="col-md-4">
+                            <label for="mes_periodo" class="form-label">
+                                <i class="bi bi-calendar-month"></i> Período
+                            </label>
+                            <select name="mes_periodo" id="mes_periodo" class="form-select" onchange="this.form.submit()">
+                                {% for mes_item in meses_disponibles %}
+                                <option value="{{ mes_item.mes }}-{{ mes_item.anio }}" {% if mes_item.seleccionado %}selected{% endif %}>
+                                    {{ mes_item.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="aportante" class="form-label">
+                                <i class="bi bi-person"></i> Aportante
+                            </label>
                             <select name="aportante" id="aportante" class="form-select">
                                 <option value="">Todos los aportantes</option>
                                 {% for aportante in aportantes %}
@@ -46,9 +61,10 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6 d-flex align-items-end">
+
+                        <div class="col-md-4 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-funnel"></i> Aplicar Filtros
+                                <i class="bi bi-funnel"></i> Filtrar
                             </button>
                             <a href="{% url 'lista_gastos_personales' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i> Limpiar
@@ -252,6 +268,33 @@
 
 {% block extra_js %}
 <script>
+    // Modificar el formulario para enviar mes y año por separado
+    document.getElementById('mes_periodo').addEventListener('change', function() {
+        var form = this.form;
+        var periodo = this.value.split('-');
+
+        if (periodo.length === 2) {
+            // Crear campos ocultos para mes y año
+            var mesInput = document.createElement('input');
+            mesInput.type = 'hidden';
+            mesInput.name = 'mes';
+            mesInput.value = periodo[0];
+
+            var anioInput = document.createElement('input');
+            anioInput.type = 'hidden';
+            anioInput.name = 'anio';
+            anioInput.value = periodo[1];
+
+            // Remover el campo mes_periodo antes de enviar
+            this.name = '';
+
+            form.appendChild(mesInput);
+            form.appendChild(anioInput);
+        }
+
+        form.submit();
+    });
+
     // Inicializar DataTables si hay datos
     {% if gastos %}
     $(document).ready(function() {

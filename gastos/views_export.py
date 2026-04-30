@@ -19,7 +19,7 @@ from reportlab.pdfgen import canvas
 
 import xlsxwriter
 
-from .models import Aportante, CategoriaGasto, Gasto, MetaAhorro, Familia
+from .models import Aportante, CategoriaGasto, Gasto, MetaAhorro, Familia, DistribucionGasto
 
 
 @login_required
@@ -476,5 +476,226 @@ def exportar_dashboard_excel(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = f'attachment; filename="reporte_dashboard_{nombre_mes.replace(" ", "_")}.xlsx"'
+
+    return response
+
+
+@login_required
+def exportar_reportes_excel(request):
+    """Exportar reporte detallado con distribución por aportante a Excel"""
+    # Verificar permisos
+    familia_id = request.session.get('familia_id')
+    if not familia_id:
+        return JsonResponse({'error': 'No hay familia seleccionada'}, status=400)
+
+    familia = get_object_or_404(Familia, id=familia_id)
+
+    # Verificar si tiene permiso para exportar
+    if not familia.tiene_exportar_datos():
+        return JsonResponse({
+            'error': 'Esta función requiere Plan Premium o superior'
+        }, status=403)
+
+    # Parámetros de fecha
+    mes_param = request.GET.get('mes', str(timezone.now().month))
+    anio_param = request.GET.get('anio', str(timezone.now().year))
+    
+    try:
+        mes = int(mes_param)
+        anio = int(anio_param)
+    except (ValueError, TypeError):
+        mes = timezone.now().month
+        anio = timezone.now().year
+
+    # Diccionario de meses en español
+    meses_es = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+
+    nombre_mes = f"{meses_es[mes]} {anio}"
+
+    # Obtener aportantes
+    aportantes = Aportante.objects.filter(familia_id=familia_id, activo=True).order_by('nombre')
+
+    # Obtener gastos compartidos del período
+    gastos_periodo = Gasto.objects.filter(
+        subcategoria__categoria__familia_id=familia_id,
+        fecha__month=mes,
+        fecha__year=anio,
+        tipo_gasto='COMPARTIDO'
+    ).select_related('subcategoria__categoria', 'pagado_por').prefetch_related('distribuciones__aportante').order_by('fecha', 'id')
+
+    # Crear buffer para Excel
+    output = io.BytesIO()
+
+    # Crear workbook
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+
+    # Formatos
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'font_color': '#2C3E50',
+        'align': 'center',
+        'valign': 'vcenter',
+        'bg_color': '#ECF0F1',
+    })
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'font_size': 11,
+        'bg_color': '#3498DB',
+        'font_color': 'white',
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'text_wrap': True,
+    })
+
+    money_format = workbook.add_format({
+        'num_format': '$#,##0',
+        'align': 'right',
+        'border': 1,
+    })
+
+    money_bold_format = workbook.add_format({
+        'num_format': '$#,##0',
+        'align': 'right',
+        'bold': True,
+        'bg_color': '#D5DBDB',
+        'border': 1,
+    })
+
+    date_format = workbook.add_format({
+        'num_format': 'dd/mm/yyyy',
+        'align': 'center',
+        'border': 1,
+    })
+
+    cell_format = workbook.add_format({
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': 1,
+        'text_wrap': True,
+    })
+
+    cell_center_format = workbook.add_format({
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+    })
+
+    # Crear hoja de trabajo
+    worksheet = workbook.add_worksheet('Reporte Detallado')
+
+    # Configurar anchos de columna
+    worksheet.set_column('A:A', 12)  # Fecha
+    worksheet.set_column('B:B', 20)  # Categoría
+    worksheet.set_column('C:C', 20)  # Tipo
+    worksheet.set_column('D:D', 35)  # Descripción
+    worksheet.set_column('E:E', 15)  # Pagado por
+    
+    # Columnas de aportantes (dinámicas)
+    col_start = 5  # Columna F (índice 5)
+    for i, aportante in enumerate(aportantes):
+        worksheet.set_column(col_start + i, col_start + i, 15)
+    
+    # Columna de total
+    worksheet.set_column(col_start + len(aportantes), col_start + len(aportantes), 15)
+
+    # Título
+    num_columnas = 6 + len(aportantes)
+    ultima_columna = chr(65 + num_columnas - 1)  # Convertir a letra (A=65)
+    worksheet.merge_range(f'A1:{ultima_columna}1', f'Reporte Detallado de Gastos - {familia.nombre}', title_format)
+    worksheet.merge_range(f'A2:{ultima_columna}2', f'Período: {nombre_mes}', cell_center_format)
+
+    # Encabezados
+    row = 3
+    worksheet.write(row, 0, 'Fecha', header_format)
+    worksheet.write(row, 1, 'Categoría', header_format)
+    worksheet.write(row, 2, 'Tipo de Gasto', header_format)
+    worksheet.write(row, 3, 'Descripción', header_format)
+    worksheet.write(row, 4, 'Pagado por', header_format)
+    
+    col = 5
+    for aportante in aportantes:
+        worksheet.write(row, col, aportante.nombre, header_format)
+        col += 1
+    
+    worksheet.write(row, col, 'TOTAL', header_format)
+
+    # Inicializar totales por aportante
+    totales_por_aportante = {aportante.id: Decimal('0') for aportante in aportantes}
+    total_general = Decimal('0')
+
+    # Escribir datos de gastos
+    row = 4
+    for gasto in gastos_periodo:
+        worksheet.write(row, 0, gasto.fecha.strftime('%d/%m/%Y'), cell_center_format)
+        worksheet.write(row, 1, gasto.subcategoria.categoria.nombre, cell_format)
+        worksheet.write(row, 2, gasto.subcategoria.get_tipo_display(), cell_center_format)
+        worksheet.write(row, 3, gasto.descripcion or 'Sin descripción', cell_format)
+        worksheet.write(row, 4, gasto.pagado_por.nombre if gasto.pagado_por else 'N/A', cell_format)
+        
+        # Obtener distribuciones del gasto
+        distribuciones = {}
+        distribuciones_gasto = gasto.distribuciones.all()
+        
+        # Si no hay distribuciones, distribuir equitativamente
+        if not distribuciones_gasto.exists():
+            num_aportantes = aportantes.count()
+            if num_aportantes > 0:
+                monto_por_aportante = gasto.monto / num_aportantes
+                for aportante in aportantes:
+                    distribuciones[aportante.id] = monto_por_aportante
+        else:
+            for dist in distribuciones_gasto:
+                distribuciones[dist.aportante.id] = dist.monto_asignado
+        
+        # Escribir distribuciones
+        col = 5
+        suma_fila = Decimal('0')
+        for aportante in aportantes:
+            monto = distribuciones.get(aportante.id, Decimal('0'))
+            worksheet.write(row, col, float(monto), money_format)
+            totales_por_aportante[aportante.id] += monto
+            suma_fila += monto
+            col += 1
+        
+        # Escribir total del gasto
+        worksheet.write(row, col, float(gasto.monto), money_bold_format)
+        total_general += gasto.monto
+        
+        row += 1
+
+    # Escribir fila de totales
+    row += 1
+    worksheet.write(row, 0, '', cell_format)
+    worksheet.write(row, 1, '', cell_format)
+    worksheet.write(row, 2, '', cell_format)
+    worksheet.write(row, 3, '', cell_format)
+    worksheet.write(row, 4, 'TOTALES:', header_format)
+    
+    col = 5
+    for aportante in aportantes:
+        monto_total = totales_por_aportante[aportante.id]
+        worksheet.write(row, col, float(monto_total), money_bold_format)
+        col += 1
+    
+    worksheet.write(row, col, float(total_general), money_bold_format)
+
+    # Cerrar workbook
+    workbook.close()
+
+    # Obtener el valor del buffer
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="reporte_detallado_{nombre_mes.replace(" ", "_")}.xlsx"'
 
     return response
