@@ -34,23 +34,51 @@
     .stat-card {
         border: none;
         border-radius: 16px;
-        padding: 24px;
+        padding: 16px;
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
         height: 100%;
-        min-height: 200px;
+        min-height: 155px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+    }
+
+    .stat-card.stat-saldo {
+        background: linear-gradient(135deg, #eef6ff 0%, #f7fbff 100%);
+    }
+
+    .stat-card.stat-ingresos {
+        background: linear-gradient(135deg, #edf9f2 0%, #f9fffb 100%);
+    }
+
+    .stat-card.stat-gastos {
+        background: linear-gradient(135deg, #fff2f2 0%, #fff8f8 100%);
+    }
+
+    .stat-card.stat-fijos {
+        background: linear-gradient(135deg, #fff8eb 0%, #fffcf5 100%);
+    }
+
+    .stat-card.stat-balance {
+        background: linear-gradient(135deg, #eef9ff 0%, #f7fdff 100%);
     }
 
     [data-theme="dark"] .stat-card {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         border: 1px solid #475569;
+    }
+
+    [data-theme="dark"] .stat-card.stat-saldo,
+    [data-theme="dark"] .stat-card.stat-ingresos,
+    [data-theme="dark"] .stat-card.stat-gastos,
+    [data-theme="dark"] .stat-card.stat-fijos,
+    [data-theme="dark"] .stat-card.stat-balance {
+        background: linear-gradient(135deg, #172033 0%, #28354d 100%);
     }
 
     .stat-card::before {
@@ -80,18 +108,18 @@
     }
 
     .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 16px;
+        font-size: 1.75rem;
+        margin-bottom: 8px;
         opacity: 0.9;
     }
 
     .stat-label {
-        font-size: 0.9rem;
+        font-size: 0.78rem;
         font-weight: 600;
         color: #64748b;
-        margin-bottom: 12px;
+        margin-bottom: 6px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.4px;
     }
 
     [data-theme="dark"] .stat-label {
@@ -99,10 +127,64 @@
     }
 
     .stat-value {
-        font-size: 2rem;
+        font-size: 1.35rem;
         font-weight: 700;
         line-height: 1.2;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
+    }
+
+    .category-breakdown-item {
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.03);
+        padding: 8px 10px;
+    }
+
+    [data-theme="dark"] .category-breakdown-item {
+        background: rgba(148, 163, 184, 0.12);
+    }
+
+    .insight-kpi {
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .trend-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .trend-card .card-body {
+        padding: 12px 16px 18px;
+        display: flex;
+        flex: 1;
+        align-items: stretch;
+        overflow: hidden;
+    }
+
+    .trend-chart-container {
+        flex: 1;
+        min-height: 360px;
+        height: 100%;
+        padding-bottom: 10px;
+    }
+
+    .category-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .trend-chart-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    [data-theme="dark"] .insight-kpi {
+        border-color: #475569;
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     }
 
     /* Colores de estado en tema dark - más suaves y profesionales */
@@ -348,15 +430,19 @@
     /* Responsividad mejorada */
     @media (max-width: 768px) {
         .stat-card {
-            min-height: 180px;
+            min-height: 140px;
+        }
+
+        .trend-chart-container {
+            min-height: 240px;
         }
 
         .stat-value {
-            font-size: 1.75rem;
+            font-size: 1.15rem;
         }
 
         .stat-icon {
-            font-size: 2rem;
+            font-size: 1.5rem;
         }
     }
 </style>
@@ -404,7 +490,7 @@
 <div class="row mb-4">
     {% if saldo_anterior > 0 or saldo_anterior < 0 %}
     <div class="col-md-2 mb-3">
-        <div class="card stat-card">
+        <div class="card stat-card stat-saldo">
             <i class="bi bi-arrow-down-circle stat-icon text-info"></i>
             <div class="stat-label">Saldo Anterior</div>
             <div class="stat-value text-info valor-monetario">
@@ -418,7 +504,7 @@
     {% endif %}
 
     <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-2{% else %}col-md-3{% endif %} mb-3">
-        <div class="card stat-card">
+        <div class="card stat-card stat-ingresos">
             <i class="bi bi-wallet2 stat-icon text-success"></i>
             <div class="stat-label">Ingresos del Mes</div>
             <div class="stat-value text-success valor-monetario">
@@ -438,7 +524,7 @@
     </div>
 
     <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-3{% else %}col-md-3{% endif %} mb-3">
-        <div class="card stat-card">
+        <div class="card stat-card stat-gastos">
             <i class="bi bi-credit-card stat-icon text-danger"></i>
             <div class="stat-label">Gastos del Mes</div>
             <div class="stat-value text-danger valor-monetario">
@@ -457,7 +543,7 @@
     </div>
 
     <div class="{% if saldo_anterior > 0 or saldo_anterior < 0 %}col-md-2{% else %}col-md-3{% endif %} mb-3">
-        <div class="card stat-card">
+        <div class="card stat-card stat-fijos">
             <i class="bi bi-pin-angle stat-icon text-warning"></i>
             <div class="stat-label">Gastos Fijos</div>
             <div class="stat-value text-warning valor-monetario">
@@ -475,7 +561,7 @@
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card stat-card">
+        <div class="card stat-card stat-balance">
             <i class="bi bi-piggy-bank stat-icon {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
             <div class="stat-label">Balance</div>
             <div class="stat-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %} valor-monetario">
@@ -501,19 +587,19 @@
 <div class="row mb-4">
     <!-- Gráfico de Tendencia -->
     <div class="col-lg-8 mb-4">
-        <div class="card slide-in">
+        <div id="trendCard" class="card slide-in trend-card">
             <div class="card-header">
                 <i class="bi bi-graph-up-arrow"></i> Tendencia de Ingresos vs Gastos
                 <div class="float-end">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-secondary active" onclick="updateChart('3months')">3M</button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="updateChart('6months')">6M</button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="updateChart('12months')">12M</button>
+                        <button type="button" class="btn btn-outline-secondary active" data-period="3months" onclick="updateChart('3months')">3M</button>
+                        <button type="button" class="btn btn-outline-secondary" data-period="6months" onclick="updateChart('6months')">6M</button>
+                        <button type="button" class="btn btn-outline-secondary" data-period="12months" onclick="updateChart('12months')">12M</button>
                     </div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="chart-container">
+                <div id="trendChartContainer" class="chart-container trend-chart-container">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
@@ -522,14 +608,29 @@
 
     <!-- Distribución por Categorías -->
     <div class="col-lg-4 mb-4">
-        <div class="card slide-in">
+        <div id="categoryCard" class="card slide-in category-card">
             <div class="card-header">
                 <i class="bi bi-pie-chart-fill"></i> Gastos por Categoría
             </div>
             <div class="card-body">
-                <div class="chart-container" style="height: 280px;">
+                <div class="chart-container" style="height: 320px;">
                     <canvas id="categoryChart"></canvas>
                 </div>
+                {% if categoria_breakdown %}
+                <div class="mt-3 d-grid gap-2">
+                    {% for categoria in categoria_breakdown %}
+                    <div class="category-breakdown-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ categoria.nombre }}</strong>
+                            <div class="small text-muted">{{ categoria.porcentaje|floatformat:1 }}% del total</div>
+                        </div>
+                        <div class="small fw-semibold valor-monetario">
+                            {% if ocultar_valores %}****{% else %}{{ categoria.total|formato_moneda }}{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -596,54 +697,67 @@
         </div>
     </div>
 
-    <!-- Gastos Recientes y Análisis -->
+    <!-- Radar financiero y decisiones -->
     <div class="col-lg-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-clock-history"></i> Gastos Recientes
+                <i class="bi bi-cpu"></i> Radar Financiero de {{ mes_actual }}
                 <a href="{% url 'crear_gasto' %}" class="btn btn-sm btn-success float-end">
                     <i class="bi bi-plus-circle"></i> Registrar
                 </a>
             </div>
             <div class="card-body">
-                {% if gastos_recientes %}
-                <div class="list-group list-group-flush">
-                    {% for gasto in gastos_recientes|slice:":5" %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1">{{ gasto.descripcion|truncatewords:5 }}</h6>
-                            <small class="text-muted">
-                                <i class="bi bi-tag"></i> {{ gasto.categoria.nombre }}
-                                <span class="mx-2">•</span>
-                                <i class="bi bi-calendar"></i> {{ gasto.fecha|date:"d/m/Y" }}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            <strong class="text-danger valor-monetario">
-                                {% if ocultar_valores %}****{% else %}{{ gasto.monto|formato_moneda }}{% endif %}
-                            </strong>
-                            <br>
-                            <span class="badge badge-{{ gasto.categoria.tipo|lower }}">
-                                {{ gasto.categoria.get_tipo_display }}
-                            </span>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <div class="insight-kpi">
+                            <div class="small text-muted">Promedio diario gastado</div>
+                            <div class="fw-bold text-danger valor-monetario">
+                                {% if ocultar_valores %}****{% else %}{{ gasto_promedio_diario|formato_moneda }}{% endif %}
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="col-md-6">
+                        <div class="insight-kpi">
+                            <div class="small text-muted">Proyección de cierre del mes</div>
+                            <div class="fw-bold valor-monetario {% if proyeccion_cierre_mes > total_ingresos %}text-danger{% else %}text-success{% endif %}">
+                                {% if ocultar_valores %}****{% else %}{{ proyeccion_cierre_mes|formato_moneda }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {% if gastos_recientes|length > 5 %}
-                <div class="text-center mt-3">
-                    <a href="{% url 'lista_gastos' %}" class="btn btn-outline-primary">
-                        Ver todos los gastos <i class="bi bi-arrow-right"></i>
-                    </a>
+                <div class="alert alert-{% if variacion_vs_mes_anterior > 0 %}warning{% else %}success{% endif %} mb-3">
+                    <strong>
+                        {% if variacion_vs_mes_anterior > 0 %}
+                        <i class="bi bi-arrow-up-circle"></i> Gastaste más que el mes anterior
+                        {% elif variacion_vs_mes_anterior < 0 %}
+                        <i class="bi bi-arrow-down-circle"></i> Gastaste menos que el mes anterior
+                        {% else %}
+                        <i class="bi bi-dash-circle"></i> Gastos estables vs mes anterior
+                        {% endif %}
+                    </strong>
+                    <div class="small mt-1 valor-monetario">
+                        {% if ocultar_valores %}****{% else %}
+                        Variación: {{ variacion_vs_mes_anterior|formato_moneda }} ({{ tendencia_gastos|floatformat:1 }}%)
+                        {% endif %}
+                    </div>
                 </div>
-                {% endif %}
-                {% else %}
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay gastos registrados este mes.
-                    <a href="{% url 'crear_gasto' %}" class="alert-link">Registrar gasto</a>
+
+                <div class="alert alert-info mb-0">
+                    <h6 class="mb-2"><i class="bi bi-activity"></i> Señales para decidir mejor</h6>
+                    <div class="small">
+                        Concentración Top 3 categorías: <strong>{{ concentracion_top_3|floatformat:1 }}%</strong><br>
+                        {% if capacidad_ahorro_proyectada >= 0 %}
+                        Mantienes capacidad de ahorro proyectada de <strong class="valor-monetario">{% if ocultar_valores %}****{% else %}{{ capacidad_ahorro_proyectada|formato_moneda }}{% endif %}</strong>
+                        {% else %}
+                        Riesgo de déficit proyectado de <strong class="valor-monetario">{% if ocultar_valores %}****{% else %}{{ capacidad_ahorro_proyectada|abs_value|formato_moneda }}{% endif %}</strong>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2 d-flex gap-2 flex-wrap">
+                        <a href="{% url 'lista_gastos' %}" class="btn btn-sm btn-outline-primary">Ver detalle de gastos</a>
+                        <a href="{% url 'reportes' %}" class="btn btn-sm btn-outline-secondary">Abrir reportes</a>
+                    </div>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -720,33 +834,52 @@
         data: {{ aportantes_data|safe }}
     };
 
+    function formatCompactCurrency(value) {
+        if (Math.abs(value) >= 1000000) {
+            return '$' + (value / 1000000).toFixed(1) + 'M';
+        }
+        if (Math.abs(value) >= 1000) {
+            return '$' + (value / 1000).toFixed(0) + 'K';
+        }
+        return '$' + value;
+    }
+
     // ========== GRÁFICO DE TENDENCIA ==========
+    let trendChart = null;
     const trendCtx = document.getElementById('trendChart');
     if (trendCtx) {
-        const trendChart = new Chart(trendCtx, {
+        trendChart = new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: trendData.labels,
+                labels: trendData.labels.slice(-3),
                 datasets: [{
                     label: 'Ingresos',
-                    data: trendData.ingresos,
-                    borderColor: '#27ae60',
-                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    data: trendData.ingresos.slice(-3),
+                    yAxisID: 'yIngresos',
+                    borderColor: '#56c7e8',
+                    backgroundColor: 'rgba(86, 199, 232, 0.16)',
                     tension: 0.4,
                     fill: true,
                     borderWidth: 3,
                     pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#56c7e8',
+                    pointBorderWidth: 2
                 }, {
                     label: 'Gastos',
-                    data: trendData.gastos,
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    data: trendData.gastos.slice(-3),
+                    yAxisID: 'yGastos',
+                    borderColor: '#9d7ae8',
+                    backgroundColor: 'rgba(157, 122, 232, 0.16)',
                     tension: 0.4,
                     fill: true,
                     borderWidth: 3,
                     pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#9d7ae8',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
@@ -777,15 +910,38 @@
                     }
                 },
                 scales: {
-                    y: {
+                    yIngresos: {
+                        position: 'left',
                         beginAtZero: true,
+                        grace: '15%',
+                        border: {
+                            color: 'rgba(86, 199, 232, 0.55)'
+                        },
                         ticks: {
+                            color: '#4f89a8',
                             callback: function(value) {
-                                return '$' + (value / 1000) + 'K';
+                                return formatCompactCurrency(value);
                             }
                         },
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    yGastos: {
+                        position: 'right',
+                        beginAtZero: true,
+                        grace: '15%',
+                        border: {
+                            color: 'rgba(157, 122, 232, 0.6)'
+                        },
+                        ticks: {
+                            color: '#8e69d8',
+                            callback: function(value) {
+                                return formatCompactCurrency(value);
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false
                         }
                     },
                     x: {
@@ -813,7 +969,7 @@
                     data: categoryData.data,
                     backgroundColor: categoryData.colors,
                     borderWidth: 3,
-                    borderColor: '#fff',
+                    borderColor: '#f8fafc',
                     hoverOffset: 10
                 }]
             },
@@ -927,12 +1083,71 @@
     }
 
     function updateChart(period) {
-        showToast('Actualizando datos para ' + period, 'info');
-        // Aquí se implementaría la actualización real del gráfico
+        if (!trendChart) {
+            return;
+        }
+
+        const periodMap = {
+            '3months': 3,
+            '6months': 6,
+            '12months': 12,
+        };
+
+        const months = periodMap[period] || 3;
+        trendChart.data.labels = trendData.labels.slice(-months);
+        trendChart.data.datasets[0].data = trendData.ingresos.slice(-months);
+        trendChart.data.datasets[1].data = trendData.gastos.slice(-months);
+        trendChart.update();
+        syncTrendChartHeight();
+
+        document.querySelectorAll('[data-period]').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-period') === period);
+        });
+    }
+
+    function syncTrendChartHeight() {
+        const trendCard = document.getElementById('trendCard');
+        const categoryCard = document.getElementById('categoryCard');
+        const trendCardBody = trendCard ? trendCard.querySelector('.card-body') : null;
+        const trendChartContainer = document.getElementById('trendChartContainer');
+
+        if (!trendCard || !categoryCard || !trendCardBody || !trendChartContainer) {
+            return;
+        }
+
+        const trendHeader = trendCard.querySelector('.card-header');
+        const computedBodyStyles = window.getComputedStyle(trendCardBody);
+        const paddingTop = parseFloat(computedBodyStyles.paddingTop || '0');
+        const paddingBottom = parseFloat(computedBodyStyles.paddingBottom || '0');
+        const bottomGap = 10;
+        const minHeight = window.innerWidth <= 768 ? 240 : 360;
+
+        const availableHeight = categoryCard.offsetHeight
+            - (trendHeader ? trendHeader.offsetHeight : 0)
+            - paddingTop
+            - paddingBottom
+            - bottomGap;
+
+        trendChartContainer.style.height = `${Math.max(minHeight, availableHeight)}px`;
+
+        if (trendChart) {
+            trendChart.resize();
+        }
     }
 
     // Toggle de privacidad con actualización dinámica (SIN RECARGA)
     document.addEventListener('DOMContentLoaded', function() {
+        updateChart('3months');
+        syncTrendChartHeight();
+
+        window.addEventListener('resize', syncTrendChartHeight);
+
+        const categoryCard = document.getElementById('categoryCard');
+        if (categoryCard && 'ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(() => syncTrendChartHeight());
+            resizeObserver.observe(categoryCard);
+        }
+
         const toggleBtn = document.getElementById('togglePrivacidad');
         const iconoPrivacidad = document.getElementById('iconoPrivacidad');
         const textoPrivacidad = document.getElementById('textoPrivacidad');

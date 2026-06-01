@@ -1,19 +1,22 @@
 # Requirements para Producción (gastosweb.com)
 # Incluye todas las dependencias + PostgreSQL
+# ACTUALIZADO: 31/05/2026 - CVEs resueltos
 
-Django==6.0.1
-pillow==10.4.0
+Django==6.0.5
+pillow==12.2.0
 qrcode==7.4.2
 openpyxl==3.1.2
 openai==1.6.1
 python-decouple==3.8
-requests==2.31.0
+requests==2.33.0
 reportlab==4.0.7
 xlsxwriter==3.1.9
-gunicorn==21.2.0
+gunicorn==22.0.0
 whitenoise==6.6.0
 dj-database-url==3.1.0
 groq==0.12.0
+cryptography==46.0.6
+django-encrypted-model-fields==0.6.5
 
 # PostgreSQL para producción
 psycopg2-binary==2.9.10

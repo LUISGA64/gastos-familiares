@@ -1,9 +1,34 @@
 # 📊 FINANBOT - REGISTRO DE CAMBIOS Y MEJORAS
 
 **Aplicación:** FinanBot - Gestión Inteligente de Gastos Familiares  
-**Versión:** 2.0.0  
-**Fecha:** Febrero 2026  
+**Versión:** 2.2.2  
+**Fecha:** Mayo 2026  
 **Estado:** ✅ Producción
+
+---
+
+## 🔥 CAMBIOS RECIENTES
+
+### 🐛 Fix v2.2.2 - 01/05/2026
+**Bug crítico resuelto: Conciliación quedaba en estado "EN PROCESO"**
+
+**Problema:** Cuando todos los aportantes ingresaban correctamente sus códigos de confirmación, la conciliación permanecía en estado "EN PROCESO" en lugar de cerrarse automáticamente.
+
+**Solución:** Modificada la lógica de `confirmar_conciliacion()` para cerrar automáticamente cuando todos confirman, asignando 'SIGUIENTE_MES' como destino por defecto del saldo.
+
+**Archivos modificados:**
+- `gastos/views.py` - Función `confirmar_conciliacion()`
+
+**Impacto:**
+- ✅ Flujo más intuitivo: cierre automático sin pasos adicionales
+- ✅ Comportamiento predecible
+- ✅ Mejor experiencia de usuario
+- ✅ Menos confusión con estados pendientes
+
+**Documentación:**
+- `FIX_CONCILIACION_ESTADO_EN_PROCESO.md` - Documentación técnica completa
+- `RESUMEN_FIX_CONCILIACION.md` - Guía de despliegue y pruebas
+- `test_fix_conciliacion.py` - Script de verificación
 
 ---
 

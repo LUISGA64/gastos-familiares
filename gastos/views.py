@@ -3,9 +3,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.db import transaction
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import timedelta, date
+from calendar import monthrange
 from decimal import Decimal
 import json
 import locale
@@ -71,6 +73,8 @@ def dashboard(request):
         try:
             mes_actual = int(mes_seleccionado)
             anio_actual = int(anio_seleccionado)
+            if mes_actual < 1 or mes_actual > 12:
+                raise ValueError
         except (ValueError, TypeError):
             mes_actual = fecha_actual.month
             anio_actual = fecha_actual.year
@@ -139,21 +143,32 @@ def dashboard(request):
 
     # ========== DATOS PARA GRÁFICOS ==========
 
-    # Histórico de 6 meses para gráfico de tendencia
+    # Histórico de 12 meses para gráfico de tendencia (anclado al mes seleccionado)
+    def desplazar_mes(anio_base, mes_base, desplazamiento):
+        total_meses = (anio_base * 12) + (mes_base - 1) + desplazamiento
+        return total_meses // 12, (total_meses % 12) + 1
+
     meses_labels = []
     ingresos_historico = []
     gastos_historico = []
 
-    for i in range(5, -1, -1):
-        fecha = timezone.now() - timedelta(days=30*i)
-        mes = fecha.month
-        anio = fecha.year
+    total_ingresos_fijo = aportantes.aggregate(total=Sum('ingreso_mensual'))['total']
+    total_ingresos_fijo = Decimal(str(total_ingresos_fijo)) if total_ingresos_fijo else Decimal('0')
+
+    for i in range(11, -1, -1):
+        anio, mes = desplazar_mes(anio_actual, mes_actual, -i)
 
         # Etiqueta del mes en español
         meses_labels.append(f"{MESES_ES_CORTO[mes]} {anio}")
 
-        # Ingresos (asumimos constantes, pero se puede mejorar)
-        ingresos_historico.append(float(total_ingresos) if total_ingresos else 0)
+        ingresos_reales_mes = IngresoAportante.objects.filter(
+            aportante__familia_id=familia_id,
+            fecha__month=mes,
+            fecha__year=anio
+        ).aggregate(total=Sum('monto'))['total']
+
+        ingresos_mes_historico = Decimal(str(ingresos_reales_mes)) if ingresos_reales_mes else total_ingresos_fijo
+        ingresos_historico.append(float(ingresos_mes_historico))
 
         # Gastos del mes
         gastos_del_mes = Gasto.objects.filter(
@@ -163,17 +178,26 @@ def dashboard(request):
         ).aggregate(total=Sum('monto'))['total'] or 0
         gastos_historico.append(float(gastos_del_mes))
 
-    # Datos para gráfico de categorías (pie chart)
+    # Datos para gráfico de categorías (doughnut)
     categorias_labels = []
     categorias_data = []
     categorias_colors = [
-        '#3498db', '#e74c3c', '#f39c12', '#27ae60', '#9b59b6',
-        '#1abc9c', '#e67e22', '#34495e', '#16a085', '#d35400'
+        '#56c7e8', '#5a6797', '#4fb0c6', '#7aa6ff', '#6ecf95',
+        '#f5b971', '#8e95d1', '#62d4c7', '#6f7bd9', '#9bc2ff'
     ]
 
     for idx, cat in enumerate(gastos_por_categoria):
         categorias_labels.append(cat.nombre)
         categorias_data.append(float(cat.total))
+
+    categoria_breakdown = []
+    if total_gastos_mes > 0:
+        for cat in gastos_por_categoria:
+            categoria_breakdown.append({
+                'nombre': cat.nombre,
+                'total': cat.total,
+                'porcentaje': float((cat.total / total_gastos_mes) * 100),
+            })
 
     # Datos para gráfico de aportantes (bar chart)
     aportantes_labels = []
@@ -200,25 +224,43 @@ def dashboard(request):
     else:
         tendencia_gastos = 0
 
-    # Proyección para próximo mes (promedio últimos 3 meses)
-    if len(gastos_historico) >= 3:
-        proyeccion_gastos = sum(gastos_historico[-3:]) / 3
+    # Proyección para próximo mes (promedio de los últimos 3 meses cerrados)
+    if len(gastos_historico) >= 4:
+        proyeccion_gastos = sum(gastos_historico[-4:-1]) / 3
     else:
         proyeccion_gastos = float(total_gastos_mes) if total_gastos_mes else 0
 
     # Meta de ahorro (20% de ingresos)
     meta_ahorro = total_ingresos * Decimal('0.20') if total_ingresos else 0
 
+    # Métricas analíticas para decisiones del mes
+    dias_del_mes = monthrange(anio_actual, mes_actual)[1]
+    es_mes_actual = (mes_actual == fecha_actual.month and anio_actual == fecha_actual.year)
+    dias_evaluados = min(fecha_actual.day, dias_del_mes) if es_mes_actual else dias_del_mes
+
+    gasto_promedio_diario = Decimal('0')
+    if dias_evaluados > 0:
+        gasto_promedio_diario = Decimal(str(total_gastos_mes)) / Decimal(str(dias_evaluados))
+
+    proyeccion_cierre_mes = gasto_promedio_diario * Decimal(str(dias_del_mes))
+    variacion_vs_mes_anterior = Decimal(str(total_gastos_mes)) - Decimal(str(gastos_mes_anterior))
+
+    top_3_total = Decimal('0')
+    for cat in gastos_por_categoria[:3]:
+        top_3_total += Decimal(str(cat.total))
+    concentracion_top_3 = float((top_3_total / Decimal(str(total_gastos_mes))) * 100) if total_gastos_mes else 0
+
+    capacidad_ahorro_proyectada = (total_ingresos + saldo_anterior) - proyeccion_cierre_mes
+
     # Generar lista de meses disponibles (últimos 12 meses)
-    from datetime import date
     meses_disponibles = []
     for i in range(12):
-        fecha_mes = date(fecha_actual.year, fecha_actual.month, 1) - timedelta(days=30*i)
+        anio_mes, mes = desplazar_mes(fecha_actual.year, fecha_actual.month, -i)
         meses_disponibles.append({
-            'mes': fecha_mes.month,
-            'anio': fecha_mes.year,
-            'nombre': f"{MESES_ES[fecha_mes.month]} {fecha_mes.year}",
-            'seleccionado': (fecha_mes.month == mes_actual and fecha_mes.year == anio_actual)
+            'mes': mes,
+            'anio': anio_mes,
+            'nombre': f"{MESES_ES[mes]} {anio_mes}",
+            'seleccionado': (mes == mes_actual and anio_mes == anio_actual)
         })
 
     context = {
@@ -237,6 +279,7 @@ def dashboard(request):
         'mes_seleccionado': mes_actual,
         'anio_seleccionado': anio_actual,
         'meses_disponibles': meses_disponibles,
+        'categoria_breakdown': categoria_breakdown,
 
         # Datos para gráficos (convertir a JSON)
         'meses_labels': json.dumps(meses_labels),
@@ -253,6 +296,11 @@ def dashboard(request):
         'tendencia_ingresos': 0,  # Por ahora, se puede mejorar
         'proyeccion_gastos': proyeccion_gastos,
         'meta_ahorro': meta_ahorro,
+        'gasto_promedio_diario': gasto_promedio_diario,
+        'proyeccion_cierre_mes': proyeccion_cierre_mes,
+        'variacion_vs_mes_anterior': variacion_vs_mes_anterior,
+        'concentracion_top_3': concentracion_top_3,
+        'capacidad_ahorro_proyectada': capacidad_ahorro_proyectada,
     }
 
     # GAMIFICACIÓN: Registrar visita al dashboard
@@ -988,6 +1036,18 @@ def conciliacion(request):
         anio=anio
     ).first()
 
+    if conciliacion_existente and conciliacion_existente.estado != 'CERRADA':
+        total_confirmaciones = conciliacion_existente.detalles.count()
+        confirmaciones_realizadas = conciliacion_existente.detalles.filter(confirmado=True).count()
+
+        if total_confirmaciones > 0 and total_confirmaciones == confirmaciones_realizadas:
+            destino = conciliacion_existente.destino_saldo or 'SIGUIENTE_MES'
+            conciliacion_existente.cerrar_conciliacion(
+                request.user if request.user.is_authenticated else None,
+                destino
+            )
+            conciliacion_existente.refresh_from_db()
+
     # Calcular progreso de confirmaciones
     confirmados_count = 0
     total_aportantes = 0
@@ -1231,73 +1291,91 @@ def confirmar_conciliacion(request):
     from .email_utils import enviar_notificacion_conciliacion_cerrada
 
     try:
-        # Buscar la conciliación
-        conciliacion = ConciliacionMensual.objects.get(
-            familia_id=familia_id,
-            mes=mes,
-            anio=anio
-        )
-
-        # Buscar el detalle del aportante
-        detalle = DetalleConciliacion.objects.get(
-            conciliacion=conciliacion,
-            aportante_id=aportante_id
-        )
-
-        # Verificar el código
-        if detalle.codigo_confirmacion != codigo:
-            messages.error(request, f'❌ Código incorrecto para {detalle.aportante.nombre}. Por favor verifica el código enviado a tu email.')
-            from django.urls import reverse
-            url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
-            return redirect(url)
-
-        # Confirmar
-        if not detalle.confirmado:
-            detalle.confirmado = True
-            detalle.fecha_confirmacion = timezone.now()
-            detalle.save()
-
-            messages.success(request, f'✅ ¡Confirmado! {detalle.aportante.nombre} ha aceptado la conciliación.')
-        else:
-            messages.info(request, f'ℹ️ {detalle.aportante.nombre} ya había confirmado anteriormente.')
-
-        # Verificar si todos confirmaron
-        total_detalles = conciliacion.detalles.count()
-        confirmados = conciliacion.detalles.filter(confirmado=True).count()
-
-        if confirmados == total_detalles and total_detalles > 0:
-            # Todos confirmaron, pero si hay saldo positivo, pedir destino antes de cerrar
-            if conciliacion.saldo_disponible > 0 and not conciliacion.destino_saldo:
-                messages.warning(
-                    request,
-                    f'✅ Todos han confirmado, pero hay un saldo positivo de ${conciliacion.saldo_disponible:,.0f}.<br>'
-                    f'Por favor, selecciona el destino del saldo sobrante para completar el cierre.',
-                    extra_tags='safe'
-                )
-            else:
-                # Cerrar la conciliación con el destino seleccionado (o con déficit)
-                destino = conciliacion.destino_saldo if conciliacion.destino_saldo else 'SIGUIENTE_MES'
-                conciliacion.cerrar_conciliacion(request.user if request.user.is_authenticated else None, destino)
-
-                # Enviar notificación de cierre
-                enviar_notificacion_conciliacion_cerrada(conciliacion)
-
-                messages.success(
-                    request,
-                    f'🎉 <strong>¡Conciliación Cerrada!</strong><br>'
-                    f'Todos los aportantes ({confirmados}/{total_detalles}) han confirmado.<br>'
-                    f'La conciliación de {conciliacion} ha sido cerrada exitosamente.<br>'
-                    f'Saldo transferido al siguiente mes: ${conciliacion.saldo_transferido_siguiente:,.0f}<br>'
-                    f'Se han enviado notificaciones a todos los aportantes.',
-                    extra_tags='safe'
-                )
-        else:
-            messages.info(
-                request,
-                f'📊 Progreso: {confirmados} de {total_detalles} aportantes han confirmado.<br>'
-                f'Faltan {total_detalles - confirmados} confirmaciones para cerrar la conciliación.',
-                extra_tags='safe'
+        with transaction.atomic():
+            # Buscar la conciliación con bloqueo para evitar cierres inconsistentes
+            conciliacion = ConciliacionMensual.objects.select_for_update().get(
+                familia_id=familia_id,
+                mes=mes,
+                anio=anio
             )
+
+            # Si ya está cerrada, no permitir que siga mostrándose como pendiente
+            if conciliacion.estado == 'CERRADA':
+                messages.info(request, 'ℹ️ Esta conciliación ya fue cerrada previamente.')
+                from django.urls import reverse
+                url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+                return redirect(url)
+
+            # Buscar el detalle del aportante
+            detalle = DetalleConciliacion.objects.select_for_update().get(
+                conciliacion=conciliacion,
+                aportante_id=aportante_id
+            )
+
+            # Verificar el código
+            if detalle.codigo_confirmacion != codigo:
+                messages.error(request, f'❌ Código incorrecto para {detalle.aportante.nombre}. Por favor verifica el código enviado a tu email.')
+                from django.urls import reverse
+                url = reverse('conciliacion') + f'?mes={mes}&anio={anio}'
+                return redirect(url)
+
+            # Confirmar
+            if not detalle.confirmado:
+                detalle.confirmado = True
+                detalle.fecha_confirmacion = timezone.now()
+                detalle.save(update_fields=['confirmado', 'fecha_confirmacion'])
+
+                messages.success(request, f'✅ ¡Confirmado! {detalle.aportante.nombre} ha aceptado la conciliación.')
+            else:
+                messages.info(request, f'ℹ️ {detalle.aportante.nombre} ya había confirmado anteriormente.')
+
+            # Verificar si todos confirmaron
+            total_detalles = conciliacion.detalles.count()
+            confirmados = conciliacion.detalles.filter(confirmado=True).count()
+
+            if confirmados == total_detalles and total_detalles > 0:
+                # Todos confirmaron - cerrar la conciliación automáticamente
+                destino = conciliacion.destino_saldo if conciliacion.destino_saldo else 'SIGUIENTE_MES'
+
+                # Cerrar la conciliación y refrescar el estado persistido
+                conciliacion.cerrar_conciliacion(
+                    request.user if request.user.is_authenticated else None,
+                    destino
+                )
+                conciliacion.refresh_from_db()
+
+                # Enviar notificación de cierre una sola vez cuando la transición ocurrió
+                if conciliacion.estado == 'CERRADA':
+                    enviar_notificacion_conciliacion_cerrada(conciliacion)
+
+                # Mensaje de éxito detallado
+                mensaje_cierre = (
+                    f'🎉 <strong>¡Conciliación Cerrada Exitosamente!</strong><br>'
+                    f'✅ Todos los aportantes ({confirmados}/{total_detalles}) han confirmado.<br>'
+                    f'📋 Período: {conciliacion}<br>'
+                )
+
+                # Información sobre el saldo
+                if conciliacion.saldo_disponible > 0:
+                    mensaje_cierre += (
+                        f'💰 Saldo positivo: ${conciliacion.saldo_disponible:,.0f}<br>'
+                        f'📤 El saldo se transferirá automáticamente al siguiente mes<br>'
+                    )
+                elif conciliacion.saldo_disponible < 0:
+                    mensaje_cierre += f'⚠️ Déficit: ${abs(conciliacion.saldo_disponible):,.0f} (se arrastrará al siguiente mes)<br>'
+                else:
+                    mensaje_cierre += f'✅ Balance perfecto: $0<br>'
+
+                mensaje_cierre += f'📧 Se han enviado notificaciones a todos los aportantes.'
+
+                messages.success(request, mensaje_cierre, extra_tags='safe')
+            else:
+                messages.info(
+                    request,
+                    f'📊 Progreso: {confirmados} de {total_detalles} aportantes han confirmado.<br>'
+                    f'Faltan {total_detalles - confirmados} confirmaciones para cerrar la conciliación.',
+                    extra_tags='safe'
+                )
 
     except ConciliacionMensual.DoesNotExist:
         messages.error(request, 'No se encontró la conciliación para este período.')
